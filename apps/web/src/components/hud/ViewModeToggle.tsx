@@ -12,17 +12,17 @@ export function ViewModeToggle() {
     <div
       role="group"
       aria-label="Map projection mode"
-      className="pointer-events-auto inline-flex overflow-hidden rounded-[2px] bg-white shadow-md divide-x divide-[#E0E0E0]"
+      className="pointer-events-auto inline-flex overflow-hidden border border-red-700 bg-white shadow-md divide-x divide-red-700"
     >
       <button
         type="button"
         onClick={() => setViewMode('3d')}
         title="3D Globe View"
         aria-pressed={viewMode === '3d'}
-        className={`flex items-center gap-1.5 px-2.5 py-2 text-[12px] font-medium transition cursor-pointer ${
+        className={`flex cursor-pointer items-center gap-1.5 px-2.5 py-2 text-[12px] font-semibold transition-colors ${
           viewMode === '3d'
-            ? 'bg-[#5B9BD5] text-white'
-            : 'bg-white text-[#555555] hover:bg-[#F2F2F2]'
+            ? 'bg-red-700 text-white'
+            : 'bg-white text-red-700 hover:bg-red-700 hover:text-white'
         }`}
       >
         <Globe className="h-4 w-4" strokeWidth={2} />
@@ -34,10 +34,10 @@ export function ViewModeToggle() {
         onClick={() => setViewMode('2d')}
         title="2D Equirectangular Map View"
         aria-pressed={viewMode === '2d'}
-        className={`flex items-center gap-1.5 px-2.5 py-2 text-[12px] font-medium transition cursor-pointer ${
+        className={`flex cursor-pointer items-center gap-1.5 px-2.5 py-2 text-[12px] font-semibold transition-colors ${
           viewMode === '2d'
-            ? 'bg-[#5B9BD5] text-white'
-            : 'bg-white text-[#555555] hover:bg-[#F2F2F2]'
+            ? 'bg-red-700 text-white'
+            : 'bg-white text-red-700 hover:bg-red-700 hover:text-white'
         }`}
       >
         <MapIcon className="h-4 w-4" strokeWidth={2} />

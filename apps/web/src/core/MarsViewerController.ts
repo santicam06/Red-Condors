@@ -37,6 +37,7 @@ export class MarsViewerController {
   private latestMousePosition = new Cesium.Cartesian2(-1, -1);
   private mouseInsideCanvas = false;
   private handleMouseLeaveBound: () => void;
+  private removePostUpdateListener: (() => void) | null = null;
 
   constructor(
     container: HTMLElement,
@@ -130,6 +131,10 @@ export class MarsViewerController {
       this.broadcastCursorCoordinates(null);
     };
     this.viewer.scene.canvas.addEventListener('mouseleave', this.handleMouseLeaveBound);
+
+    this.removePostUpdateListener = this.viewer.scene.postUpdate.addEventListener(() => {
+      this.clamp2DVerticalPan();
+    });
   }
 
   /**
@@ -286,6 +291,7 @@ export class MarsViewerController {
         MARS_ELLIPSOID
       ),
     });
+    this.clamp2DVerticalPan();
 
     this.nomenclatureManager.markDirty();
     if (this.mouseInsideCanvas) {
@@ -373,6 +379,34 @@ export class MarsViewerController {
   }
 
   /**
+   * In 2D mode, locks vertical panning when the entire Martian map (-90°..+90°)
+   * fits inside the viewport (allowing only horizontal dragging), and when zoomed
+   * in, constrains vertical panning so the poles never scroll off into blank space.
+   */
+  private clamp2DVerticalPan(): void {
+    if (this.viewer.isDestroyed()) return;
+    const { scene, camera } = this.viewer;
+    if (scene.mode !== Cesium.SceneMode.SCENE2D) return;
+
+    const frustum = camera.frustum;
+    if (
+      !(frustum instanceof Cesium.OrthographicOffCenterFrustum) ||
+      typeof frustum.top !== 'number'
+    ) {
+      return;
+    }
+
+    const halfMapHeight = Math.PI * 0.5 * MARS_ELLIPSOID.maximumRadius;
+    const halfViewportHeight = Math.abs(frustum.top);
+    const allowedMaxY = Math.max(0, halfMapHeight - halfViewportHeight);
+
+    const clampedY = Cesium.Math.clamp(camera.position.y, -allowedMaxY, allowedMaxY);
+    if (Math.abs(camera.position.y - clampedY) > 1e-6) {
+      camera.position.y = clampedY;
+    }
+  }
+
+  /**
    * Toggles the Mars Nomenclature label layer ON or OFF.
    */
   public setNomenclatureVisible(visible: boolean): void {
@@ -455,6 +489,8 @@ export class MarsViewerController {
 
   public destroy(): void {
     this.cancelActiveZoomAnimation();
+    this.removePostUpdateListener?.();
+    this.removePostUpdateListener = null;
     if (!this.viewer.isDestroyed()) {
       this.viewer.scene.canvas.removeEventListener(
         'mouseleave',

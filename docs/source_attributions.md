@@ -38,6 +38,14 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **License / Terms:** Public Domain / NASA Media Usage Guidelines (also redistributed under CesiumJS Apache-2.0 third-party notices)
 - **Usage in Project:** 3D celestial starfield skybox (`Cesium.SkyBox.createEarthSkyBox()`) surrounding Mars in 3D Globe view, replicating NASA Mars Trek's deep-space background.
 
+### 1.5 Mars Perseverance MEDA Weather
+- **Dataset:** `juliensimon/mars-perseverance-weather` (`https://huggingface.co/datasets/juliensimon/mars-perseverance-weather`)
+- **Upstream Source:** NASA Planetary Data System Atmospheres Node — Mars 2020 MEDA derived environmental products (`https://pds-atmospheres.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/`)
+- **Mission / Instrument:** NASA Mars 2020 Perseverance — Mars Environmental Dynamics Analyzer (MEDA)
+- **Dataset Author / Citation:** Julien Simon, *Mars Perseverance MEDA Weather* (2026), Hugging Face
+- **License:** CC BY 4.0 for the compiled Hugging Face dataset; upstream NASA products remain subject to NASA/PDS usage guidance
+- **Usage in Project:** Dataset-level metadata and documented summary statistics are displayed at a representative Perseverance point in Jezero Crater. The point is explicitly labeled approximate and the values are historical dataset statistics, not live conditions.
+
 ---
 
 ## 2. Open-Source Libraries & Tooling
@@ -64,3 +72,4 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **HTTPX (`httpx`)** | BSD-3-Clause | `https://github.com/encode/httpx` | HTTP client used by FastAPI's `TestClient` in backend tests. |
 | **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
+| **JetBrains Mono** | SIL Open Font License 1.1 | `https://github.com/JetBrains/JetBrainsMono` | Monospaced typography for the Perseverance weather point marker and information panel. |

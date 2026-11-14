@@ -1,12 +1,20 @@
 # Red Condors — Martian Map
 
+[![CI](https://github.com/santicam06/Red-Condors/actions/workflows/lint.yml/badge.svg)](https://github.com/santicam06/Red-Condors/actions/workflows/lint.yml)
+
 A "Google Earth for Mars" mission-planning and rehearsal tool built by **Team Red Condors** for the
 **NASA Space Apps Challenge — Toronto (November 14–15, 2026)**, challenge
-**"Interplanetary Survival Guide: Martian Map"** ([brief](docs/challenge.md)).
+**"Interplanetary Survival Guide: Martian Map"** ([brief](docs/challenge.md)). It combines a
+Mars Trek-inspired map with rover observations, environmental conditions, and future EVA and rover
+route planning.
 
 > **Disclaimer:** This is an independent hackathon prototype. It is **not** endorsed by,
 > affiliated with, or an official product of NASA, JPL, Caltech, or USGS. No official NASA or JPL
 > logos are used.
+
+> **Project status:** The repo currently contains the structural baseline, an interactive web map,
+> and a minimal FastAPI backend. Route planning, surface imagery, environmental overlays, and
+> mission workflows are planned and not yet complete.
 
 ## Features
 
@@ -15,7 +23,7 @@ A "Google Earth for Mars" mission-planning and rehearsal tool built by **Team Re
 | 1 | 3D globe & 2D map of Mars with Mars Trek imagery, nomenclature labels, coordinate readout, zoom | ✅ Implemented |
 | 2 | Martian "Street View": rover surface imagery as clickable dots | 🛠 Planned |
 | 3 | Outpost locations & EVA / rover route rehearsals (distance, ETA) | 🛠 Planned |
-| 4 | Climate & environmental tracking with dynamic rerouting | 🛠 Planned |
+| 4 | Climate & environmental tracking with dynamic rerouting | 🟡 Started: Perseverance MEDA weather point in Jezero Crater |
 | 5 | Topography-aware safe routing (craters, slopes, ridges) | 🛠 Planned |
 | 6 | Scientific research missions at waypoints | 🛠 Planned |
 
@@ -36,14 +44,18 @@ No API keys or paid services are required to run the app.
 
 ```text
 apps/
-├── web/          Frontend: the one and only web app
-└── api/          Backend: the one and only API (FastAPI modular monolith)
-    └── app/modules/<domain>/    points, rover_images, weather, ...
-docs/             Architecture, challenge brief, source attributions
-scripts/dev.sh    One command to set up, run, and check everything
+├── web/                     Frontend: the one and only web app
+│   ├── src/components/      Shared viewport and HUD components
+│   ├── src/core/            Dataset-agnostic Cesium map engine
+│   └── src/features/        Isolated product capabilities (e.g. perseverance/)
+└── api/                     Backend: the one and only API (FastAPI modular monolith)
+    └── app/modules/<domain>/  points, rover_images, weather, ...
+docs/
+├── architecture.md          Boundaries and dependency direction
+├── challenge.md             NASA Space Apps challenge brief
+└── source_attributions.md   Dataset, service, and dependency credits
+scripts/dev.sh               One command to set up, run, and check everything
 ```
-
-Details are in [`docs/architecture.md`](docs/architecture.md).
 
 ## Prerequisites
 
@@ -114,8 +126,20 @@ port 8000, so no CORS setup is needed.
 | :--- | :--- |
 | `npm run build` | Type-check and build the frontend into `apps/web/dist` |
 | `npm run preview` | Serve the production build locally |
-| `npm run lint` | Lint the frontend (ESLint) |
+| `npm run lint` | Lint the frontend (ESLint, warnings treated as errors) |
 | `npm run fetch:nomenclature` | Refresh `apps/web/public/data/mars_nomenclature.geojson` from Mars Trek |
+
+## Using the map
+
+1. Start the app (Option A or B) and open <http://localhost:5173>.
+2. Use the **3D / 2D** control to switch between the globe and the flat map.
+3. Use the zoom buttons or the mouse (drag to pan, scroll to zoom) to explore Mars.
+4. Toggle **Nomenclature** to show or hide Mars feature labels.
+5. Select the **Perseverance MEDA** point in Jezero Crater to see a summary of the historical
+   weather dataset.
+
+The MEDA point's coordinate is **approximate**. Its values are historical research statistics, not
+live conditions.
 
 ## Contributing
 
@@ -129,11 +153,24 @@ port 8000, so no CORS setup is needed.
 6. Log **every** new dataset, API, imagery source, or library in
    [`docs/source_attributions.md`](docs/source_attributions.md). This is required by the Space Apps rules.
 
+For architectural decisions, read [`docs/architecture.md`](docs/architecture.md) and
+[`AGENTS.md`](AGENTS.md).
+
 ## Data & credits
 
 Mars imagery and nomenclature: Courtesy NASA/JPL-Caltech/USGS, via
-[NASA Mars Trek](https://trek.nasa.gov/mars/). The full list of sources and open-source licenses is in
-[`docs/source_attributions.md`](docs/source_attributions.md).
+[NASA Mars Trek](https://trek.nasa.gov/mars/). Weather: NASA Mars 2020 Perseverance MEDA (via the
+PDS Atmospheres Node and a CC BY 4.0 compiled dataset). The full list of sources and open-source
+licenses is in [`docs/source_attributions.md`](docs/source_attributions.md).
+
+## Help and project resources
+
+- [Architecture](docs/architecture.md)
+- [Challenge brief](docs/challenge.md)
+- [Source attributions](docs/source_attributions.md)
+- [API notes](apps/api/README.md)
+- [GitHub Issues](https://github.com/santicam06/Red-Condors/issues) for bugs, questions, and
+  feature proposals
 
 ## Team
 
