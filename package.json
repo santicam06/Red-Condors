@@ -10,7 +10,8 @@
     "build": "npm run build --workspace red-condors-martian-map",
     "preview": "npm run preview --workspace red-condors-martian-map",
     "lint": "npm run lint --workspace red-condors-martian-map",
-    "fetch:nomenclature": "npm run fetch:nomenclature --workspace red-condors-martian-map"
+    "fetch:nomenclature": "npm run fetch:nomenclature --workspace red-condors-martian-map",
+    "dev:all": "bash scripts/dev.sh"
   },
   "engines": {
     "node": ">=22",

@@ -9,10 +9,20 @@ const cesiumSource = normalizePath(
 );
 const cesiumBaseUrl = 'cesium';
 
+// Forward /api/* to the FastAPI backend so the frontend always uses relative URLs.
+const apiProxy = {
+  '/api': {
+    target: process.env.API_URL ?? 'http://127.0.0.1:8000',
+    changeOrigin: true,
+  },
+};
+
 export default defineConfig({
   define: {
     CESIUM_BASE_URL: JSON.stringify(`/${cesiumBaseUrl}`),
   },
+  server: { proxy: apiProxy },
+  preview: { proxy: apiProxy },
   plugins: [
     react(),
     tailwindcss(),

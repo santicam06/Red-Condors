@@ -54,7 +54,7 @@ setup_api() {
   fi
   info "Installing backend dependencies..."
   "$(venv_bin)/python" -m pip install --quiet --upgrade pip
-  "$(venv_bin)/python" -m pip install --quiet -e "$API_DIR[dev]"
+  (cd "$API_DIR" && "$(venv_bin)/python" -m pip install --quiet -e ".[dev]")
 }
 
 setup() { setup_web; setup_api; info "Setup complete."; }
@@ -64,21 +64,41 @@ ensure_setup() {
   [ -x "$(venv_bin)/python" ] || [ -x "$(venv_bin)/python.exe" ] || setup_api
 }
 
-run_web() { check_node; (cd "$ROOT" && npm run dev); }
+run_web() { check_node; cd "$ROOT" && exec npm run dev; }
 
 run_api() {
-  cd "$API_DIR"
-  "$(venv_bin)/python" -m uvicorn app.main:app --reload --port "$API_PORT"
+  cd "$API_DIR" && exec "$(venv_bin)/python" -m uvicorn app.main:app --reload --port "$API_PORT"
+}
+
+# Stop a background job and all of its children (uvicorn's reload worker, Vite, ...).
+kill_tree() {
+  local pid="$1"
+  [ -n "$pid" ] || return 0
+  if [ -r "/proc/$pid/winpid" ] && command -v taskkill >/dev/null 2>&1; then
+    taskkill //F //T //PID "$(cat "/proc/$pid/winpid")" >/dev/null 2>&1 || true  # Git Bash
+  else
+    kill "$pid" 2>/dev/null || true  # macOS / Linux: servers shut down their own children
+  fi
+}
+
+API_PID=""
+WEB_PID=""
+stop_all() {
+  trap - INT TERM
+  info "Stopping..."
+  kill_tree "$API_PID"
+  kill_tree "$WEB_PID"
+  wait 2>/dev/null || true
+  exit 0
 }
 
 run_all() {
   ensure_setup
   info "Starting API on http://localhost:$API_PORT and web on http://localhost:5173 (Ctrl+C stops both)"
-  run_api &
-  local api_pid=$!
-  trap 'info "Stopping..."; kill $api_pid 2>/dev/null; wait 2>/dev/null; exit 0' INT TERM
-  run_web
-  kill $api_pid 2>/dev/null || true
+  ( run_api ) & API_PID=$!
+  ( run_web ) & WEB_PID=$!
+  trap stop_all INT TERM
+  wait
 }
 
 check() {
