@@ -29,22 +29,49 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **Upstream Catalog:** Gazetteer of Planetary Nomenclature (`https://planetarynames.wr.usgs.gov/`)
 - **Provider / Credit:** International Astronomical Union (IAU) Working Group for Planetary System Nomenclature (WGPSN) / USGS Astrogeology Science Center / NASA JPL Mars Trek
 - **License / Terms:** Public Domain / Open Scientific Data
-- **Usage in Project:** Cached in `apps/web/public/data/mars_nomenclature.geojson` (via `apps/web/scripts/fetch-nomenclature.mjs`, 1,783 approved Martian surface feature names and priority levels `1`–`7`) to render toggleable Martian area and landform labels matching Mars Trek.
+- **Usage in Project:** Cached in `apps/web/public/data/mars_nomenclature.geojson` (via `apps/web/scripts/fetch-nomenclature.mjs`, 1,783 approved Martian surface feature names and priority levels `1`–`7`) to render toggleable Martian area and landform labels matching Mars Trek. Visible labels can be hovered (enlarged, blue) and clicked to open a location-details card.
 
-### 1.4 Deep Star Maps / Tycho-2 Celestial Skybox (`tycho2t3_80`)
+### 1.4 USGS Gazetteer of Planetary Nomenclature — Target: Mars
+- **Catalog page:** `https://planetarynames.wr.usgs.gov/Page/MARS/target`
+- **Gazetteer home:** `https://planetarynames.wr.usgs.gov/`
+- **Descriptor terms:** `https://planetarynames.wr.usgs.gov/DescriptorTerms` (morphological class definitions shown in the location card; terms describe shape, not geologic origin)
+- **Center-point download:** `https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MARS_nomenclature_center_pts.zip` (linked from the Mars target page under GIS Downloads; snapshot dated 2026-11-14)
+- **Provider / Credit:** International Astronomical Union (IAU) Working Group for Planetary System Nomenclature (WGPSN) / USGS Astrogeology Science Center
+- **License / Terms:** Public Domain / Open Scientific Data (U.S. Government)
+- **Usage in Project:** `apps/web/src/components/Locations/usgsGazetteer.json` stores the approved Mars center-point attributes (name, center, extent, diameter, origin, approval, quadrangle, and feature-page URL). The location card looks up the clicked label by clean name and cites `https://planetarynames.wr.usgs.gov/Page/MARS/target` as the source. Individual records link to `https://planetarynames.wr.usgs.gov/Feature/{id}` when the gazetteer includes that feature.
+
+### 1.5 Deep Star Maps / Tycho-2 Celestial Skybox (`tycho2t3_80`)
 - **Upstream Source:** NASA Goddard Space Flight Center Scientific Visualization Studio — *Deep Star Maps* (`https://svs.gsfc.nasa.gov/vis/a000000/a003500/a003572/`) & NASA/JPL-Caltech (`http://maps.jpl.nasa.gov/stars.html`), derived from the Hipparcos & Tycho-2 star catalogs
 - **Assets Used:** `Assets/Textures/SkyBox/tycho2t3_80_{px,mx,py,my,pz,mz}.jpg` (bundled with CesiumJS and matching NASA Mars Trek's 3D Globe view)
 - **Provider / Credit:** Courtesy NASA / Goddard Space Flight Center Scientific Visualization Studio / JPL-Caltech
 - **License / Terms:** Public Domain / NASA Media Usage Guidelines (also redistributed under CesiumJS Apache-2.0 third-party notices)
 - **Usage in Project:** 3D celestial starfield skybox (`Cesium.SkyBox.createEarthSkyBox()`) surrounding Mars in 3D Globe view, replicating NASA Mars Trek's deep-space background.
 
-### 1.5 Mars Perseverance MEDA Weather
-- **Dataset:** `juliensimon/mars-perseverance-weather` (`https://huggingface.co/datasets/juliensimon/mars-perseverance-weather`)
-- **Upstream Source:** NASA Planetary Data System Atmospheres Node — Mars 2020 MEDA derived environmental products (`https://pds-atmospheres.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/`)
-- **Mission / Instrument:** NASA Mars 2020 Perseverance — Mars Environmental Dynamics Analyzer (MEDA)
-- **Dataset Author / Citation:** Julien Simon, *Mars Perseverance MEDA Weather* (2026), Hugging Face
-- **License:** CC BY 4.0 for the compiled Hugging Face dataset; upstream NASA products remain subject to NASA/PDS usage guidance
-- **Usage in Project:** Dataset-level metadata and documented summary statistics are displayed at a representative Perseverance point in Jezero Crater. The point is explicitly labeled approximate and the values are historical dataset statistics, not live conditions.
+---
+
+## 2. Location Card Imagery
+
+The place card opened from a nomenclature name shows a photo of that spot, centered on the feature. The photos are cropped from public Mars Trek WMTS tiles (no API key). Use the arrows on the photo to switch views. Each image is credited on the photo and again in the card’s Imagery section.
+
+### 2.1 Viking VIS Global Color Mosaic (place photo)
+- **Layer Identifier:** `Mars_Viking_MDIM21_ClrMosaic_global_232m`
+- **WMTS Capabilities:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/WMTSCapabilities.xml`
+- **Tile Template:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/{TileMatrix}/{TileRow}/{TileCol}.jpg`
+- **Mission / Instrument:** NASA Viking 1 & Viking 2 Orbiters — Visual Imaging Subsystem (VIS), MDIM 2.1 color mosaic, about 232 m/pixel
+- **Provider / Credit:** Courtesy NASA / JPL-Caltech / USGS Astrogeology Science Center
+- **License / Terms:** Public Domain (U.S. Government / NASA & USGS open planetary science data)
+- **Usage in Project:** First photo in the location card (`apps/web/src/components/Locations/PlacePhoto.tsx`). This is the same mosaic as the globe basemap, cropped around the clicked feature. Cross-origin tile reads are allowed (`Access-Control-Allow-Origin: *`).
+
+### 2.2 Mars Global Surveyor MOLA Color Shaded Relief (place photo)
+- **Layer Identifier:** `Mars_MGS_MOLA_ClrShade_merge_global_463m`
+- **WMTS Capabilities:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml`
+- **Tile Template:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{TileMatrix}/{TileRow}/{TileCol}.jpg`
+- **Spatial Resolution:** about 463 meters/pixel, global coverage
+- **Mission / Instrument:** NASA Mars Global Surveyor — Mars Orbiter Laser Altimeter (MOLA), color shaded relief
+- **Provider / Credit:** Courtesy NASA / JPL-Caltech / Goddard Space Flight Center (GSFC)
+- **Portal:** NASA Mars Trek (`https://trek.nasa.gov/mars/`)
+- **License / Terms:** Public Domain (U.S. Government / NASA open planetary science data)
+- **Usage in Project:** Second photo in the location card, switched with the on-image arrows. Zoom follows the feature’s diameter so a crater and a regional terra are both framed. Tile math and credits live in `apps/web/src/components/Locations/placeImagery.ts`.
 
 ### 1.6 MOLA Global Digital Elevation Model (`mola128_mola64_merge_90Nto90S_SimpleC_clon0.tif`)
 - **Product:** Mars MGS MOLA DEM, 128 pixels/degree merged with 64 ppd where 128 ppd is unavailable (~463 m/pixel), Simple Cylindrical, centre longitude 0°, Int16 metres relative to the Mars areoid
@@ -56,7 +83,12 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 
 ---
 
-## 2. Open-Source Libraries & Tooling
+### 2.3 Hypothetical Olympus Mons crew sites
+- **Landform coordinates:** Center points for Olympus Mons, Olympus Rupes, Olympus Paterae, Lycus Sulci, Pangboche, and Karzok are taken from the USGS gazetteer snapshot in §1.4.
+- **Usage in Project:** `apps/web/src/components/Outposts/olympusSites.ts` places fictional rehearsal infrastructure (base camp, habitat, science stops, and a short-walk sample pad) on those landforms. These camps are original scenario content. They are not NASA, JPL, or mission facilities, and the app labels them as hypothetical.
+- **Navigation:** The Olympus rehearsal compares the straight ellipsoid line with a slope-and-dust path for a rover and a suited walk. Speeds are rehearsal values: 10 km/h (rover) and 1.5 km/h (Marswalk). See §4.
+
+## 3. Open-Source Libraries & Tooling
 
 All third-party libraries used in this repository are distributed under **OSI-approved open-source licenses** and operate without proprietary SaaS tokens:
 
@@ -83,4 +115,36 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **HTTPX (`httpx`)** | BSD-3-Clause | `https://github.com/encode/httpx` | HTTP client used by FastAPI's `TestClient` in backend tests. |
 | **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
-| **JetBrains Mono** | SIL Open Font License 1.1 | `https://github.com/JetBrains/JetBrainsMono` | Monospaced typography for the Perseverance weather point marker and information panel. |
+| **JetBrains Mono** | SIL Open Font License 1.1 | `https://github.com/JetBrains/JetBrainsMono` | Monospaced typography for the map HUD and route bar. |
+
+---
+
+## 4. Topography and dust used to choose a route
+
+These products feed the Olympus Mons rehearsal. The straight line is drawn in red when it is too steep or too dusty. A blue line is the rover path. A gold line is the walking path. There is no public live global dust-storm API, so “now” means the current Mars season on the latest complete daily maps, not a picture from today’s downlink.
+
+### 4.1 MGS MOLA topography (MEGDR)
+- **Product:** `MEGT90N000EB.IMG`, median topography, 16 pixels per degree (about 3.7 km)
+- **Dataset:** `MGS-M-MOLA-5-MEGDR-L3-V1.0`
+- **Label:** `https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg016/megt90n000eb.lbl`
+- **Image:** `https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg016/megt90n000eb.img`
+- **Catalog:** `https://pds-geosciences.wustl.edu/missions/mgs/megdr.html`
+- **Mission / Instrument:** NASA Mars Global Surveyor — Mars Orbiter Laser Altimeter (MOLA), Mapping and Extended missions, 1999–2001
+- **What a pixel is:** Planetary radius minus the areoid, in meters, IAU 2000. Signed 16-bit integer.
+- **Provider / Credit:** Courtesy NASA / Goddard Space Flight Center. MOLA team, principal investigator David E. Smith. Archived at the NASA PDS Geosciences Node.
+- **License / Terms:** Public domain (U.S. Government / NASA)
+- **Usage in Project:** `apps/web/src/components/Outposts/molaOlympus.json` keeps the rows from 32°N to 12°N and 208°E to 242°E. The router turns neighboring elevations into a slope. A Marswalk stops above 15°. A rover stops above 25°.
+
+### 4.2 MRO MCS column dust optical depth (gridded, Mars Year 36)
+- **Product:** Gridded column dust optical depth, version 2.5, Mars Year 36. Infrared absorption at 9.3 μm, normalized to 610 Pa. One map per sol on a 5° latitude by 6° longitude grid.
+- **File:** `https://www-mars.lmd.jussieu.fr/mars/dust_climatology/dataset_v2/griddedcdod_MY36_v2-5.nc` (created 8 February 2023)
+- **Catalog:** `https://www-mars.lmd.jussieu.fr/mars/dust_climatology/index.html`
+- **Observations:** NASA Mars Reconnaissance Orbiter — Mars Climate Sounder (MCS), v5.2 retrievals
+- **Method and citation:** Montabone, L., et al. (2015), *Icarus*, doi:10.1016/j.icarus.2014.12.034. Montabone, L., et al. (2020), *JGR Planets*, doi:10.1029/2019JE006111. Version 2.5 for Mars Year 36.
+- **Provider / Credit:** Luca Montabone and co-authors, from NASA MRO MCS observations. Contact listed on the file: Luca Montabone.
+- **License / Terms:** Creative Commons Attribution-ShareAlike 3.0 (`https://creativecommons.org/licenses/by-sa/3.0/`). This dust grid is not public-domain. Credit the authors, and keep that license on adaptations.
+- **Why this is not a live feed:** MCS profile files at the PDS Atmospheres Node (`https://pds-atmospheres.nmsu.edu/data_and_services/atmospheres_data/MARS/aerosols.html`) are the nearer-to-present archive, but they are along-track profiles, not a filled map, and the published volumes lag the current Earth date. The route uses the newest full daily maps (Mars Year 36).
+- **Usage in Project:** `apps/web/src/components/Outposts/dustSeason.json` stores two sols from that file.
+  - **Present season:** sol at Ls 21.5°, chosen because 14 November 2026 falls at about Ls 21.6° (northern spring, usually clear). Dust over Olympus is about 0.05–0.12.
+  - **Dust-storm season:** sol at Ls 315°, the dustiest stretch of Mars Year 36 in this file. A rehearsal case, not today’s weather. Dust over this region rises to about 0.5–1.1.
+- **How the route uses it:** A walking step is refused above optical depth 1.0. A rover step is refused above 1.3. Below those caps, dust slows the ETA. In the present season the dust is too light to move the path, so MOLA slope picks the corridor. In the storm rehearsal, dusty cells can close the walk before they close the rover.

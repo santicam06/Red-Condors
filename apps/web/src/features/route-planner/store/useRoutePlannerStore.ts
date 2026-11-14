@@ -13,11 +13,9 @@ interface RoutePlannerState {
   destination: RouteLocation | null;
   activeInputSlot: ActiveInputSlot;
   activeTab: RouteTab;
+  /** Place from the latest map click. Pins are not drawn until it is assigned. */
+  clickedLocation: RouteLocation | null;
 
-  /**
-   * Placeholder operational metrics (kept null until routing & metric
-   * calculations are implemented).
-   */
   distanceKm: number | null;
   marswalkEta: string | null;
   roverEta: string | null;
@@ -25,6 +23,11 @@ interface RoutePlannerState {
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
   setTravelMode: (mode: TravelMode) => void;
+  setTraverseSummary: (summary: {
+    distanceKm: number | null;
+    marswalkEta: string | null;
+    roverEta: string | null;
+  }) => void;
   setSource: (location: RouteLocation | null) => void;
   setDestination: (location: RouteLocation | null) => void;
   swapLocations: () => void;
@@ -32,6 +35,9 @@ interface RoutePlannerState {
   setActiveTab: (tab: RouteTab) => void;
   openIndicationsForLocation: (location: RouteLocation) => void;
   selectLocationFromMap: (location: RouteLocation) => void;
+  presentClickedLocation: (location: RouteLocation) => void;
+  clearClickedLocation: () => void;
+  assignClickedLocation: (slot: ActiveInputSlot) => void;
 }
 
 export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
@@ -41,6 +47,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   destination: null,
   activeInputSlot: 'source',
   activeTab: 'mission',
+  clickedLocation: null,
 
   distanceKm: null,
   marswalkEta: null,
@@ -49,6 +56,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   setOpen: (isOpen) => set({ isOpen }),
   toggleOpen: () => set((state) => ({ isOpen: !state.isOpen })),
   setTravelMode: (travelMode) => set({ travelMode }),
+  setTraverseSummary: (summary) => set(summary),
 
   setSource: (source) =>
     set((state) => ({
@@ -107,6 +115,49 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
 
       return {
         destination: location,
+        activeInputSlot: 'destination',
+      };
+    }),
+
+  presentClickedLocation: (clickedLocation) =>
+    set((state) => {
+      const waitingForStart =
+        state.destination !== null &&
+        state.source === null &&
+        state.destination.id !== clickedLocation.id;
+
+      if (waitingForStart) {
+        return {
+          source: clickedLocation,
+          clickedLocation: null,
+          isOpen: true,
+          activeTab: 'mission',
+          activeInputSlot: 'destination',
+        };
+      }
+
+      return {
+        clickedLocation,
+        isOpen: true,
+        activeTab: 'mission',
+      };
+    }),
+
+  clearClickedLocation: () => set({ clickedLocation: null }),
+
+  assignClickedLocation: (slot) =>
+    set((state) => {
+      if (!state.clickedLocation) return {};
+      if (slot === 'source') {
+        return {
+          source: state.clickedLocation,
+          clickedLocation: null,
+          activeInputSlot: state.destination === null ? 'destination' : 'source',
+        };
+      }
+      return {
+        destination: state.clickedLocation,
+        clickedLocation: null,
         activeInputSlot: 'destination',
       };
     }),

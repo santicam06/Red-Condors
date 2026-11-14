@@ -31,7 +31,7 @@ function formatCoordinatePair(lat: number, lon: number): string {
   return `${Math.abs(lat).toFixed(4)}° ${latHemisphere}, ${Math.abs(lon).toFixed(4)}° ${lonHemisphere}`;
 }
 
-function IndicationsIcon({ className }: { className?: string }) {
+export function IndicationsIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
