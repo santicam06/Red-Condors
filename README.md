@@ -178,6 +178,7 @@ Team Red Condors.
 - Fabricio Alejandro Ortiz Fiallos (Front-end Developer)
 - Samuel Esteban Pineda Benavides (Back-end Developer)
 - Miguel Rincon (Full-Stack Developer)
+- Conan Olatunji (Full-Stack Developer)
 
 ## License
 
