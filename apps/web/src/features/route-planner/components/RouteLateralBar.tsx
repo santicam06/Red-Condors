@@ -104,7 +104,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
                           : 'bg-transparent text-[#3C4043] group-hover:bg-[#FCE8E6] group-hover:text-[#B3261E]'
                       }`}
                     >
-                      <Icon className="h-[22px] w-[22px]" />
+                      <Icon className="h-[25px] w-[25px]" />
                     </span>
                     <span
                       className={`text-[12px] leading-tight tabular-nums transition-colors duration-150 ${
