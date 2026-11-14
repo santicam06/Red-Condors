@@ -3,6 +3,8 @@ import { MapHUD } from './components/hud/MapHUD';
 import { NomenclatureLocations } from './components/Locations/NomenclatureLocations';
 import { MarsViewport } from './components/MarsViewport';
 import type { MarsViewerController } from './core/MarsViewerController';
+import { StreetViewPanel } from './features/rover-streetview/components/StreetViewPanel';
+import { RoverStopsLayer } from './features/rover-streetview/map/RoverStopsLayer';
 import { RouteLateralBar } from './features/route-planner/components/RouteLateralBar';
 import { useMapLocationPicker } from './features/route-planner/map/useMapLocationPicker';
 import { RouteLayer } from './features/routing/map/RouteLayer';
@@ -22,7 +24,9 @@ export function App() {
       <NomenclatureLocations controller={controller} />
       <RouteLayer controller={controller} />
       <RouteLateralBar controller={controller} />
+      <RoverStopsLayer controller={controller} />
       <MapHUD controller={controller} />
+      <StreetViewPanel />
     </main>
   );
 }

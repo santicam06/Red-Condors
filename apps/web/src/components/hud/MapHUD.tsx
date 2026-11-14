@@ -1,4 +1,5 @@
 import type { MarsViewerController } from "../../core/MarsViewerController";
+import { PegmanControl } from "../../features/rover-streetview/components/PegmanControl";
 import { WalkableAreaLegend } from "../../features/routing/components/WalkableAreaLegend";
 import { WalkableAreaToggle } from "../../features/routing/components/WalkableAreaToggle";
 import { useRoutePlannerStore } from "../../features/route-planner/store/useRoutePlannerStore";
@@ -38,6 +39,7 @@ export function MapHUD({ controller }: MapHUDProps) {
         <AttributionCredit />
 
         <div className="flex flex-col items-end gap-2.5">
+          <PegmanControl controller={controller} />
           {/* Layer switches share one width so their toggles line up */}
           <div className="flex flex-col items-stretch gap-2.5">
             <WalkableAreaToggle />

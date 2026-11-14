@@ -1,0 +1,376 @@
+{
+  "description": "Curated Perseverance Street View tour (Jezero Crater). Every value comes from the NASA/JPL sources listed per stop; verify with: python -m app.modules.rover_images.verify_showcase",
+  "curated_on": "2026-11-14",
+  "stops": [
+    {
+      "id": "m20-3-0",
+      "order": 1,
+      "title": "Landing site",
+      "summary": "Octavia E. Butler Landing, where Perseverance touched down in Jezero Crater. Listed in NASA's surface-experience layer as the landing site (sols 1–12).",
+      "rover": "perseverance",
+      "sol": 13,
+      "site": 3,
+      "drive": 0,
+      "lat": 18.44462715,
+      "lon": 77.45088572,
+      "credit": "NASA/JPL-Caltech",
+      "sample": null,
+      "panorama": {
+        "product_id": "N_LRGB_0012XRZS_0030000_CYL_L_AUTOGENJ03",
+        "capture_sol": 12,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00012/ids/rdr/mosaic/N_LRGB_0012XRZS_0030000_CYL_L_AUTOGENJ03.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00012/ids/rdr/mosaic/N_LRGB_0012XRZS_0030000_CYL_L_AUTOGENJ03.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -86.5958,
+        "el_max": 19.2967
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 3, drive 0",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_surfaceexperience.json"
+      }
+    },
+    {
+      "id": "m20-3-1392",
+      "order": 2,
+      "title": "Ingenuity's Wright Brothers Field",
+      "summary": "Helicopter flight demonstration area (sols 34–37). NASA's helicopter layer names this airfield Wright Brothers Field, the base of Ingenuity's first flights.",
+      "rover": "perseverance",
+      "sol": 34,
+      "site": 3,
+      "drive": 1392,
+      "lat": 18.44486273,
+      "lon": 77.45102155,
+      "credit": "NASA/JPL-Caltech",
+      "sample": null,
+      "panorama": {
+        "product_id": "N_LRGB_0036XRZS_0031392_CYL_L_AUTOGENJ04",
+        "capture_sol": 36,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00036/ids/rdr/mosaic/N_LRGB_0036XRZS_0031392_CYL_L_AUTOGENJ04.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00036/ids/rdr/mosaic/N_LRGB_0036XRZS_0031392_CYL_L_AUTOGENJ04.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -89.0872,
+        "el_max": 11.8567
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 3, drive 1392",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/m20_heli_waypoints.json"
+      }
+    },
+    {
+      "id": "m20-6-0",
+      "order": 3,
+      "title": "First drill site",
+      "summary": "First drill site (sols 157–166). The first sample, Roubion, is catalogued as an atmospheric sample.",
+      "rover": "perseverance",
+      "sol": 157,
+      "site": 6,
+      "drive": 0,
+      "lat": 18.42769464,
+      "lon": 77.45164982,
+      "credit": "NASA/JPL-Caltech",
+      "sample": {
+        "sample_numbers": "1",
+        "names": "Roubion",
+        "outcrop": "Roubion",
+        "area": "Polygon Valley",
+        "type": "Atmospheric",
+        "rock_type": "n/a",
+        "date": "Aug. 6, 2021",
+        "sols": "164",
+        "source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      },
+      "panorama": {
+        "product_id": "N_LRGB_0167XRZS_0060000_CYL_L_AUTOGENJ02",
+        "capture_sol": 167,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00167/ids/rdr/mosaic/N_LRGB_0167XRZS_0060000_CYL_L_AUTOGENJ02.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00167/ids/rdr/mosaic/N_LRGB_0167XRZS_0060000_CYL_L_AUTOGENJ02.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -80.9862,
+        "el_max": 30.0
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 6, drive 0",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_surfaceexperience.json"
+      }
+    },
+    {
+      "id": "m20-7-0",
+      "order": 4,
+      "title": "First rock cores",
+      "summary": "First and second rock coring site (sols 180–196) on Artuby Ridge: the igneous cores Montdenier and Montagnac.",
+      "rover": "perseverance",
+      "sol": 180,
+      "site": 7,
+      "drive": 0,
+      "lat": 18.4307394,
+      "lon": 77.44436574,
+      "credit": "NASA/JPL-Caltech",
+      "sample": {
+        "sample_numbers": "2 & 3",
+        "names": "Montdenier + Montagnac",
+        "outcrop": "Rochette",
+        "area": "Artuby Ridge",
+        "type": "Rock Core",
+        "rock_type": "Igneous",
+        "date": "Sept. 6&8, 2021",
+        "sols": "194 & 196",
+        "source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      },
+      "panorama": {
+        "product_id": "N_LRGB_0199XRZS_0070000_CYL_L_AUTOGENJ01",
+        "capture_sol": 199,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00199/ids/rdr/mosaic/N_LRGB_0199XRZS_0070000_CYL_L_AUTOGENJ01.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00199/ids/rdr/mosaic/N_LRGB_0199XRZS_0070000_CYL_L_AUTOGENJ01.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -80.0545,
+        "el_max": 30.0
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 7, drive 0",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_surfaceexperience.json"
+      }
+    },
+    {
+      "id": "m20-8-0",
+      "order": 5,
+      "title": "South Séítah",
+      "summary": "Igneous rock cores Salette and Coulettes from the Brac outcrop in South Séítah.",
+      "rover": "perseverance",
+      "sol": 248,
+      "site": 8,
+      "drive": 0,
+      "lat": 18.43396406,
+      "lon": 77.44301922,
+      "credit": "NASA/JPL-Caltech",
+      "sample": {
+        "sample_numbers": "4 & 5",
+        "names": "Salette + Coulettes",
+        "outcrop": "Brac",
+        "area": "South Séítah",
+        "type": "Rock Core",
+        "rock_type": "Igneous",
+        "date": "Nov. 15&24. 2021",
+        "sols": "262 & 271",
+        "source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      },
+      "panorama": {
+        "product_id": "N_LRGB_0275XRZS_0080000_CYL_L_AUTOGENJ01",
+        "capture_sol": 275,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00275/ids/rdr/mosaic/N_LRGB_0275XRZS_0080000_CYL_L_AUTOGENJ01.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00275/ids/rdr/mosaic/N_LRGB_0275XRZS_0080000_CYL_L_AUTOGENJ01.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -78.7927,
+        "el_max": 30.0
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 8, drive 0",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      }
+    },
+    {
+      "id": "m20-11-0",
+      "order": 6,
+      "title": "Back at the landing site",
+      "summary": "Igneous rock cores Ha'ahóni and Atsá from the Sid outcrop near Octavia E. Butler Landing.",
+      "rover": "perseverance",
+      "sol": 361,
+      "site": 11,
+      "drive": 0,
+      "lat": 18.443894,
+      "lon": 77.45243781,
+      "credit": "NASA/JPL-Caltech",
+      "sample": {
+        "sample_numbers": "8 & 9",
+        "names": "Ha'ahóni + Atsá",
+        "outcrop": "Sid",
+        "area": "Octavia E. Butler Landing/Ch’ał outcrop",
+        "type": "Rock Core",
+        "rock_type": "Igneous",
+        "date": "Mar. 7&13, 2022",
+        "sols": "371 & 377",
+        "source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      },
+      "panorama": {
+        "product_id": "N_LRGB_0361_RZS_0110000_CYL_L_AUTOGENJ03",
+        "capture_sol": 361,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00361/ids/rdr/mosaic/N_LRGB_0361_RZS_0110000_CYL_L_AUTOGENJ03.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00361/ids/rdr/mosaic/N_LRGB_0361_RZS_0110000_CYL_L_AUTOGENJ03.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -71.9605,
+        "el_max": 14.1744
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 11, drive 0",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      }
+    },
+    {
+      "id": "m20-26-1004",
+      "order": 7,
+      "title": "Delta front: Skinner Ridge",
+      "summary": "First stop at the fan front of Jezero's ancient river delta: sedimentary cores Swift Run and Skyland.",
+      "rover": "perseverance",
+      "sol": 477,
+      "site": 26,
+      "drive": 1004,
+      "lat": 18.45889532,
+      "lon": 77.40616768,
+      "credit": "NASA/JPL-Caltech",
+      "sample": {
+        "sample_numbers": "10 & 11",
+        "names": "Swift Run + Skyland",
+        "outcrop": "Skinner Ridge",
+        "area": "Fan Front",
+        "type": "Rock Core",
+        "rock_type": "Sedimentary",
+        "date": "Jul. 7&12, 2022",
+        "sols": "490 & 495",
+        "source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      },
+      "panorama": {
+        "product_id": "N_LRGB_0499XRZS_0261004_CYL_L_AUTOGENJ01",
+        "capture_sol": 499,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00499/ids/rdr/mosaic/N_LRGB_0499XRZS_0261004_CYL_L_AUTOGENJ01.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00499/ids/rdr/mosaic/N_LRGB_0499XRZS_0261004_CYL_L_AUTOGENJ01.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -67.8426,
+        "el_max": 30.0
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 26, drive 1004",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      }
+    },
+    {
+      "id": "m20-26-1222",
+      "order": 8,
+      "title": "Wildcat Ridge",
+      "summary": "Sedimentary rock cores Hazeltop and Bearwallow from the Wildcat Ridge outcrop on the fan front.",
+      "rover": "perseverance",
+      "sol": 502,
+      "site": 26,
+      "drive": 1222,
+      "lat": 18.45864728,
+      "lon": 77.40592495,
+      "credit": "NASA/JPL-Caltech",
+      "sample": {
+        "sample_numbers": "12 & 13",
+        "names": "Hazeltop + Bearwallow",
+        "outcrop": "Wildcat Ridge",
+        "area": "Fan Front",
+        "type": "Rock Core",
+        "rock_type": "Sedimentary",
+        "date": "Jul. 27&Aug. 3, 2022",
+        "sols": "509 & 516",
+        "source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      },
+      "panorama": {
+        "product_id": "N_LRGB_0533XRZS_0261222_CYL_L_AUTOGENJ01",
+        "capture_sol": 533,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00533/ids/rdr/mosaic/N_LRGB_0533XRZS_0261222_CYL_L_AUTOGENJ01.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00533/ids/rdr/mosaic/N_LRGB_0533XRZS_0261222_CYL_L_AUTOGENJ01.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -78.054,
+        "el_max": 30.0
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 26, drive 1222",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      }
+    },
+    {
+      "id": "m20-29-0",
+      "order": 9,
+      "title": "Amalik",
+      "summary": "Sedimentary rock cores Shuyak and Mageik from the Amalik outcrop on the fan front.",
+      "rover": "perseverance",
+      "sol": 565,
+      "site": 29,
+      "drive": 0,
+      "lat": 18.45072631,
+      "lon": 77.4014403,
+      "credit": "NASA/JPL-Caltech",
+      "sample": {
+        "sample_numbers": "14 & 15",
+        "names": "Shuyak + Mageik",
+        "outcrop": "Amalik",
+        "area": "Fan Front",
+        "type": "Rock Core",
+        "rock_type": "Sedimentary",
+        "date": "Oct. 2&6, 2022",
+        "sols": "575 & 579",
+        "source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      },
+      "panorama": {
+        "product_id": "N_LRGB_0590XRZS_0290000_CYL_L_AUTOGENJ02",
+        "capture_sol": 590,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00590/ids/rdr/mosaic/N_LRGB_0590XRZS_0290000_CYL_L_AUTOGENJ02.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00590/ids/rdr/mosaic/N_LRGB_0590XRZS_0290000_CYL_L_AUTOGENJ02.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -78.2648,
+        "el_max": 30.0
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 29, drive 0",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json"
+      }
+    },
+    {
+      "id": "m20-32-148",
+      "order": 10,
+      "title": "Three Forks sample depot",
+      "summary": "Next to the Three Forks sample depot, the location NASA marks in its sample-depot layer.",
+      "rover": "perseverance",
+      "sol": 652,
+      "site": 32,
+      "drive": 148,
+      "lat": 18.45262651,
+      "lon": 77.40775601,
+      "credit": "NASA/JPL-Caltech",
+      "sample": null,
+      "panorama": {
+        "product_id": "N_LRGB_0654XRZS_0320148_CYL_L_AUTOGENJ02",
+        "capture_sol": 654,
+        "instrument": "Mars 2020 Navcam (color cylindrical mosaic)",
+        "source_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/browse/sol/00654/ids/rdr/mosaic/N_LRGB_0654XRZS_0320148_CYL_L_AUTOGENJ02.png",
+        "label_url": "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/data/sol/00654/ids/rdr/mosaic/N_LRGB_0654XRZS_0320148_CYL_L_AUTOGENJ02.xml",
+        "az_min": 0.0,
+        "az_max": 360.0,
+        "el_min": -66.7179,
+        "el_max": 30.0
+      },
+      "provenance": {
+        "position_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+        "position_key": "site 32, drive 148",
+        "milestone_source_url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_TF_Sample_Depot.json"
+      }
+    }
+  ]
+}

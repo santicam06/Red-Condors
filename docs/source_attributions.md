@@ -116,6 +116,10 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
 | **JetBrains Mono** | SIL Open Font License 1.1 | `https://github.com/JetBrains/JetBrainsMono` | Monospaced typography for the map HUD and route bar. |
+| **HTTPX (`httpx`), runtime use** | BSD-3-Clause | `https://github.com/encode/httpx` | Downloads PDS mosaics and verifies the curated rover Street View stops against NASA sources. |
+| **Pillow (`pillow`)** | MIT-CMU (HPND) | `https://github.com/python-pillow/Pillow` | Resizes ~60 MB PDS Navcam mosaics into cached, browser-sized JPEG panoramas. |
+| **Photo Sphere Viewer (`@photo-sphere-viewer/core`)** | MIT | `https://github.com/mistic100/Photo-Sphere-Viewer` | Interactive 360° panorama viewer for the Rover Street View (partial/cropped equirectangular panoramas). |
+| **three.js (`three`, Photo Sphere Viewer dependency)** | MIT | `https://github.com/mrdoob/three.js` | WebGL rendering underlying Photo Sphere Viewer. |
 
 ---
 
@@ -148,3 +152,29 @@ These products feed the Olympus Mons rehearsal. The straight line is drawn in re
   - **Present season:** sol at Ls 21.5°, chosen because 14 November 2026 falls at about Ls 21.6° (northern spring, usually clear). Dust over Olympus is about 0.05–0.12.
   - **Dust-storm season:** sol at Ls 315°, the dustiest stretch of Mars Year 36 in this file. A rehearsal case, not today’s weather. Dust over this region rises to about 0.5–1.1.
 - **How the route uses it:** A walking step is refused above optical depth 1.0. A rover step is refused above 1.3. Below those caps, dust slows the ETA. In the present season the dust is too light to move the path, so MOLA slope picks the corridor. In the storm rehearsal, dusty cells can close the walk before they close the rover.
+
+---
+
+## 5. Rover Street View imagery
+
+Real ground-level 360° panoramas for the curated Perseverance tour in Jezero Crater. Full provenance: `docs/streetview_data_sources.md`.
+
+### 5.1 Mars 2020 Perseverance Rover Waypoints & Mission Map Layers (NASA/JPL MMGIS)
+- **Endpoints:**
+  - Waypoints: `https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json`
+  - Samples: `https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json`
+  - Surface milestones: `https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_surfaceexperience.json`
+  - Ingenuity airfields: `https://mars.nasa.gov/mmgis-maps/M20/Layers/json/m20_heli_waypoints.json`
+  - Sample depot: `https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_TF_Sample_Depot.json`
+- **Mission:** NASA Mars 2020 Perseverance rover
+- **Provider / Credit:** Courtesy NASA/JPL-Caltech
+- **License / Terms:** NASA public mission data; JPL Image Use Policy (`https://www.jpl.nasa.gov/jpl-image-use-policy`)
+- **Usage in Project:** Positions (lat/lon, sol, site/drive) and milestone/sample facts for the 10 curated Rover Street View stops in `apps/api/app/modules/rover_images/showcase_stops.json`. The milestone texts only restate these layers' fields. Provenance is re-checkable with `python -m app.modules.rover_images.verify_showcase`. See `docs/streetview_data_sources.md`.
+
+### 5.2 Mars 2020 Navcam Cylindrical Mosaics (NASA PDS Imaging Node)
+- **Bundle:** `mars2020_navcam_ops_mosaic` (`https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/`)
+- **Products Used:** 10 color cylindrical browse mosaics (`N_LRGB_*_CYL_*`, product IDs listed in `docs/streetview_data_sources.md`) and their PDS4 XML labels (azimuth/elevation coverage)
+- **Mission / Instrument:** NASA Mars 2020 Perseverance — Navigation Cameras (Navcam)
+- **Provider / Credit:** Courtesy NASA/JPL-Caltech (shown on every panorama, with a per-image provenance section and links to the originals)
+- **License / Terms:** Public NASA planetary data (PDS); JPL Image Use Policy: usable for any purpose with credit line, no implied endorsement, no NASA/JPL logos
+- **Usage in Project:** 360° ground-level panoramas for the Rover Street View. The API downloads each original from PDS on first use, **resizes it only** (≤8192 px JPEG, no cropping, colour or content edits), and caches it in `apps/api/data/` (gitignored).
