@@ -38,7 +38,7 @@ export function AttributionCredit() {
         <div
           role="dialog"
           aria-label="Map credits and attribution"
-          className="absolute bottom-11 left-0 w-max max-w-[calc(100vw-2rem)] rounded-[2px] bg-white px-3 py-2 text-[12px] font-normal text-[#555555] shadow-md"
+          className="absolute bottom-11 left-0 w-max max-w-[calc(100vw-2rem)] border border-red-700 bg-white px-3 py-2 text-[12px] font-normal text-neutral-800 shadow-md"
         >
           Imagery: Courtesy NASA/JPL-Caltech/USGS • Nomenclature: IAU/USGS
         </div>
@@ -50,10 +50,10 @@ export function AttributionCredit() {
         title="Imagery & Nomenclature Credits"
         aria-label="Toggle imagery and nomenclature credits"
         aria-expanded={open}
-        className={`flex h-9 w-9 items-center justify-center rounded-[2px] shadow-md transition cursor-pointer ${
+        className={`flex h-9 w-9 cursor-pointer items-center justify-center border border-red-700 shadow-md transition-colors ${
           open
-            ? 'bg-[#5B9BD5] text-white'
-            : 'bg-white text-[#555555] hover:bg-[#F2F2F2] active:bg-[#E6E6E6]'
+            ? 'bg-red-700 text-white'
+            : 'bg-white text-red-700 hover:bg-red-700 hover:text-white active:bg-red-900'
         }`}
       >
         <Info className="h-4 w-4" strokeWidth={2.25} />

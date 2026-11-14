@@ -17,7 +17,7 @@ interface MapHUDProps {
  */
 export function MapHUD({ controller }: MapHUDProps) {
   return (
-    <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4">
+    <div className="font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4">
       {/* Top row reserved for future mission rehearsal / environmental status overlays */}
       <div className="flex items-start justify-between" />
 
