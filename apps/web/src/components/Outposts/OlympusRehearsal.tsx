@@ -129,7 +129,7 @@ export function OlympusRehearsal({ controller }: OlympusRehearsalProps) {
 
   return (
     <section
-      className="border-t-2 border-red-700 bg-white text-[#202124]"
+      className="pointer-events-auto fixed top-3 right-3 z-20 flex max-h-[calc(100vh-6rem)] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden border-t-2 border-red-700 bg-white text-[#202124] shadow-[0_8px_28px_rgba(0,0,0,0.35)]"
       aria-label="Olympus Mons rehearsal"
     >
       <header className="flex items-center gap-2 border-b border-red-700/20 px-3 py-2.5">
@@ -148,7 +148,7 @@ export function OlympusRehearsal({ controller }: OlympusRehearsalProps) {
       </header>
 
       {open && (
-        <div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="flex gap-2 px-3 pt-3">
             <button
               type="button"
