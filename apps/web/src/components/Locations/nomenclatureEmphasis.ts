@@ -11,8 +11,8 @@ interface VisualState {
 }
 
 /**
- * Animates nomenclature labels: a short ease toward a slightly larger blue label
- * on hover, and a held blue treatment while its details panel is open.
+ * Animates nomenclature labels: a short ease toward a slightly larger red label
+ * on hover, and a held red treatment while its details panel is open.
  */
 export class NomenclatureEmphasis {
   private hoverFid: number | null = null;

@@ -1,23 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { MarsViewerController } from '../../core/MarsViewerController';
-import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
 import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
 import { attachNomenclaturePointer } from './attachNomenclaturePointer';
 import { frameFeatureBesidePanel } from './frameFeatureBesidePanel';
-import { LocationDetailsPanel } from './LocationDetailsPanel';
 import { NomenclatureEmphasis } from './nomenclatureEmphasis';
+import { useNomenclatureSelection } from './useNomenclatureSelection';
 
 interface NomenclatureLocationsProps {
   controller: MarsViewerController | null;
 }
 
+const SIDE_BAR_WIDTH_PX = 384;
+
 /**
- * Connects visible Mars nomenclature labels to hover emphasis and the details card.
+ * Hover and click for nomenclature labels. The place card itself renders
+ * inside the Marswalk / Rover side bar.
  */
 export function NomenclatureLocations({ controller }: NomenclatureLocationsProps) {
-  const [selected, setSelected] = useState<NomenclatureLabelHit | null>(null);
   const emphasisRef = useRef<NomenclatureEmphasis | null>(null);
-  const panelWidthRef = useRef(380);
 
   useEffect(() => {
     if (!controller) return;
@@ -25,37 +25,23 @@ export function NomenclatureLocations({ controller }: NomenclatureLocationsProps
     const emphasis = new NomenclatureEmphasis(controller);
     emphasisRef.current = emphasis;
     const detach = attachNomenclaturePointer(controller, emphasis, (hit) => {
-      setSelected(hit);
-      frameFeatureBesidePanel(
-        controller,
-        hit,
-        panelWidthRef.current,
-        useRoutePlannerStore.getState().isOpen ? 400 : 12
-      );
+      useNomenclatureSelection.getState().setHit(hit);
+      useRoutePlannerStore.getState().setOpen(true);
+      frameFeatureBesidePanel(controller, hit, SIDE_BAR_WIDTH_PX, 0);
+    });
+
+    const unsubscribe = useNomenclatureSelection.subscribe((state) => {
+      emphasis.setSelected(state.hit?.fid ?? null);
     });
 
     return () => {
       detach();
+      unsubscribe();
       emphasis.dispose();
       emphasisRef.current = null;
-      setSelected(null);
+      useNomenclatureSelection.getState().setHit(null);
     };
   }, [controller]);
 
-  const close = useCallback(() => {
-    emphasisRef.current?.setSelected(null);
-    setSelected(null);
-  }, []);
-
-  const handleWidthChange = useCallback((widthPx: number) => {
-    panelWidthRef.current = widthPx;
-  }, []);
-
-  return (
-    <LocationDetailsPanel
-      hit={selected}
-      onClose={close}
-      onWidthChange={handleWidthChange}
-    />
-  );
+  return null;
 }

@@ -7,8 +7,10 @@ import type {
 } from '../../../core/MarsViewerController';
 import { CUSTOM_LOCATIONS } from '../data/customLocations';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
+import type { RouteLocation } from '../types';
 
 const CUSTOM_LOCATIONS_CHANNEL = 'route-planner-locations';
+const ROUTE_PINS_CHANNEL = 'route-endpoint-pins';
 
 /**
  * Feature-level map adapter connecting `MarsViewerController` clicks (both
@@ -16,7 +18,7 @@ const CUSTOM_LOCATIONS_CHANNEL = 'route-planner-locations';
  * lateral bar's Source / Destination state.
  */
 export function useMapLocationPicker(controller: MarsViewerController | null): void {
-  const selectLocationFromMap = useRoutePlannerStore((s) => s.selectLocationFromMap);
+  const presentClickedLocation = useRoutePlannerStore((s) => s.presentClickedLocation);
 
   // Sync any custom Locations of Interest onto a dedicated Cesium overlay channel
   useEffect(() => {
@@ -68,12 +70,12 @@ export function useMapLocationPicker(controller: MarsViewerController | null): v
     };
   }, [controller]);
 
-  // Forward feature clicks on the Mars globe/map into Source / Destination boxes
+  // A click opens the side bar with start / finish choices. It does not pin yet.
   useEffect(() => {
     if (!controller) return;
 
     return controller.onFeatureClick((picked: PickedMapFeature) => {
-      selectLocationFromMap({
+      presentClickedLocation({
         id: picked.id,
         name: picked.name,
         subtitle: picked.subtitle,
@@ -83,5 +85,70 @@ export function useMapLocationPicker(controller: MarsViewerController | null): v
         priorityLevel: picked.priorityLevel,
       });
     });
-  }, [controller, selectLocationFromMap]);
+  }, [controller, presentClickedLocation]);
+
+  useEffect(() => {
+    if (!controller) return;
+
+    return controller.onSurfaceClick((coords) => {
+      const latLabel = `${Math.abs(coords.lat).toFixed(2)}° ${coords.lat >= 0 ? 'N' : 'S'}`;
+      const lonLabel = `${Math.abs(coords.lon).toFixed(2)}° ${coords.lon >= 0 ? 'E' : 'W'}`;
+      presentClickedLocation({
+        id: `pin-${coords.lat.toFixed(4)}-${coords.lon.toFixed(4)}`,
+        name: `${latLabel}, ${lonLabel}`,
+        subtitle: 'Map position',
+        lat: coords.lat,
+        lon: coords.lon,
+        category: 'nomenclature',
+      });
+    });
+  }, [controller, presentClickedLocation]);
+
+  useEffect(() => {
+    if (!controller) return;
+
+    const channel = controller.getOrCreateOverlayChannel(ROUTE_PINS_CHANNEL);
+
+    const drawPins = () => {
+      if (controller.viewer.isDestroyed()) return;
+      channel.entities.removeAll();
+      const { source, destination } = useRoutePlannerStore.getState();
+      if (source) addRoutePin(channel, source, 'start');
+      if (destination) addRoutePin(channel, destination, 'end');
+      controller.viewer.scene.requestRender();
+    };
+
+    drawPins();
+    return useRoutePlannerStore.subscribe(drawPins);
+  }, [controller]);
+}
+
+function addRoutePin(
+  channel: Cesium.CustomDataSource,
+  location: RouteLocation,
+  role: 'start' | 'end'
+): void {
+  const isEnd = role === 'end';
+  channel.entities.add({
+    id: `route-${role}`,
+    position: Cesium.Cartesian3.fromDegrees(location.lon, location.lat, 0, MARS_ELLIPSOID),
+    point: {
+      pixelSize: isEnd ? 18 : 14,
+      color: Cesium.Color.fromCssColorString(isEnd ? '#EA4335' : '#FFFFFF'),
+      outlineColor: Cesium.Color.fromCssColorString(isEnd ? '#FFFFFF' : '#202124'),
+      outlineWidth: 3,
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+    },
+    label: {
+      text: isEnd ? 'End' : 'Start',
+      font: '600 12px Roboto, system-ui, sans-serif',
+      fillColor: Cesium.Color.WHITE,
+      outlineColor: Cesium.Color.fromCssColorString(isEnd ? '#EA4335' : '#202124'),
+      outlineWidth: 3,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      pixelOffset: new Cesium.Cartesian2(0, -14),
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+    },
+  });
 }

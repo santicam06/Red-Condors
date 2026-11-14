@@ -80,7 +80,7 @@ export class NomenclatureManager {
   private entries: LabelEntry[] = [];
   private readonly entriesByFid = new Map<number, LabelEntry>();
   private readonly restFill = Cesium.Color.WHITE.clone();
-  private readonly activeFill = Cesium.Color.fromCssColorString('#4C9AFF');
+  private readonly activeFill = Cesium.Color.fromCssColorString('#B91C1C');
   private readonly scratchFill = new Cesium.Color();
   private readonly scratchPickWindow = new Cesium.Cartesian2();
   private visibleHitBoxes: HitBoxEntry[] = [];
@@ -194,8 +194,8 @@ export class NomenclatureManager {
   }
 
   /**
-   * Scales a label and mixes its fill from white toward blue.
-   * `blueMix` is 0 (rest) to 1 (full blue). The Locations hover animator drives this.
+   * Scales a label and mixes its fill from white toward red.
+   * `blueMix` is 0 (rest) to 1 (full red). The Locations hover animator drives this.
    */
   public setLabelVisual(fid: number, scale: number, blueMix: number): void {
     const entry = this.entriesByFid.get(fid);

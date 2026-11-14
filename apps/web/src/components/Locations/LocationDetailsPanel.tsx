@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { BookOpen, ChevronDown, ExternalLink, MapPin, Ruler, X } from 'lucide-react';
 import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
 import {
@@ -11,40 +11,23 @@ import {
 } from './sources';
 import { PLACE_IMAGE_LAYERS, signedLongitude } from './placeImagery';
 import { PlacePhoto } from './PlacePhoto';
+import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
+import type { RouteLocation } from '../../features/route-planner/types';
 import { lookupUsgsFeature } from './usgsGazetteer';
 import type { UsgsFeatureRecord } from './types';
-import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
-import './location-panel.css';
-
-const MIN_WIDTH = 300;
-const MAX_WIDTH = 560;
-const DEFAULT_WIDTH = 380;
 
 interface LocationDetailsPanelProps {
   hit: NomenclatureLabelHit | null;
   onClose: () => void;
-  onWidthChange: (widthPx: number) => void;
 }
 
 /**
- * Google Maps–style place card for a clicked Mars nomenclature label.
- * Width is adjustable from the right-edge grip. Detail groups collapse.
+ * Place details for a clicked Mars nomenclature label, shown inside the
+ * Marswalk / Rover side bar.
  */
-export function LocationDetailsPanel({
-  hit,
-  onClose,
-  onWidthChange,
-}: LocationDetailsPanelProps) {
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
-  const widthRef = useRef(width);
+export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
-  const routeBarOpen = useRoutePlannerStore((state) => state.isOpen);
-  const leftPx = routeBarOpen ? 400 : 12;
-
-  useEffect(() => {
-    widthRef.current = width;
-    onWidthChange(width);
-  }, [width, onWidthChange]);
+  const assignClickedLocation = useRoutePlannerStore((state) => state.assignClickedLocation);
 
   useEffect(() => {
     if (!hit) return;
@@ -70,37 +53,18 @@ export function LocationDetailsPanel({
     record?.centerLatitude != null && record.centerLongitude != null
       ? `${formatLat(record.centerLatitude)} · ${formatLon360(record.centerLongitude)}`
       : `${formatLat(hit.latitude, 5)} · ${formatLon180(hit.longitude, 5)}`;
-
-  const startResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    const startX = event.clientX;
-    const startWidth = widthRef.current;
-    const target = event.currentTarget;
-    target.setPointerCapture(event.pointerId);
-
-    const onMove = (move: PointerEvent) => {
-      const next = Math.min(
-        Math.min(MAX_WIDTH, window.innerWidth - 48),
-        Math.max(MIN_WIDTH, startWidth + (move.clientX - startX))
-      );
-      setWidth(next);
-    };
-    const onUp = () => {
-      target.removeEventListener('pointermove', onMove);
-      target.removeEventListener('pointerup', onUp);
-    };
-    target.addEventListener('pointermove', onMove);
-    target.addEventListener('pointerup', onUp);
+  const routePlace: RouteLocation = {
+    id: `nom-${hit.fid}`,
+    name: hit.name,
+    subtitle: featureType || 'Named feature',
+    lat: hit.latitude,
+    lon: hit.longitude,
+    category: 'nomenclature',
+    priorityLevel: hit.level,
   };
 
   return (
-    <aside
-      role="dialog"
-      aria-modal="false"
-      aria-labelledby="location-details-title"
-      className="location-panel-in pointer-events-auto fixed top-3 bottom-3 z-30 flex overflow-hidden rounded-lg bg-white text-[#222] shadow-[0_8px_28px_rgba(0,0,0,0.35)]"
-      style={{ width, left: leftPx }}
-    >
+    <section aria-labelledby="location-details-title" className="border-t-2 border-red-700 bg-white text-[#202124]">
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="relative shrink-0">
           <PlacePhoto
@@ -113,7 +77,7 @@ export function LocationDetailsPanel({
             type="button"
             onClick={onClose}
             aria-label="Close location details"
-            className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white text-[#222] shadow-md hover:bg-[#f7f7f7]"
+            className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center bg-red-700 text-white hover:bg-red-900"
           >
             <X size={18} />
           </button>
@@ -130,6 +94,28 @@ export function LocationDetailsPanel({
             <p className="mt-1 text-[13.5px] text-[#5f6368]">
               {featureType || 'Named feature'} · Mars
             </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  useRoutePlannerStore.getState().presentClickedLocation(routePlace);
+                  assignClickedLocation('source');
+                }}
+                className="flex-1 cursor-pointer border border-red-700 bg-white px-3 py-2 text-[13px] font-medium text-red-700 hover:bg-red-700 hover:text-white"
+              >
+                Set as start
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  useRoutePlannerStore.getState().presentClickedLocation(routePlace);
+                  assignClickedLocation('destination');
+                }}
+                className="flex-1 cursor-pointer bg-red-700 px-3 py-2 text-[13px] font-medium text-white hover:bg-red-900"
+              >
+                Set as finish
+              </button>
+            </div>
           </header>
 
           <ul className="px-1 py-2">
@@ -187,7 +173,7 @@ export function LocationDetailsPanel({
               href={USGS_DESCRIPTOR_TERMS_PAGE}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-[12.5px] text-[#1a73e8] hover:underline"
+              className="mt-2 inline-flex items-center gap-1 text-[12.5px] text-red-700 hover:underline"
             >
               USGS descriptor terms
               <ExternalLink size={12} />
@@ -244,7 +230,7 @@ export function LocationDetailsPanel({
                     href={layer.capabilitiesUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#1a73e8] hover:underline"
+                    className="text-red-700 hover:underline"
                   >
                     WMTS layer
                   </a>
@@ -254,7 +240,7 @@ export function LocationDetailsPanel({
           </Section>
 
           <div className="border-t border-black/8 px-4 py-4">
-            <p className="text-[11px] font-medium tracking-[0.08em] text-[#888] uppercase">
+            <p className="text-[11px] font-semibold tracking-[0.12em] text-red-700 uppercase">
               Source
             </p>
             <p className="mt-2 text-[13.5px] leading-relaxed text-[#333]">
@@ -266,7 +252,7 @@ export function LocationDetailsPanel({
               href={USGS_MARS_TARGET_PAGE}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 block text-[12.5px] break-all text-[#1a73e8] hover:underline"
+              className="mt-2 block text-[12.5px] break-all text-red-700 hover:underline"
             >
               {USGS_MARS_TARGET_PAGE}
             </a>
@@ -274,7 +260,7 @@ export function LocationDetailsPanel({
               href={featureUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#1a73e8] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#1765cc]"
+              className="mt-3 inline-flex items-center gap-1.5 bg-red-700 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-red-900"
             >
               {record?.featureId ? 'View USGS feature record' : 'Open USGS Mars catalog'}
               <ExternalLink size={14} />
@@ -282,14 +268,7 @@ export function LocationDetailsPanel({
           </div>
         </div>
       </div>
-
-      <button
-        type="button"
-        aria-label="Resize location details"
-        onPointerDown={startResize}
-        className="w-2 shrink-0 cursor-ew-resize border-l border-black/10 bg-[#f6f6f6] hover:bg-[#e7f0fe]"
-      />
-    </aside>
+    </section>
   );
 }
 
@@ -304,7 +283,7 @@ function InfoRow({
 }) {
   return (
     <li className="flex items-start gap-3 px-3 py-2">
-      <span className="mt-0.5 text-[#1a73e8]">{icon}</span>
+      <span className="mt-0.5 text-red-700">{icon}</span>
       <span className="min-w-0">
         <span className="block text-[14px] leading-snug text-[#202124]">{label}</span>
         <span className="mt-0.5 block text-[12px] leading-snug text-[#5f6368]">{detail}</span>
@@ -324,7 +303,7 @@ function Section({
 }) {
   return (
     <details open={defaultOpen} className="group border-t border-black/8">
-      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-[11px] font-medium tracking-[0.08em] text-[#888] uppercase [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between border-t border-red-700/20 px-4 py-2.5 text-[11px] font-semibold tracking-[0.12em] text-red-700 uppercase [&::-webkit-details-marker]:hidden">
         {title}
         <ChevronDown
           size={14}

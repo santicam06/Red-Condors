@@ -13,6 +13,8 @@ interface RoutePlannerState {
   destination: RouteLocation | null;
   activeInputSlot: ActiveInputSlot;
   activeTab: RouteTab;
+  /** Place from the latest map click. Pins are not drawn until it is assigned. */
+  clickedLocation: RouteLocation | null;
 
   /**
    * Placeholder operational metrics (kept null until routing & metric
@@ -31,6 +33,9 @@ interface RoutePlannerState {
   setActiveInputSlot: (slot: ActiveInputSlot) => void;
   setActiveTab: (tab: RouteTab) => void;
   selectLocationFromMap: (location: RouteLocation) => void;
+  presentClickedLocation: (location: RouteLocation) => void;
+  clearClickedLocation: () => void;
+  assignClickedLocation: (slot: ActiveInputSlot) => void;
 }
 
 export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
@@ -40,6 +45,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   destination: null,
   activeInputSlot: 'source',
   activeTab: 'mission',
+  clickedLocation: null,
 
   distanceKm: null,
   marswalkEta: null,
@@ -96,6 +102,32 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
       return {
         isOpen: true,
         destination: location,
+        activeInputSlot: 'destination',
+      };
+    }),
+
+  presentClickedLocation: (clickedLocation) =>
+    set({
+      clickedLocation,
+      isOpen: true,
+      activeTab: 'mission',
+    }),
+
+  clearClickedLocation: () => set({ clickedLocation: null }),
+
+  assignClickedLocation: (slot) =>
+    set((state) => {
+      if (!state.clickedLocation) return {};
+      if (slot === 'source') {
+        return {
+          source: state.clickedLocation,
+          clickedLocation: null,
+          activeInputSlot: state.destination === null ? 'destination' : 'source',
+        };
+      }
+      return {
+        destination: state.clickedLocation,
+        clickedLocation: null,
         activeInputSlot: 'destination',
       };
     }),

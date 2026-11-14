@@ -20,6 +20,7 @@ import {
 export type { PickedMapFeature };
 export type CursorCoordinateListener = (coords: MarsLatLon | null) => void;
 export type FeatureClickListener = (feature: PickedMapFeature) => void;
+export type SurfaceClickListener = (coords: MarsLatLon) => void;
 
 const CLICK_MAX_DRAG_DISTANCE_PX = 6;
 
@@ -40,6 +41,7 @@ export class MarsViewerController {
   private readonly overlayDataSources = new Map<string, Cesium.CustomDataSource>();
   private readonly cursorListeners = new Set<CursorCoordinateListener>();
   private readonly featureClickListeners = new Set<FeatureClickListener>();
+  private readonly surfaceClickListeners = new Set<SurfaceClickListener>();
 
   private zoomAnimationFrame: number | null = null;
   private cursorRafPending = false;
@@ -140,7 +142,8 @@ export class MarsViewerController {
       (click: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
         const downPos = this.leftDownPosition;
         this.leftDownPosition = null;
-        if (!downPos || this.featureClickListeners.size === 0) return;
+        if (!downPos) return;
+        if (this.featureClickListeners.size === 0 && this.surfaceClickListeners.size === 0) return;
 
         const dragDist = Cesium.Cartesian2.distance(downPos, click.position);
         if (dragDist > CLICK_MAX_DRAG_DISTANCE_PX) return;
@@ -150,6 +153,14 @@ export class MarsViewerController {
           for (const listener of this.featureClickListeners) {
             listener(picked);
           }
+          return;
+        }
+
+        if (this.surfaceClickListeners.size === 0) return;
+        const coords = pickMarsCoordinates(this.viewer, click.position);
+        if (!coords) return;
+        for (const listener of this.surfaceClickListeners) {
+          listener(coords);
         }
       },
       Cesium.ScreenSpaceEventType.LEFT_UP
@@ -476,7 +487,7 @@ export class MarsViewerController {
     return this.nomenclatureManager.pickAt(screenX, screenY);
   }
 
-  /** Drives the hover/selection enlarge-and-blue treatment on one label. */
+  /** Drives the hover/selection enlarge-and-red treatment on one label. */
   public setNomenclatureLabelVisual(fid: number, scale: number, blueMix: number): void {
     this.nomenclatureManager.setLabelVisual(fid, scale, blueMix);
   }
@@ -500,6 +511,17 @@ export class MarsViewerController {
     this.featureClickListeners.add(listener);
     return () => {
       this.featureClickListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Clicks on the Martian surface that miss a named label or marker.
+   * Used to drop a start or end pin the way Google Maps drops a pin.
+   */
+  public onSurfaceClick(listener: SurfaceClickListener): () => void {
+    this.surfaceClickListeners.add(listener);
+    return () => {
+      this.surfaceClickListeners.delete(listener);
     };
   }
 
