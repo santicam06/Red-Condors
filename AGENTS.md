@@ -3,8 +3,11 @@
 ## Project Context
 This repository contains **Red Condors'** project for the **NASA Space Apps Hackathon in Toronto (November 14–15)**, tackling the challenge **"Interplanetary Survival Guide: Martian Map"** (see `docs/challenge.md`).
 
-> **Current Stage — Early Concept / Rough Overview:**
-> The project is currently in the ideation and early planning phase. The **tech stack**, **exact target region on Mars**, and **specific scientific mission scenarios** are **still TBD**. AI agents working in this repository should treat architectural and stack choices as flexible until explicitly decided by the team, focusing on modularity and rapid prototyping.
+> **Current Stage — Structural Baseline:**
+> The repository uses a monorepo with a **React + Vite + TypeScript** frontend in
+> `apps/web` and a reserved **Python modular monolith** boundary in `apps/api`.
+> The exact target region, backend runtime implementation, database, and specific
+> scientific mission scenarios remain TBD.
 
 ## Vision
 We are building a **"Google Earth for Mars"** style interactive mission-planning and rehearsal application that bridges global/regional planetary maps with hyperlocalized astronaut surface operations (Marswalks / EVAs and rover traverses).
@@ -40,6 +43,10 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
 
 ## Repository Structure (Current)
 - `AGENTS.md` — Project context and guidelines for AI coding agents.
+- `apps/web/` — React, TypeScript, Vite, and CesiumJS frontend.
+- `apps/web/src/features/` — Isolated frontend product capabilities.
+- `apps/api/` — Python modular-monolith boundary, organized by domain module.
+- `docs/architecture.md` — Current repository boundaries and dependency direction.
 - `docs/challenge.md` — Official NASA Space Apps challenge brief (*Interplanetary Survival Guide: Martian Map*).
 - `docs/source_attributions.md` — Central log for citing all datasets, APIs, imagery, and open-source libraries used.
 
@@ -50,4 +57,7 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
   - **Never** use official NASA logos (Meatball, Worm, Seal) or the JPL logo in the app UI or assets.
   - **Never** imply official endorsement by NASA, JPL, or Caltech.
 - **Open-Source Dependencies Only:** Any third-party libraries, map engines, or datasets must use **OSI-approved open-source licenses** or be unrestricted public-domain/open data. Avoid locking core features behind proprietary SaaS tokens.
-- **Ask Before Locking Stack Decisions:** Until the team finalizes the frontend/backend stack and target Martian region, confirm major framework or tooling choices with the user before scaffolding code.
+- **Protect Architecture Decisions:** Confirm backend framework, database, target
+  region, and other cross-cutting choices before implementation. Keep backend
+  product behavior inside `apps/api/app/modules/<domain>` rather than creating
+  separate deployable services.
