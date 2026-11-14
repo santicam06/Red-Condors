@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchRoutes } from '../api/routingClient';
+import { RouteRequestError, fetchRoutes } from '../api/routingClient';
 import type { Route, RouteKind, RouteRequest, WalkableArea } from '../types/routing';
 
 export type RoutingStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -55,7 +55,12 @@ export const useRoutingStore = create<RoutingState>((set) => ({
       });
     } catch (err) {
       if (controller.signal.aborted) return;
-      set({ status: 'error', error: err instanceof Error ? err.message : String(err) });
+      set({
+        status: 'error',
+        error: err instanceof Error ? err.message : String(err),
+        // "No safe route" errors still carry the terrain that blocks the crew
+        walkableArea: err instanceof RouteRequestError ? err.walkableArea : null,
+      });
     } finally {
       if (inFlight === controller) inFlight = null;
     }

@@ -58,7 +58,8 @@ export class RouteOverlayManager {
     this.addPin(request.source, 'A', '#FFFFFF');
     this.addPin(request.destination, 'B', '#B91C1C');
 
-    if (routes.length > 0 && this.lastFramedRequest !== request) {
+    // Frame once per request, also when there is no route but the blocking terrain is shown
+    if ((routes.length > 0 || walkableArea) && this.lastFramedRequest !== request) {
       this.lastFramedRequest = request;
       this.frame(request.destination);
     }
