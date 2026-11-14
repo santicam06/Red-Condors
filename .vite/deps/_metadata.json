@@ -1,0 +1,52 @@
+{
+  "hash": "2bbc0d71",
+  "configHash": "9e37b2e8",
+  "lockfileHash": "d2aa7dca",
+  "browserHash": "c0cf7288",
+  "optimized": {
+    "cesium": {
+      "src": "../../node_modules/cesium/Source/Cesium.js",
+      "file": "cesium.js",
+      "fileHash": "8e197e06",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "68ab2b77",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "6c841203",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "822a41ef",
+      "needsInterop": true
+    },
+    "zustand": {
+      "src": "../../node_modules/zustand/esm/index.mjs",
+      "file": "zustand.js",
+      "fileHash": "a2f848ec",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-QVQFRRVA": {
+      "file": "chunk-QVQFRRVA.js"
+    },
+    "zip-reader-TFFMZDZF": {
+      "file": "zip-reader-TFFMZDZF.js"
+    },
+    "chunk-J266CSMR": {
+      "file": "chunk-J266CSMR.js"
+    },
+    "chunk-2TUXWMP5": {
+      "file": "chunk-2TUXWMP5.js"
+    }
+  }
+}
