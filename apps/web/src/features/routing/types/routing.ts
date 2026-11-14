@@ -31,4 +31,39 @@ export interface RouteResponse {
   dem_resolution_m: number;
   max_slope_deg: number;
   warnings: string[];
+  walkable_area: WalkableArea;
+}
+
+/**
+ * Per-pixel terrain codes in `WalkableArea.cells`. A pixel's slope is its steepest step to any
+ * of its 8 neighbours.
+ */
+export const WALKABLE_CELL = {
+  /** Outside the planning radius (or no DEM data) */
+  outside: '0',
+  /** Reachable, slope <= `gentle_max_slope_deg` */
+  gentle: '1',
+  /** Reachable, slope between `gentle_max_slope_deg` and the limit */
+  moderate: '2',
+  /** Slope over the limit: off-limits for routing */
+  steep: '3',
+  /** Within the limit, but walled off from the destination by steep terrain */
+  unreachable: '4',
+} as const;
+
+/**
+ * DEM-pixel grid of terrain classes around the destination.
+ * `cells` is row-major from the north-west corner, one character per pixel
+ * (see `WALKABLE_CELL`).
+ */
+export interface WalkableArea {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+  rows: number;
+  cols: number;
+  gentle_max_slope_deg: number;
+  max_slope_deg: number;
+  cells: string;
 }

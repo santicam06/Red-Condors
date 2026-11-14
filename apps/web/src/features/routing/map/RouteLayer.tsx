@@ -18,7 +18,13 @@ export function RouteLayer({ controller }: RouteLayerProps) {
 
     const manager = new RouteOverlayManager(controller);
     const draw = (state: ReturnType<typeof useRoutingStore.getState>) => {
-      manager.render(state.request, state.routes, state.highlightedKind);
+      manager.render({
+        request: state.request,
+        routes: state.routes,
+        highlighted: state.highlightedKind,
+        walkableArea: state.walkableArea,
+        walkableAreaVisible: state.walkableAreaVisible,
+      });
       // TODO(routing-ui): surface `status`, `error` and `warnings` in the route-planner UI.
       if (state.status === 'error') {
         console.warn('[routing] Route request failed:', state.error);

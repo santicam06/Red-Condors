@@ -7,8 +7,23 @@ from app.core.config import Settings
 from app.modules.routing.dem import DemPatch, DemReader
 from app.modules.routing.errors import NoSafeRouteError, OutsideDemError, SourceTooFarError
 from app.modules.routing.geo import haversine_m
-from app.modules.routing.graph import SpeedModel, build_graph, node_id
-from app.modules.routing.schemas import LatLon, Route, RouteKind, RouteRequest, RouteResponse
+from app.modules.routing.graph import SpeedModel, Terrain, build_terrain, node_id
+from app.modules.routing.schemas import (
+    CELL_GENTLE,
+    CELL_MODERATE,
+    CELL_OUTSIDE,
+    CELL_STEEP,
+    CELL_UNREACHABLE,
+    LatLon,
+    Route,
+    RouteKind,
+    RouteRequest,
+    RouteResponse,
+    WalkableArea,
+)
+
+# Slopes up to this fraction of the limit are shown as "gentle" on the walkable-area overlay
+GENTLE_SLOPE_FRACTION = 1 / 3
 
 ROUTE_WEIGHTS: dict[RouteKind, str] = {
     "shortest": "distance",
@@ -30,18 +45,25 @@ def compute_routes(request: RouteRequest, reader: DemReader, settings: Settings)
 
     patch = reader.read_patch(destination.lat, destination.lon, settings.route_graph_radius_m)
     speed = SpeedModel(settings.rover_speed_kmh, settings.eva_speed_kmh, max_slope)
-    graph = build_graph(
+    terrain = build_terrain(
         patch, destination.lat, destination.lon, settings.route_graph_radius_m, speed
     )
 
     cols = patch.elevation.shape[1]
-    start = node_id(*_nearest_pixel(patch, source), cols)
-    goal = node_id(*_nearest_pixel(patch, destination), cols)
+    source_px = _nearest_pixel(patch, source)
+    goal_px = _nearest_pixel(patch, destination)
+    for name, (row, col) in (("source", source_px), ("destination", goal_px)):
+        if not terrain.traversable[row, col]:
+            raise NoSafeRouteError(
+                f"The {name} sits on terrain steeper than the {max_slope:g}° slope limit "
+                f"({terrain.pixel_slope_deg[row, col]:.1f}°)."
+            )
+    start, goal = node_id(*source_px, cols), node_id(*goal_px, cols)
 
     paths: dict[RouteKind, list[int]] = {}
     for kind, weight in ROUTE_WEIGHTS.items():
         try:
-            paths[kind] = nx.dijkstra_path(graph, start, goal, weight=weight)
+            paths[kind] = nx.dijkstra_path(terrain.graph, start, goal, weight=weight)
         except (nx.NetworkXNoPath, nx.NodeNotFound) as exc:
             raise NoSafeRouteError(
                 f"No route between the points stays under the {max_slope:g}° slope limit."
@@ -55,6 +77,46 @@ def compute_routes(request: RouteRequest, reader: DemReader, settings: Settings)
         dem_resolution_m=patch.resolution_m,
         max_slope_deg=max_slope,
         warnings=_duplicate_warnings(paths),
+        walkable_area=_walkable_area(patch, terrain, goal),
+    )
+
+
+def _walkable_area(patch: DemPatch, terrain: Terrain, goal: int) -> WalkableArea:
+    """Classifies each planning-area pixel by its own slope and by reachability.
+
+    The graph is undirected, so the destination's connected component is exactly the set of
+    pixels with a slope-safe path to (and from) the destination. Traversable pixels outside
+    it are walled-off pockets.
+    """
+    rows, cols = patch.elevation.shape
+    gentle_max = terrain.max_slope_deg * GENTLE_SLOPE_FRACTION
+    slope = terrain.pixel_slope_deg
+
+    cells = np.full((rows, cols), CELL_OUTSIDE, dtype="<U1")
+    with np.errstate(invalid="ignore"):
+        cells[terrain.in_area & (slope > terrain.max_slope_deg)] = CELL_STEEP
+    cells[terrain.traversable] = CELL_UNREACHABLE
+
+    reachable = np.zeros(rows * cols, dtype=bool)
+    if goal in terrain.graph:
+        reachable[list(nx.node_connected_component(terrain.graph, goal))] = True
+    reachable = reachable.reshape(rows, cols)
+    with np.errstate(invalid="ignore"):
+        cells[reachable & (slope <= gentle_max)] = CELL_GENTLE
+        cells[reachable & (slope > gentle_max)] = CELL_MODERATE
+
+    half_lat = abs(patch.lats[0] - patch.lats[1]) / 2 if rows > 1 else 0.0
+    half_lon = abs(patch.lons[1] - patch.lons[0]) / 2 if cols > 1 else 0.0
+    return WalkableArea(
+        west=float(patch.lons[0] - half_lon),
+        east=float(patch.lons[-1] + half_lon),
+        north=float(patch.lats[0] + half_lat),
+        south=float(patch.lats[-1] - half_lat),
+        rows=rows,
+        cols=cols,
+        gentle_max_slope_deg=round(gentle_max, 2),
+        max_slope_deg=terrain.max_slope_deg,
+        cells="".join(cells.ravel()),
     )
 
 

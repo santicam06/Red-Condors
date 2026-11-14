@@ -2,32 +2,52 @@ import * as Cesium from 'cesium';
 import { MARS_ELLIPSOID } from '../../../config/marsConfig';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { ROUTE_SOURCE_MAX_DISTANCE_KM, ROUTE_STYLE } from '../config/demoRoute';
-import type { LatLon, Route, RouteKind, RouteRequest } from '../types/routing';
+import { WALKABLE_CELL_RGBA } from '../config/walkableAreaStyle';
+import {
+  type LatLon,
+  type Route,
+  type RouteKind,
+  type RouteRequest,
+  type WalkableArea,
+} from '../types/routing';
 
 const OVERLAY_CHANNEL_ID = 'routing';
-const CIRCLE_SEGMENTS = 96;
 const LABEL_FONT = '500 12px "JetBrains Mono", monospace';
+/** Each DEM pixel is drawn as an N×N block so cell edges stay crisp when resampled */
+const CELL_UPSCALE = 4;
+const WALKABLE_LAYER_ALPHA = 0.85;
+
+export interface RouteOverlayState {
+  request: RouteRequest | null;
+  routes: Route[];
+  highlighted: RouteKind | null;
+  walkableArea: WalkableArea | null;
+  walkableAreaVisible: boolean;
+}
 
 /**
- * Draws the source/destination pins, the 20 km planning circle around the destination and
- * the shortest / fastest / safest routes on both the 3D globe and the 2D map.
+ * Draws the walkable-area overlay, the source/destination pins and the shortest / fastest /
+ * safest routes on both the 3D globe and the 2D map.
  */
 export class RouteOverlayManager {
   private readonly channel: Cesium.CustomDataSource;
   private readonly routeEntities = new Map<RouteKind, Cesium.Entity>();
   private lastFramedRequest: RouteRequest | null = null;
+  /** Imagery layer showing the walkable area, and the grid it was drawn from */
+  private walkableLayer: { area: WalkableArea; layer: Cesium.ImageryLayer } | null = null;
 
   constructor(private readonly controller: MarsViewerController) {
     this.channel = controller.getOrCreateOverlayChannel(OVERLAY_CHANNEL_ID);
   }
 
-  /** Redraws everything for the given request/routes. */
-  public render(request: RouteRequest | null, routes: Route[], highlighted: RouteKind | null) {
+  /** Redraws everything for the given routing state. */
+  public render(state: RouteOverlayState) {
+    const { request, routes, highlighted, walkableArea, walkableAreaVisible } = state;
     this.channel.entities.removeAll();
     this.routeEntities.clear();
+    this.syncWalkableLayer(request && walkableAreaVisible ? walkableArea : null);
     if (!request) return this.requestRender();
 
-    this.addPlanningCircle(request.destination);
     // Draw the highlighted route last so it sits on top
     const ordered = [...routes].sort(
       (a, b) => Number(a.kind === highlighted) - Number(b.kind === highlighted)
@@ -113,44 +133,42 @@ export class RouteOverlayManager {
     });
   }
 
-  /** Dashed 20 km circle showing where a source may be placed for this destination. */
-  private addPlanningCircle(center: LatLon) {
-    const radiusRad = (ROUTE_SOURCE_MAX_DISTANCE_KM * 1000) / MARS_ELLIPSOID.maximumRadius;
-    const lat1 = Cesium.Math.toRadians(center.lat);
-    const lon1 = Cesium.Math.toRadians(center.lon);
-    const positions: Cesium.Cartesian3[] = [];
+  /**
+   * Shades every DEM pixel in the planning area by its own slope: green (gentle), yellow
+   * (moderate), red (over the limit, off-limits for routes) and purple (walkable but walled
+   * off from the destination by steep terrain).
+   *
+   * Drawn as an imagery layer on the globe rather than a textured ground rectangle: imagery
+   * uses the same lat/lon grid as the MOLA DEM, so cells line up exactly with the terrain and
+   * the routes in both 3D and 2D.
+   */
+  private syncWalkableLayer(area: WalkableArea | null) {
+    if (this.walkableLayer?.area === area) return;
+    this.removeWalkableLayer();
+    if (!area) return;
 
-    for (let i = 0; i <= CIRCLE_SEGMENTS; i++) {
-      // Destination point at a given bearing and angular distance on a sphere
-      const bearing = (i / CIRCLE_SEGMENTS) * Cesium.Math.TWO_PI;
-      const lat2 = Math.asin(
-        Math.sin(lat1) * Math.cos(radiusRad) +
-          Math.cos(lat1) * Math.sin(radiusRad) * Math.cos(bearing)
-      );
-      const lon2 =
-        lon1 +
-        Math.atan2(
-          Math.sin(bearing) * Math.sin(radiusRad) * Math.cos(lat1),
-          Math.cos(radiusRad) - Math.sin(lat1) * Math.sin(lat2)
-        );
-      positions.push(Cesium.Cartesian3.fromRadians(lon2, lat2, 0, MARS_ELLIPSOID));
-    }
-
-    this.channel.entities.add({
-      name: `${ROUTE_SOURCE_MAX_DISTANCE_KM} km planning radius`,
-      polyline: {
-        positions,
-        width: 2,
-        clampToGround: true,
-        material: new Cesium.PolylineDashMaterialProperty({
-          color: Cesium.Color.WHITE.withAlpha(0.75),
-          dashLength: 12,
-        }),
-      },
+    const canvas = renderWalkableCanvas(area);
+    const provider = new Cesium.SingleTileImageryProvider({
+      url: canvas.toDataURL('image/png'),
+      rectangle: Cesium.Rectangle.fromDegrees(area.west, area.south, area.east, area.north),
+      tileWidth: canvas.width,
+      tileHeight: canvas.height,
+      ellipsoid: MARS_ELLIPSOID,
     });
+    const layer = this.controller.addImageryOverlay(provider, WALKABLE_LAYER_ALPHA);
+    layer.magnificationFilter = Cesium.TextureMagnificationFilter.NEAREST;
+    this.walkableLayer = { area, layer };
   }
 
-  /** Flies the camera to frame the planning circle (works in 3D and 2D). */
+  private removeWalkableLayer() {
+    if (!this.walkableLayer) return;
+    if (!this.controller.viewer.isDestroyed()) {
+      this.controller.viewer.imageryLayers.remove(this.walkableLayer.layer, true);
+    }
+    this.walkableLayer = null;
+  }
+
+  /** Flies the camera to frame the planning area around the destination (3D and 2D). */
   private frame(center: LatLon) {
     const halfLat = Cesium.Math.toDegrees(
       (ROUTE_SOURCE_MAX_DISTANCE_KM * 1300) / MARS_ELLIPSOID.maximumRadius
@@ -176,8 +194,33 @@ export class RouteOverlayManager {
   public destroy(): void {
     this.channel.entities.removeAll();
     this.routeEntities.clear();
+    this.removeWalkableLayer();
     this.requestRender();
   }
+}
+
+/** Paints one RGBA pixel per DEM cell (north-west first), upscaled with crisp edges. */
+function renderWalkableCanvas(area: WalkableArea): HTMLCanvasElement {
+  const pixels = new ImageData(area.cols, area.rows);
+  for (let i = 0; i < area.cells.length; i++) {
+    const rgba = WALKABLE_CELL_RGBA[area.cells[i]];
+    if (rgba) pixels.data.set(rgba, i * 4);
+  }
+
+  const small = document.createElement('canvas');
+  small.width = area.cols;
+  small.height = area.rows;
+  small.getContext('2d')?.putImageData(pixels, 0, 0);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = area.cols * CELL_UPSCALE;
+  canvas.height = area.rows * CELL_UPSCALE;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(small, 0, 0, canvas.width, canvas.height);
+  }
+  return canvas;
 }
 
 export function formatKm(meters: number): string {

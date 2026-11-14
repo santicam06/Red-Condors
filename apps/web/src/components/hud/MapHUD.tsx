@@ -1,4 +1,6 @@
 import type { MarsViewerController } from '../../core/MarsViewerController';
+import { WalkableAreaLegend } from '../../features/routing/components/WalkableAreaLegend';
+import { WalkableAreaToggle } from '../../features/routing/components/WalkableAreaToggle';
 import { AttributionCredit } from './AttributionCredit';
 import { CoordinateReadout } from './CoordinateReadout';
 import { NomenclatureToggle } from './NomenclatureToggle';
@@ -18,15 +20,22 @@ interface MapHUDProps {
 export function MapHUD({ controller }: MapHUDProps) {
   return (
     <div className="font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4">
-      {/* Top row reserved for future mission rehearsal / environmental status overlays */}
-      <div className="flex items-start justify-between" />
+      {/* Top row: left reserved for future mission rehearsal / environmental status overlays */}
+      <div className="flex items-start justify-between">
+        <div />
+        <WalkableAreaLegend />
+      </div>
 
       {/* Bottom row: Left attribution credit | Right Mars Trek navigation, Nomenclature & Lat/Lon */}
       <div className="flex items-end justify-between gap-4">
         <AttributionCredit />
 
         <div className="flex flex-col items-end gap-2.5">
-          <NomenclatureToggle />
+          {/* Layer switches share one width so their toggles line up */}
+          <div className="flex flex-col items-stretch gap-2.5">
+            <WalkableAreaToggle />
+            <NomenclatureToggle />
+          </div>
 
           <div className="flex items-end gap-2">
             <ViewModeToggle />
