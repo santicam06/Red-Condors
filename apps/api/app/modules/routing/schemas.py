@@ -59,6 +59,13 @@ class WalkableArea(BaseModel):
     cells: str
 
 
+class NoSafeRouteResponse(BaseModel):
+    """422 body when no slope-safe route exists: the reason plus the terrain that blocks it."""
+
+    detail: str
+    walkable_area: WalkableArea | None = None
+
+
 class RouteResponse(BaseModel):
     routes: list[Route]
     dem_resolution_m: float

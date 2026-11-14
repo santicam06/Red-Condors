@@ -1,19 +1,28 @@
-import { ArrowUpDown, MapPin, X } from 'lucide-react';
+import { ArrowUpDown, MapPin, Navigation, X } from 'lucide-react';
+import { LocationDetailsPanel } from '../../../components/Locations/LocationDetailsPanel';
+import { OlympusRehearsal } from '../../../components/Outposts/OlympusRehearsal';
+import type { MarsViewerController } from '../../../core/MarsViewerController';
+import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
+import { usePlannedTraverse } from '../map/usePlannedTraverse';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
-import type { RouteTab, TravelMode } from '../types';
+import type { TravelMode } from '../types';
 import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
 import { LocationInputBox } from './LocationInputBox';
 
-export function RouteLateralBar() {
+interface RouteLateralBarProps {
+  controller: MarsViewerController | null;
+}
+
+export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const isOpen = useRoutePlannerStore((s) => s.isOpen);
   const travelMode = useRoutePlannerStore((s) => s.travelMode);
   const source = useRoutePlannerStore((s) => s.source);
   const destination = useRoutePlannerStore((s) => s.destination);
   const activeInputSlot = useRoutePlannerStore((s) => s.activeInputSlot);
-  const activeTab = useRoutePlannerStore((s) => s.activeTab);
   const distanceKm = useRoutePlannerStore((s) => s.distanceKm);
   const marswalkEta = useRoutePlannerStore((s) => s.marswalkEta);
   const roverEta = useRoutePlannerStore((s) => s.roverEta);
+  usePlannedTraverse(controller);
 
   const setOpen = useRoutePlannerStore((s) => s.setOpen);
   const setTravelMode = useRoutePlannerStore((s) => s.setTravelMode);
@@ -21,7 +30,8 @@ export function RouteLateralBar() {
   const setDestination = useRoutePlannerStore((s) => s.setDestination);
   const swapLocations = useRoutePlannerStore((s) => s.swapLocations);
   const setActiveInputSlot = useRoutePlannerStore((s) => s.setActiveInputSlot);
-  const setActiveTab = useRoutePlannerStore((s) => s.setActiveTab);
+  const selectedPlace = useNomenclatureSelection((s) => s.hit);
+  const clearSelectedPlace = useNomenclatureSelection((s) => s.setHit);
 
   const modes: Array<{
     id: TravelMode;
@@ -43,18 +53,27 @@ export function RouteLateralBar() {
     },
   ];
 
-  const tabs: Array<{ id: RouteTab; label: string }> = [
-    { id: 'mission', label: 'Mission' },
-    { id: 'considerations', label: 'Considerations' },
-  ];
-
   const formattedDistance =
     distanceKm !== null ? `${distanceKm.toFixed(1)} km` : '-- km';
 
   return (
-    <aside
-      aria-label="Martian traversal route planner"
-      aria-hidden={!isOpen}
+    <>
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title="Open displacement route planner"
+          aria-label="Open displacement route planner"
+          className="font-jetbrains pointer-events-auto fixed top-3 left-3 sm:top-4 sm:left-4 z-20 flex cursor-pointer items-center gap-2 border border-red-700 bg-white px-3 py-2 text-[12.5px] font-medium text-red-700 shadow-md transition-colors hover:bg-red-700 hover:text-white active:bg-red-900"
+        >
+          <Navigation className="h-4 w-4" strokeWidth={2.1} />
+          <span>Route Planner</span>
+        </button>
+      )}
+
+      <aside
+        aria-label="Martian traversal route planner"
+        aria-hidden={!isOpen}
       className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[384px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
         isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
       }`}
@@ -86,7 +105,7 @@ export function RouteLateralBar() {
                           : 'bg-transparent text-[#3C4043] group-hover:bg-[#FCE8E6] group-hover:text-[#B3261E]'
                       }`}
                     >
-                      <Icon className="h-[22px] w-[22px]" />
+                      <Icon className="h-[25px] w-[25px]" />
                     </span>
                     <span
                       className={`text-[12px] leading-tight tabular-nums transition-colors duration-150 ${
@@ -172,48 +191,16 @@ export function RouteLateralBar() {
           </div>
         </div>
 
-        {/* Google Maps–style horizontal section divider */}
-        <div className="h-[6px] w-full shrink-0 border-y border-[#E0E0E0] bg-[#F1F3F4]" />
+        <div className="h-[6px] w-full shrink-0 border-y border-red-700/20 bg-red-50" />
 
-        {/* Two tabs ("Mission" and "Considerations") replacing "Enviar instrucciones... Copiar vínculo" */}
-        <div
-          role="tablist"
-          aria-label="Traversal details sections"
-          className="grid shrink-0 grid-cols-2 border-b border-[#E0E0E0] bg-white"
-        >
-          {tabs.map(({ id, label }) => {
-            const selected = activeTab === id;
-            return (
-              <button
-                key={id}
-                id={`route-tab-${id}`}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                aria-controls={`route-tabpanel-${id}`}
-                onClick={() => setActiveTab(id)}
-                className={`relative flex items-center justify-center px-4 py-3 text-[14px] tracking-[0.01em] transition-colors duration-150 cursor-pointer focus:outline-none ${
-                  selected
-                    ? 'font-medium text-[#B3261E] hover:bg-[#FCE8E6]/45'
-                    : 'font-medium text-[#5F6368] hover:bg-[#FCE8E6]/70 hover:text-[#B3261E]'
-                }`}
-              >
-                <span>{label}</span>
-                {selected && (
-                  <span className="absolute bottom-0 left-4 right-4 h-[3px] rounded-t-full bg-[#C53929]" />
-                )}
-              </button>
-            );
-          })}
+        <div className="flex-1 overflow-y-auto bg-white">
+          <LocationDetailsPanel
+            hit={selectedPlace}
+            onClose={() => clearSelectedPlace(null)}
+          />
+          <OlympusRehearsal controller={controller} />
         </div>
-
-        {/* Empty tab content area for both "Mission" and "Considerations" */}
-        <div
-          id={`route-tabpanel-${activeTab}`}
-          role="tabpanel"
-          aria-labelledby={`route-tab-${activeTab}`}
-          className="flex-1 overflow-y-auto bg-white"
-        />
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -22,9 +22,9 @@ route planning.
 | :-: | :--- | :--- |
 | 1 | 3D globe & 2D map of Mars with Mars Trek imagery, nomenclature labels, coordinate readout, zoom | ✅ Implemented |
 | 2 | Martian "Street View": rover surface imagery as clickable dots | 🛠 Planned |
-| 3 | Outpost locations & EVA / rover route rehearsals (distance, ETA) | 🛠 Planned |
-| 4 | Climate & environmental tracking with dynamic rerouting | 🟡 Started: Perseverance MEDA weather point in Jezero Crater |
-| 5 | Topography-aware safe routing (craters, slopes, ridges) | 🛠 Planned |
+| 3 | Outpost locations & EVA / rover route rehearsals (distance, ETA) | 🟡 Started: hypothetical Olympus Mons crew sites, plus the route bar |
+| 4 | Climate & environmental tracking with dynamic rerouting | 🟡 Started: Olympus dust-season rehearsal reroutes a traverse |
+| 5 | Topography-aware safe routing (craters, slopes, ridges) | 🟡 Started: Olympus routes avoid steep MOLA slopes |
 | 6 | Scientific research missions at waypoints | 🛠 Planned |
 
 The full product vision is in [`AGENTS.md`](AGENTS.md).
@@ -47,7 +47,7 @@ apps/
 ├── web/                     Frontend: the one and only web app
 │   ├── src/components/      Shared viewport and HUD components
 │   ├── src/core/            Dataset-agnostic Cesium map engine
-│   └── src/features/        Isolated product capabilities (e.g. perseverance/)
+│   └── src/features/        Isolated product capabilities (route planner)
 └── api/                     Backend: the one and only API (FastAPI modular monolith)
     └── app/modules/<domain>/  points, rover_images, weather, ...
 docs/
@@ -135,11 +135,9 @@ port 8000, so no CORS setup is needed.
 2. Use the **3D / 2D** control to switch between the globe and the flat map.
 3. Use the zoom buttons or the mouse (drag to pan, scroll to zoom) to explore Mars.
 4. Toggle **Nomenclature** to show or hide Mars feature labels.
-5. Select the **Perseverance MEDA** point in Jezero Crater to see a summary of the historical
-   weather dataset.
-
-The MEDA point's coordinate is **approximate**. Its values are historical research statistics, not
-live conditions.
+5. Hover a feature name to enlarge it and turn it blue. Click the name to open its location card.
+6. Use the route bar to pick a source and destination, or the Olympus Mons panel to rehearse a
+   slope- and dust-aware traverse. The Olympus crew sites are hypothetical.
 
 ## Contributing
 
@@ -159,8 +157,8 @@ For architectural decisions, read [`docs/architecture.md`](docs/architecture.md)
 ## Data & credits
 
 Mars imagery and nomenclature: Courtesy NASA/JPL-Caltech/USGS, via
-[NASA Mars Trek](https://trek.nasa.gov/mars/). Weather: NASA Mars 2020 Perseverance MEDA (via the
-PDS Atmospheres Node and a CC BY 4.0 compiled dataset). The full list of sources and open-source
+[NASA Mars Trek](https://trek.nasa.gov/mars/). Olympus routes also use MOLA topography and a
+published MRO dust climatology. The full list of sources and open-source
 licenses is in [`docs/source_attributions.md`](docs/source_attributions.md).
 
 ## Help and project resources
@@ -177,9 +175,10 @@ licenses is in [`docs/source_attributions.md`](docs/source_attributions.md).
 Team Red Condors. 
 
 - Santiago Camacho Moyano (Team Lead - AI Developer)
-- Fabricio Alejandro Ortiz Fiallos (Front-end Developer)
-- Samuel Esteban Pineda Benavides (Back-end Developer)
+- Fabricio Alejandro Ortiz Fiallos (Full-Stack Developer)
+- Samuel Esteban Pineda Benavides (Full-Stack Developer)
 - Miguel Rincon (Full-Stack Developer)
+- Conan Olatunji (Full-Stack Developer)
 
 ## License
 

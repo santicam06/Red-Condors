@@ -17,7 +17,7 @@
    - Smooth mouse-drag panning/rotation with inertia in 3D and 2D.
    - Smooth mouse scroll-wheel zoom in/out.
    - Dedicated on-screen **Zoom In (`+`)** and **Zoom Out (`-`)** buttons.
-5. **Mars Nomenclature Toggle** replicating Mars Trek's area/feature labels (`Margaritifer Terra`, `Iani Chaos`, `Aureum Chaos`, `Arsinoes Chaos`, etc.) sourced from Mars Trek's Nomenclature service with zoom-level hierarchy filtering (`level` 1–7) and a clean `Nomenclature` pill toggle switch.
+5. **Mars Nomenclature Toggle** replicating Mars Trek's area/feature labels (`Margaritifer Terra`, `Iani Chaos`, `Aureum Chaos`, `Arsinoes Chaos`, etc.) sourced from Mars Trek's Nomenclature service with zoom-level hierarchy filtering (`level` 1–7) and a clean `Nomenclature` pill toggle switch. Hovering a visible name enlarges it and turns it blue; clicking opens an adjustable location-details card backed by the USGS Gazetteer of Planetary Nomenclature (Mars target page).
 6. **Bottom-Right Cursor Coordinate Readout** formatted as `Lat: -16.35182°, Lon: -93.06344°` (5 decimal places), updating live as the cursor moves **on Mars** in either 3D or 2D mode, and displaying a placeholder (`Lat: --, Lon: --`) when the cursor is over the black space background (**excluding** `Terrain Exaggeration`).
 7. **Compliance & Citations** (`docs/source_attributions.md` + subtle text credit `"Courtesy NASA/JPL-Caltech/USGS"`, zero NASA/JPL logos, zero proprietary SaaS tokens).
 
@@ -163,6 +163,11 @@ Disable all default Cesium chrome in `Viewer` constructor options:
     - `level 7` (small craters < 70 km): visible below `~700 km`.
 - **Far-Side Globe Occlusion (Critical 3D Fix):**
   - In `SCENE3D`, apply an `EllipsoidalOccluder` check against camera position so labels on the back hemisphere of Mars never show through the planet.
+- **Hover and click (location details):**
+  - Only labels that are currently drawn (nomenclature on, inside the level/altitude filter, and not decluttered) respond to the pointer.
+  - Hover eases the label to about `1.16×` scale and mixes the fill from white to `#4C9AFF`. The cursor becomes a pointer.
+  - Click keeps the label blue and opens the location card. Escape or the close button restores the white label.
+  - If the clicked name would sit under the card, the camera pans (zoom unchanged) so the name stays in the open map area.
 
 ### 5.4 Bottom-Right Cursor Coordinate Readout (Image 2 Specification)
 - **Visual Format:**
@@ -187,6 +192,13 @@ Disable all default Cesium chrome in `Viewer` constructor options:
   6. Normalize longitude to `[-180, 180]`: `((((lonDeg + 180) % 360) + 360) % 360) - 180`.
 - **60+ FPS Performance Isolation:**
   - Isolate cursor coordinate state inside `<CoordinateReadout />` (subscribed directly to pointer updates via `requestAnimationFrame` throttling) so moving the mouse never re-renders `<MarsViewport />` or other HUD controls.
+
+### 5.5 Location Details Card (USGS Mars Nomenclature)
+- **UI:** A left-side white card, mounted from `src/components/Locations/`, similar to a Google Maps place panel. A right-edge grip resizes the width (`300–560px`). Location, extent, feature class, and name-origin groups are collapsible. The source block stays visible.
+- **Contents:** Feature name and class, USGS morphological descriptor, official center (planetocentric, +East, 0–360), diameter, latitude/longitude extent, name origin, approval, and quadrangle. The map’s own label anchor (`−180` to `180`) is shown beside the USGS center. Mars Trek `level` is labeled as display priority, not a USGS field.
+- **Lookup:** `src/components/Locations/usgsGazetteer.json` is a name-keyed snapshot of the USGS Mars center-point gazetteer (`MARS_nomenclature_center_pts`, 2026-11-14), matched to the on-map label by clean name.
+- **Source line in the card:** Gazetteer of Planetary Nomenclature — Target: Mars, `https://planetarynames.wr.usgs.gov/Page/MARS/target`, plus a link to the individual feature record when the name matches. Descriptor wording cites `https://planetarynames.wr.usgs.gov/DescriptorTerms`.
+- **Photos:** A Google Maps–style strip at the top of the card. Arrows switch between a centered crop of the Viking color mosaic and the MGS MOLA color shaded relief (`Mars_MGS_MOLA_ClrShade_merge_global_463m`). The credit sits on the photo, and both layers are listed again under Imagery. Citations are in `docs/source_attributions.md` section 2.
 
 ---
 
@@ -215,8 +227,8 @@ Red-Condors/
 │       │   ├── config/
 │       │   ├── core/
 │       │   ├── store/
-│       │   ├── features/             # Isolated product capabilities
-│       │   ├── components/
+│       │   ├── features/             # Isolated product capabilities (route planner)
+│       │   ├── components/           # HUD, nomenclature hover card, Olympus rehearsal
 │       │   ├── App.tsx
 │       │   ├── main.tsx
 │       │   └── index.css
@@ -281,5 +293,6 @@ Red-Condors/
    - [x] Switching 3D ↔ 2D preserves center `(lat, lon)` and zoom scale seamlessly; 2D map displays against pure `#000000` background without rotation twist.
    - [x] Mouse drag, scroll wheel zoom, and `+` / `-` buttons respond fluidly in both 3D and 2D.
    - [x] Navigating to `Lat: -4°, Lon: -22°` with `Nomenclature` toggled ON displays `Margaritifer Terra`, `Iani Chaos`, `Aureum Chaos`, and `Arsinoes Chaos` matching Image 1, and back-side labels are hidden in 3D.
+   - [x] Hovering a visible nomenclature name enlarges it and turns it blue; clicking opens the adjustable USGS location card, including the Mars target-page source (`https://planetarynames.wr.usgs.gov/Page/MARS/target`).
    - [x] Moving cursor over Mars updates `Lat: XX.XXXXX°, Lon: YY.YYYYY°` at 60 FPS; moving cursor onto black space displays `Lat: --, Lon: --` (with no `Terrain Exaggeration` line).
    - [x] Zero NASA/JPL logos used anywhere; zero console or 404 tile errors at deep zoom (`> level 7`).

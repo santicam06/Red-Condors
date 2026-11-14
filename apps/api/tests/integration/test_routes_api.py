@@ -53,7 +53,13 @@ def test_impassable_terrain_is_422(client_with_dem) -> None:
     response = client_with_dem(cliff).post("/api/routes", json=BODY)
 
     assert response.status_code == 422
-    assert "slope limit" in response.json()["detail"]
+    body = response.json()
+    assert "slope limit" in body["detail"]
+    # The traversable area comes back too, so the UI can show the blocking cliff
+    area = body["walkable_area"]
+    assert len(area["cells"]) == area["rows"] * area["cols"]
+    assert "3" in area["cells"]  # steep cliff cells
+    assert "1" in area["cells"]  # gentle plains on the destination side
 
 
 def test_invalid_coordinates_are_rejected(client_with_dem) -> None:
