@@ -6,6 +6,7 @@ import {
   Thermometer,
   X,
 } from 'lucide-react';
+import { useRoutePlannerStore } from '../../route-planner/store/useRoutePlannerStore';
 import {
   PERSEVERANCE_JEZERO_POINT,
   PERSEVERANCE_WEATHER_DATASET,
@@ -22,6 +23,7 @@ export function PerseverancePointPanel({
   onPointerEnter,
   onPointerLeave,
 }: PerseverancePointPanelProps) {
+  const isRouteBarOpen = useRoutePlannerStore((s) => s.isOpen);
   const point = PERSEVERANCE_JEZERO_POINT;
   const dataset = PERSEVERANCE_WEATHER_DATASET;
 
@@ -30,7 +32,9 @@ export function PerseverancePointPanel({
       aria-label="Perseverance MEDA weather point information"
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      className="font-jetbrains pointer-events-auto fixed left-3 top-3 z-20 max-h-[calc(100vh-1.5rem)] w-[min(360px,calc(100vw-1.5rem))] overflow-y-auto border-2 border-red-700 bg-white text-black shadow-2xl sm:left-4 sm:top-4"
+      className={`font-jetbrains pointer-events-auto fixed left-3 top-3 z-30 max-h-[calc(100vh-1.5rem)] w-[min(360px,calc(100vw-1.5rem))] overflow-y-auto border-2 border-red-700 bg-white text-black shadow-2xl transition-[left] duration-250 ease-out sm:top-4 ${
+        isRouteBarOpen ? 'sm:left-[400px]' : 'sm:left-4'
+      }`}
     >
       <header className="flex items-start justify-between gap-4 border-b border-red-700/25 px-4 py-3.5">
         <div>

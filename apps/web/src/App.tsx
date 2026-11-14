@@ -4,11 +4,15 @@ import { MarsViewport } from './components/MarsViewport';
 import type { MarsViewerController } from './core/MarsViewerController';
 import { PerseverancePointPanel } from './features/perseverance/components/PerseverancePointPanel';
 import { PerseverancePointLayer } from './features/perseverance/map/PerseverancePointLayer';
+import { RouteLateralBar } from './features/route-planner/components/RouteLateralBar';
+import { useMapLocationPicker } from './features/route-planner/map/useMapLocationPicker';
 
 export function App() {
   const [controller, setController] = useState<MarsViewerController | null>(null);
   const [perseverancePointOpen, setPerseverancePointOpen] = useState(false);
   const hoverCloseTimer = useRef<number | null>(null);
+
+  useMapLocationPicker(controller);
 
   const cancelHoverClose = useCallback(() => {
     if (hoverCloseTimer.current !== null) {
@@ -61,6 +65,7 @@ export function App() {
         controller={controller}
         onHoverChange={handlePerseveranceHover}
       />
+      <RouteLateralBar />
       <MapHUD controller={controller} />
       {perseverancePointOpen && (
         <PerseverancePointPanel
