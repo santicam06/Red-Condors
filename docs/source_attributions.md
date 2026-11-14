@@ -46,6 +46,14 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **License:** CC BY 4.0 for the compiled Hugging Face dataset; upstream NASA products remain subject to NASA/PDS usage guidance
 - **Usage in Project:** Dataset-level metadata and documented summary statistics are displayed at a representative Perseverance point in Jezero Crater. The point is explicitly labeled approximate and the values are historical dataset statistics, not live conditions.
 
+### 1.6 MOLA Global Digital Elevation Model (`mola128_mola64_merge_90Nto90S_SimpleC_clon0.tif`)
+- **Product:** Mars MGS MOLA DEM, 128 pixels/degree merged with 64 ppd where 128 ppd is unavailable (~463 m/pixel), Simple Cylindrical, centre longitude 0°, Int16 metres relative to the Mars areoid
+- **Distribution:** USGS Astrogeology Science Center (`https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m`), derived from the PDS MOLA Mission Experiment Gridded Data Records (MEGDR)
+- **Mission / Instrument:** NASA Mars Global Surveyor (MGS) — Mars Orbiter Laser Altimeter (MOLA)
+- **Provider / Credit:** MOLA Science Team, NASA Goddard Space Flight Center; mosaic by USGS Astrogeology Science Center
+- **License / Terms:** Public Domain (U.S. Government / NASA & USGS open planetary science data)
+- **Usage in Project:** Read by the API (`apps/api/app/modules/routing`) as a small window around a route destination to build a slope-filtered terrain graph for topography-aware safe routing (shortest / fastest / safest routes). The ~2 GB file is downloaded locally into `apps/api/data/` and is not committed.
+
 ---
 
 ## 2. Open-Source Libraries & Tooling
@@ -68,6 +76,9 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **Starlette (`starlette`, FastAPI dependency)** | BSD-3-Clause | `https://github.com/encode/starlette` | ASGI toolkit underlying FastAPI, including the test client. |
 | **Uvicorn (`uvicorn[standard]`)** | BSD-3-Clause | `https://github.com/encode/uvicorn` | ASGI server that runs the API locally (with auto-reload) and in deployment. |
 | **Pydantic (`pydantic`) & pydantic-settings** | MIT | `https://github.com/pydantic/pydantic`, `https://github.com/pydantic/pydantic-settings` | Request/response schemas and `RC_*` environment-based configuration. |
+| **Rasterio (`rasterio`)** | BSD-3-Clause | `https://github.com/rasterio/rasterio` | Windowed reads of the MOLA GeoTIFF DEM for safe routing (bundles GDAL, MIT/X). |
+| **NumPy (`numpy`)** | BSD-3-Clause | `https://github.com/numpy/numpy` | Vectorised slope, distance and travel-time calculations over DEM windows. |
+| **NetworkX (`networkx`)** | BSD-3-Clause | `https://github.com/networkx/networkx` | Terrain graph and Dijkstra shortest-path search for shortest / fastest / safest routes. |
 | **pytest (`pytest`)** | MIT | `https://github.com/pytest-dev/pytest` | Backend unit and integration tests. |
 | **HTTPX (`httpx`)** | BSD-3-Clause | `https://github.com/encode/httpx` | HTTP client used by FastAPI's `TestClient` in backend tests. |
 | **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
