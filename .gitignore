@@ -14,6 +14,9 @@ __pycache__/
 .venv/
 *.egg-info/
 
+# Generated datasets & caches (rebuild with the module's index builder)
+apps/api/data/
+
 # Local env & OS
 .env
 .env.local
