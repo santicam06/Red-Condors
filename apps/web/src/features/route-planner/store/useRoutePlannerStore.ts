@@ -8,6 +8,7 @@ import type {
 
 interface RoutePlannerState {
   isOpen: boolean;
+  isRouteCalculatorOpen: boolean;
   travelMode: TravelMode;
   source: RouteLocation | null;
   destination: RouteLocation | null;
@@ -42,6 +43,7 @@ interface RoutePlannerState {
 
 export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   isOpen: false,
+  isRouteCalculatorOpen: false,
   travelMode: 'marswalk',
   source: null,
   destination: null,
@@ -53,8 +55,16 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   marswalkEta: null,
   roverEta: null,
 
-  setOpen: (isOpen) => set({ isOpen }),
-  toggleOpen: () => set((state) => ({ isOpen: !state.isOpen })),
+  setOpen: (isOpen) =>
+    set((state) => ({
+      isOpen,
+      isRouteCalculatorOpen: isOpen ? state.isRouteCalculatorOpen : false,
+    })),
+  toggleOpen: () =>
+    set((state) => ({
+      isOpen: !state.isOpen,
+      isRouteCalculatorOpen: !state.isOpen ? state.isRouteCalculatorOpen : false,
+    })),
   setTravelMode: (travelMode) => set({ travelMode }),
   setTraverseSummary: (summary) => set(summary),
 
@@ -79,6 +89,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   openIndicationsForLocation: (location) =>
     set((state) => ({
       isOpen: true,
+      isRouteCalculatorOpen: true,
       destination: location,
       source: state.source?.id === location.id ? null : state.source,
       activeInputSlot: 'source',
