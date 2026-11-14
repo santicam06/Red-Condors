@@ -58,7 +58,7 @@ export class MarsViewerController {
         initialMode === '2d' ? Cesium.SceneMode.SCENE2D : Cesium.SceneMode.SCENE3D,
       mapMode2D: Cesium.MapMode2D.INFINITE_SCROLL,
       baseLayer: false,
-      skyBox: false,
+      skyBox: Cesium.SkyBox.createEarthSkyBox(),
       skyAtmosphere: false,
       animation: false,
       timeline: false,
@@ -71,16 +71,17 @@ export class MarsViewerController {
       infoBox: false,
       selectionIndicator: false,
       shouldAnimate: false,
+      useBrowserRecommendedResolution: false,
       msaaSamples: 4,
       contextOptions: {
         webgl: {
-          alpha: false,
+          alpha: true,
           antialias: true,
         },
       },
     });
 
-    this.configureVisualFidelity();
+    this.configureVisualFidelity(initialMode);
     this.configureCameraController(initialMode);
 
     // Add verified NASA Mars Trek global Viking Color Mosaic WMTS basemap
@@ -132,18 +133,21 @@ export class MarsViewerController {
   }
 
   /**
-   * Applies strict visual overrides so Mars Trek's Viking Color Mosaic renders
-   * with true Martian colors surrounded by pure #000000 black space.
+   * Applies Mars Trek visual fidelity overrides:
+   * - Tycho-2 deep-space starfield skybox in 3D (matching `trek.nasa.gov/mars/`)
+   * - Transparent space background in 2D so the starfield backdrop shows outside ±90°
+   * - True Viking MDIM 2.1 coloration (no Earth blue atmosphere, no day/night shadows, no sun/moon glare)
    */
-  private configureVisualFidelity(): void {
+  private configureVisualFidelity(initialMode: MarsViewMode): void {
     const { scene } = this.viewer;
     const globe = scene.globe;
 
-    this.viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2);
+    this.viewer.resolutionScale = window.devicePixelRatio || 1;
 
-    // Pure black space background (no stars, no sun/moon sprites, no blue Earth atmosphere)
-    scene.backgroundColor = Cesium.Color.BLACK;
-    if (scene.skyBox) scene.skyBox.show = false;
+    // In 3D, opaque black clears behind the Tycho-2 SkyBox; in 2D, transparent clears reveal the starfield backdrop
+    scene.backgroundColor =
+      initialMode === '2d' ? Cesium.Color.TRANSPARENT : Cesium.Color.BLACK;
+    if (scene.skyBox) scene.skyBox.show = true;
     if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
     if (scene.sun) scene.sun.show = false;
     if (scene.moon) scene.moon.show = false;
@@ -156,9 +160,10 @@ export class MarsViewerController {
     globe.enableLighting = false;
     globe.baseColor = Cesium.Color.fromCssColorString('#1c110c');
     globe.depthTestAgainstTerrain = false;
-    globe.maximumScreenSpaceError = 1.5; // Sharper tile LOD selection
+    globe.maximumScreenSpaceError = 1.0; // Force sharper WMTS tile LOD selection
 
-    scene.postProcessStages.fxaa.enabled = true;
+    // Disable FXAA post-processing blur; rely on hardware MSAA (msaaSamples: 4) for crisp edges and imagery
+    scene.postProcessStages.fxaa.enabled = false;
   }
 
   /**
@@ -264,8 +269,10 @@ export class MarsViewerController {
     const effectiveAltitude = this.getEffectiveAltitudeMeters();
 
     if (targetMode === '2d') {
+      this.viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
       this.viewer.scene.morphTo2D(0);
     } else {
+      this.viewer.scene.backgroundColor = Cesium.Color.BLACK;
       this.viewer.scene.morphTo3D(0);
     }
 

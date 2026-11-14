@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { MarsViewerController } from '../core/MarsViewerController';
 import { useMapStore } from '../store/useMapStore';
+import { StarfieldBackdrop } from './StarfieldBackdrop';
 
 interface MarsViewportProps {
   onControllerReady: (controller: MarsViewerController | null) => void;
@@ -51,9 +52,12 @@ export function MarsViewport({ onControllerReady }: MarsViewportProps) {
   }, [nomenclatureVisible]);
 
   return (
-    <div
-      ref={containerRef}
-      className="mars-cesium-container fixed inset-0 h-full w-full bg-black"
-    />
+    <>
+      <StarfieldBackdrop visible={viewMode === '2d'} />
+      <div
+        ref={containerRef}
+        className="mars-cesium-container fixed inset-0 h-full w-full bg-transparent"
+      />
+    </>
   );
 }
