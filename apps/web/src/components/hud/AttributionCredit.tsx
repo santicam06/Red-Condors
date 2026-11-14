@@ -40,7 +40,7 @@ export function AttributionCredit() {
           aria-label="Map credits and attribution"
           className="absolute bottom-11 left-0 w-max max-w-[calc(100vw-2rem)] border border-red-700 bg-white px-3 py-2 text-[12px] font-normal text-neutral-800 shadow-md"
         >
-          Imagery: Courtesy NASA/JPL-Caltech/USGS • Nomenclature: IAU/USGS
+          Imagery: Courtesy NASA/JPL-Caltech/USGS • Nomenclature: IAU/USGS • Elevation: MGS MOLA, NASA/GSFC/USGS
         </div>
       )}
 

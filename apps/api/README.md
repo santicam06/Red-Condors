@@ -35,6 +35,14 @@ uvicorn app.main:app --reload --port 8000
 
 Settings come from `RC_*` environment variables or a local `.env` file (see `.env.example`).
 
+## Elevation data (safe routing)
+
+`POST /api/routes` needs the MOLA global DEM (~2 GB, not committed). Download
+`mola128_mola64_merge_90Nto90S_SimpleC_clon0.tif` from USGS Astrogeology
+(<https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m>) into `apps/api/data/`
+(git-ignored), or point `RC_MOLA_DEM_PATH` at it. Without it the endpoint returns 503 and the
+real-DEM integration test is skipped.
+
 ## Check it
 
 ```bash

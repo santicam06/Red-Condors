@@ -1,16 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { MapHUD } from './components/hud/MapHUD';
-import { MarsViewport } from './components/MarsViewport';
-import type { MarsViewerController } from './core/MarsViewerController';
-import { PerseverancePointPanel } from './features/perseverance/components/PerseverancePointPanel';
-import { PerseverancePointLayer } from './features/perseverance/map/PerseverancePointLayer';
-import { StreetViewPanel } from './features/rover-streetview/components/StreetViewPanel';
-import { RoverStopsLayer } from './features/rover-streetview/map/RoverStopsLayer';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { MapHUD } from "./components/hud/MapHUD";
+import { MarsViewport } from "./components/MarsViewport";
+import type { MarsViewerController } from "./core/MarsViewerController";
+import { PerseverancePointPanel } from "./features/perseverance/components/PerseverancePointPanel";
+import { PerseverancePointLayer } from "./features/perseverance/map/PerseverancePointLayer";
+import { StreetViewPanel } from "./features/rover-streetview/components/StreetViewPanel";
+import { RoverStopsLayer } from "./features/rover-streetview/map/RoverStopsLayer";
+import { RouteLayer } from "./features/routing/map/RouteLayer";
+import { RouteLateralBar } from "./features/route-planner/components/RouteLateralBar";
+import { useMapLocationPicker } from "./features/route-planner/map/useMapLocationPicker";
 
 export function App() {
-  const [controller, setController] = useState<MarsViewerController | null>(null);
+  const [controller, setController] = useState<MarsViewerController | null>(
+    null,
+  );
   const [perseverancePointOpen, setPerseverancePointOpen] = useState(false);
   const hoverCloseTimer = useRef<number | null>(null);
+
+  useMapLocationPicker(controller);
 
   const cancelHoverClose = useCallback(() => {
     if (hoverCloseTimer.current !== null) {
@@ -41,7 +48,7 @@ export function App() {
         closePerseverancePoint();
       }
     },
-    [closePerseverancePoint]
+    [closePerseverancePoint],
   );
 
   const handlePerseveranceHover = useCallback(
@@ -53,7 +60,7 @@ export function App() {
         scheduleHoverClose();
       }
     },
-    [cancelHoverClose, scheduleHoverClose]
+    [cancelHoverClose, scheduleHoverClose],
   );
 
   return (
@@ -63,6 +70,8 @@ export function App() {
         controller={controller}
         onHoverChange={handlePerseveranceHover}
       />
+      <RouteLayer controller={controller} />
+      <RouteLateralBar />
       <RoverStopsLayer controller={controller} />
       <MapHUD controller={controller} />
       {perseverancePointOpen && (

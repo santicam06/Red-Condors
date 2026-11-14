@@ -14,9 +14,6 @@ __pycache__/
 .venv/
 *.egg-info/
 
-# Generated datasets & caches (rebuild with the module's index builder)
-apps/api/data/
-
 # Local env & OS
 .env
 .env.local
@@ -27,3 +24,6 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+# Large datasets (downloaded locally, never committed)
+apps/api/data/
