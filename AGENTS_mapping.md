@@ -11,7 +11,8 @@
 ### In Scope
 1. **Interchangeable 3D Globe & 2D Map Views** using a unified Martian coordinate system and preserving camera center/zoom across mode switches.
 2. **Mars Trek Visual Fidelity** by streaming NASA Mars Trek's exact default global basemap (`Mars_Viking_MDIM21_ClrMosaic_global_232m`) with true Martian coloration (no Earth blue atmospheric tinting or solar day/night shadows).
-3. **Pure Black Space Background (`#000000`)** in both 3D and 2D views — no starfields, sun/moon sprites, skyboxes, or decorative UI chrome yet.
+3. **Deep-Space Background** matching Mars Trek: Tycho-2 starfield skybox in 3D and a seeded starfield backdrop (`StarfieldBackdrop.tsx`) behind the 2D map. No sun/moon sprites or decorative UI chrome yet.
+   > *Update:* this replaced the original pure-black (`#000000`) requirement. Sections 4.2 and 7 below still describe the earlier black-only baseline; `src/core/MarsViewerController.ts` is the source of truth.
 4. **Fluid Navigation Controls** matching Mars Trek:
    - Smooth mouse-drag panning/rotation with inertia in 3D and 2D.
    - Smooth mouse scroll-wheel zoom in/out.
