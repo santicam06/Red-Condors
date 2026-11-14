@@ -28,6 +28,9 @@ interface LocationDetailsPanelProps {
 export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const assignClickedLocation = useRoutePlannerStore((state) => state.assignClickedLocation);
+  const openIndicationsForLocation = useRoutePlannerStore(
+    (state) => state.openIndicationsForLocation
+  );
 
   useEffect(() => {
     if (!hit) return;
@@ -94,7 +97,14 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
             <p className="mt-1 text-[13.5px] text-[#5f6368]">
               {featureType || 'Named feature'} · Mars
             </p>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => openIndicationsForLocation(routePlace)}
+                className="cursor-pointer border border-red-700 bg-white px-3 py-2 text-[13px] font-medium text-red-700 hover:bg-red-700 hover:text-white"
+              >
+                Indications
+              </button>
               <button
                 type="button"
                 onClick={() => {

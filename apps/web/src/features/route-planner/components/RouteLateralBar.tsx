@@ -54,7 +54,6 @@ export function RouteLateralBar() {
 
   return (
     <>
-      {/* Reopen button in top-left corner when lateral bar is closed */}
       {!isOpen && (
         <button
           type="button"
@@ -68,14 +67,13 @@ export function RouteLateralBar() {
         </button>
       )}
 
-      {/* Google Maps–style left lateral bar */}
       <aside
         aria-label="Martian traversal route planner"
         aria-hidden={!isOpen}
-        className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[384px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
-        }`}
-      >
+      className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[384px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
+      }`}
+    >
         {/* Top section: Travel modes (Marswalk & Rover) + ETA below each icon + Close button */}
         <div className="px-4 pt-3.5 pb-4">
           <div className="relative flex items-start justify-center">

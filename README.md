@@ -172,7 +172,12 @@ licenses is in [`docs/source_attributions.md`](docs/source_attributions.md).
 
 ## Team
 
-Team Red Condors. *(Add member names and roles here.)*
+Team Red Condors. 
+
+- Santiago Camacho Moyano (Team Lead - AI Developer)
+- Fabricio Alejandro Ortiz Fiallos (Front-end Developer)
+- Samuel Esteban Pineda Benavides (Back-end Developer)
+- Miguel Rincon (Full-Stack Developer)
 
 ## License
 
