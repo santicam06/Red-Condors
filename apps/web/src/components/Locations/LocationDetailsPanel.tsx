@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BookOpen, ChevronDown, ExternalLink, MapPin, Ruler, X } from 'lucide-react';
-import { IndicationsIcon } from '../location/LocationInfoPanel';
 import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
 import { describeFeatureType } from './descriptorTerms';
 import { USGS_DESCRIPTOR_TERMS_PAGE, USGS_MARS_TARGET_PAGE } from './sources';
 import { PLACE_IMAGE_LAYERS, signedLongitude } from './placeImagery';
 import { PlacePhoto } from './PlacePhoto';
-import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
-import type { RouteLocation } from '../../features/route-planner/types';
 import { lookupUsgsFeature } from './usgsGazetteer';
 
 interface LocationDetailsPanelProps {
@@ -21,9 +18,6 @@ interface LocationDetailsPanelProps {
  */
 export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
-  const openIndicationsForLocation = useRoutePlannerStore(
-    (state) => state.openIndicationsForLocation
-  );
   const [moreInfo, setMoreInfo] = useState(false);
 
   useEffect(() => {
@@ -51,15 +45,6 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
   const photoLongitude =
     record?.centerLongitude != null ? signedLongitude(record.centerLongitude) : hit.longitude;
   const centerText = `Lat: ${hit.latitude.toFixed(5)}°, Lon: ${hit.longitude.toFixed(5)}°`;
-  const routePlace: RouteLocation = {
-    id: `nom-${hit.fid}`,
-    name: hit.name,
-    subtitle: featureType || 'Named feature',
-    lat: hit.latitude,
-    lon: hit.longitude,
-    category: 'nomenclature',
-    priorityLevel: hit.level,
-  };
 
   return (
     <section aria-labelledby="location-details-title" className="border-t-2 border-red-700 bg-white text-[#202124]">
@@ -82,7 +67,7 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <header className="px-4 pt-4 pb-1">
+          <header className="px-4 pt-4 pb-3">
             <h2
               id="location-details-title"
               className="text-[22px] leading-tight font-medium text-[#202124]"
@@ -92,21 +77,6 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
             <p className="mt-1 text-[13.5px] text-[#5f6368]">
               {featureType || 'Named feature'} · Mars
             </p>
-            <div className="mt-3 flex items-center justify-center border-y border-red-700/25 py-3">
-              <button
-                type="button"
-                onClick={() => openIndicationsForLocation(routePlace)}
-                aria-label={`Get indications to ${hit.name}`}
-                className="group flex cursor-pointer flex-col items-center gap-1.5 focus-visible:outline-none"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-red-700 bg-white text-red-700 shadow-sm transition-colors duration-150 group-hover:bg-red-700 group-hover:text-white group-active:bg-red-900">
-                  <IndicationsIcon className="h-6 w-6" />
-                </span>
-                <span className="text-[11px] font-medium tracking-wide text-red-700 group-hover:text-red-900">
-                  Indications
-                </span>
-              </button>
-            </div>
           </header>
 
           <section className="mx-4 mb-3 border border-red-700/30 bg-red-50 p-3">
