@@ -369,6 +369,26 @@ export class MarsViewerController {
   }
 
   /**
+   * Flies the camera to a point on the Martian ellipsoid. Altitude is meters
+   * above the surface in both the 3D globe and the 2D map.
+   */
+  public flyToLatLon(lonDeg: number, latDeg: number, altitudeMeters: number): void {
+    if (this.viewer.isDestroyed()) return;
+    this.cancelActiveZoomAnimation();
+
+    const altitude = Cesium.Math.clamp(
+      altitudeMeters,
+      CAMERA_BOUNDS.minZoomDistanceMeters,
+      CAMERA_BOUNDS.maxZoomDistanceMeters
+    );
+
+    this.viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(lonDeg, latDeg, altitude, MARS_ELLIPSOID),
+      duration: 1.4,
+    });
+  }
+
+  /**
    * Toggles the Mars Nomenclature label layer ON or OFF.
    */
   public setNomenclatureVisible(visible: boolean): void {
