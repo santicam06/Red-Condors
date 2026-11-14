@@ -29,7 +29,7 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **Upstream Catalog:** Gazetteer of Planetary Nomenclature (`https://planetarynames.wr.usgs.gov/`)
 - **Provider / Credit:** International Astronomical Union (IAU) Working Group for Planetary System Nomenclature (WGPSN) / USGS Astrogeology Science Center / NASA JPL Mars Trek
 - **License / Terms:** Public Domain / Open Scientific Data
-- **Usage in Project:** Cached in `public/data/mars_nomenclature.geojson` (via `scripts/fetch-nomenclature.mjs`, 1,783 approved Martian surface feature names and priority levels `1`–`7`) to render toggleable Martian area and landform labels matching Mars Trek.
+- **Usage in Project:** Cached in `apps/web/public/data/mars_nomenclature.geojson` (via `apps/web/scripts/fetch-nomenclature.mjs`, 1,783 approved Martian surface feature names and priority levels `1`–`7`) to render toggleable Martian area and landform labels matching Mars Trek.
 
 ### 1.4 Deep Star Maps / Tycho-2 Celestial Skybox (`tycho2t3_80`)
 - **Upstream Source:** NASA Goddard Space Flight Center Scientific Visualization Studio — *Deep Star Maps* (`https://svs.gsfc.nasa.gov/vis/a000000/a003500/a003572/`) & NASA/JPL-Caltech (`http://maps.jpl.nasa.gov/stars.html`), derived from the Hipparcos & Tycho-2 star catalogs
@@ -54,4 +54,6 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **Zustand (`zustand`)** | MIT | `https://github.com/pmndrs/zustand` | Lightweight reactive state store for map mode (`3D` / `2D`) and layer toggles. |
 | **Tailwind CSS (`tailwindcss`, `@tailwindcss/vite`)** | MIT | `https://github.com/tailwindlabs/tailwindcss` | Utility-first styling for HUD controls. |
 | **Lucide (`lucide-react`)** | ISC | `https://github.com/lucide-icons/lucide` | Open-source vector icons for zoom (`+`/`-`) and 3D/2D map view controls. |
+| **ESLint ecosystem (`eslint`, `typescript-eslint`, React Hooks/Refresh plugins)** | MIT | `https://github.com/eslint/eslint`, `https://github.com/typescript-eslint/typescript-eslint`, `https://github.com/facebook/react` | Automated frontend lint checks locally and in GitHub Actions. |
+| **GitHub-maintained Actions (`actions/checkout`, `actions/setup-node`)** | MIT | `https://github.com/actions/checkout`, `https://github.com/actions/setup-node` | Reproducible dependency installation and lint execution in pull requests and branch pushes. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
