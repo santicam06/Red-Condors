@@ -196,7 +196,8 @@ export class MarsViewerController {
     const { scene } = this.viewer;
     const globe = scene.globe;
 
-    this.viewer.resolutionScale = window.devicePixelRatio || 1;
+    const pixelRatio = window.devicePixelRatio || 1;
+    this.viewer.resolutionScale = Math.min(2, Math.max(pixelRatio, 1.5));
 
     // In 3D, opaque black clears behind the Tycho-2 SkyBox; in 2D, transparent clears reveal the starfield backdrop
     scene.backgroundColor =
@@ -214,7 +215,7 @@ export class MarsViewerController {
     globe.enableLighting = false;
     globe.baseColor = Cesium.Color.fromCssColorString('#1c110c');
     globe.depthTestAgainstTerrain = false;
-    globe.maximumScreenSpaceError = 1.0; // Force sharper WMTS tile LOD selection
+    globe.maximumScreenSpaceError = 0.5;
 
     // Disable FXAA post-processing blur; rely on hardware MSAA (msaaSamples: 4) for crisp edges and imagery
     scene.postProcessStages.fxaa.enabled = false;
@@ -490,6 +491,11 @@ export class MarsViewerController {
   /** Drives the hover/selection enlarge-and-red treatment on one label. */
   public setNomenclatureLabelVisual(fid: number, scale: number, blueMix: number): void {
     this.nomenclatureManager.setLabelVisual(fid, scale, blueMix);
+  }
+
+  /** Puts square brackets on named start and end labels and enlarges them slightly. */
+  public setNamedRouteLabels(fids: number[]): void {
+    this.nomenclatureManager.setRouteNames(fids);
   }
 
   /**

@@ -15,7 +15,7 @@ export function NomenclatureToggle() {
       aria-checked={nomenclatureVisible}
       aria-label="Toggle Mars Nomenclature labels"
       onClick={toggleNomenclature}
-      className="pointer-events-auto flex w-full cursor-pointer items-center justify-between gap-3 border border-red-700 bg-white px-3 py-2 text-[12.5px] font-medium text-red-700 shadow-md transition-colors hover:bg-red-700 hover:text-white"
+      className="pointer-events-auto flex cursor-pointer items-center justify-between gap-3 border border-red-700 bg-white px-3 py-2 text-[12.5px] font-medium text-red-700 shadow-md transition-colors hover:bg-red-700 hover:text-white"
     >
       <span className="tracking-[0.01em]">Nomenclature</span>
       <span

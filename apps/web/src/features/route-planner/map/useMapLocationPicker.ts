@@ -5,6 +5,7 @@ import type {
   MarsViewerController,
   PickedMapFeature,
 } from '../../../core/MarsViewerController';
+import { isNearCrewSites } from '../../../components/Outposts/olympusSites';
 import { CUSTOM_LOCATIONS } from '../data/customLocations';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
 import type { RouteLocation } from '../types';
@@ -99,7 +100,7 @@ export function useMapLocationPicker(controller: MarsViewerController | null): v
         subtitle: 'Map position',
         lat: coords.lat,
         lon: coords.lon,
-        category: 'nomenclature',
+        category: 'pin',
       });
     });
   }, [controller, presentClickedLocation]);
@@ -113,14 +114,36 @@ export function useMapLocationPicker(controller: MarsViewerController | null): v
       if (controller.viewer.isDestroyed()) return;
       channel.entities.removeAll();
       const { source, destination } = useRoutePlannerStore.getState();
-      if (source) addRoutePin(channel, source, 'start');
-      if (destination) addRoutePin(channel, destination, 'end');
+      const namedFids: number[] = [];
+      for (const [location, role] of [
+        [source, 'start'],
+        [destination, 'end'],
+      ] as const) {
+        if (!location) continue;
+        if (isDroppedPin(location) && !isNearCrewSites(location.lat, location.lon)) {
+          addRoutePin(channel, location, role);
+          continue;
+        }
+        const fid = nomenclatureFid(location);
+        if (fid !== null) namedFids.push(fid);
+      }
+      controller.setNamedRouteLabels(namedFids);
       controller.viewer.scene.requestRender();
     };
 
     drawPins();
     return useRoutePlannerStore.subscribe(drawPins);
   }, [controller]);
+}
+
+function isDroppedPin(location: RouteLocation): boolean {
+  return location.category === 'pin' || location.id.startsWith('pin-');
+}
+
+function nomenclatureFid(location: RouteLocation): number | null {
+  if (!location.id.startsWith('nom-')) return null;
+  const fid = Number(location.id.slice(4));
+  return Number.isFinite(fid) ? fid : null;
 }
 
 function addRoutePin(

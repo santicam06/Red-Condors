@@ -2,6 +2,7 @@ import type { MarsViewerController } from '../../core/MarsViewerController';
 import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
 import { AttributionCredit } from './AttributionCredit';
 import { CoordinateReadout } from './CoordinateReadout';
+import { NomenclatureToggle } from './NomenclatureToggle';
 import { ViewModeToggle } from './ViewModeToggle';
 import { ZoomControls } from './ZoomControls';
 
@@ -32,6 +33,8 @@ export function MapHUD({ controller }: MapHUDProps) {
         <AttributionCredit />
 
         <div className="flex flex-col items-end gap-2.5">
+          <NomenclatureToggle />
+
           <div className="flex items-end gap-2">
             <ViewModeToggle />
             <ZoomControls

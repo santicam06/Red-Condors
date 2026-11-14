@@ -1,13 +1,18 @@
 import { ArrowUpDown, MapPin, Navigation, X } from 'lucide-react';
 import { LocationDetailsPanel } from '../../../components/Locations/LocationDetailsPanel';
-import { NomenclatureToggle } from '../../../components/hud/NomenclatureToggle';
+import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
+import { usePlannedTraverse } from '../map/usePlannedTraverse';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
 import type { TravelMode } from '../types';
 import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
 import { LocationInputBox } from './LocationInputBox';
 
-export function RouteLateralBar() {
+interface RouteLateralBarProps {
+  controller: MarsViewerController | null;
+}
+
+export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const isOpen = useRoutePlannerStore((s) => s.isOpen);
   const travelMode = useRoutePlannerStore((s) => s.travelMode);
   const source = useRoutePlannerStore((s) => s.source);
@@ -16,6 +21,7 @@ export function RouteLateralBar() {
   const distanceKm = useRoutePlannerStore((s) => s.distanceKm);
   const marswalkEta = useRoutePlannerStore((s) => s.marswalkEta);
   const roverEta = useRoutePlannerStore((s) => s.roverEta);
+  usePlannedTraverse(controller);
 
   const setOpen = useRoutePlannerStore((s) => s.setOpen);
   const setTravelMode = useRoutePlannerStore((s) => s.setTravelMode);
@@ -23,11 +29,8 @@ export function RouteLateralBar() {
   const setDestination = useRoutePlannerStore((s) => s.setDestination);
   const swapLocations = useRoutePlannerStore((s) => s.swapLocations);
   const setActiveInputSlot = useRoutePlannerStore((s) => s.setActiveInputSlot);
-  const clickedLocation = useRoutePlannerStore((s) => s.clickedLocation);
   const selectedPlace = useNomenclatureSelection((s) => s.hit);
   const clearSelectedPlace = useNomenclatureSelection((s) => s.setHit);
-  const assignClickedLocation = useRoutePlannerStore((s) => s.assignClickedLocation);
-  const clearClickedLocation = useRoutePlannerStore((s) => s.clearClickedLocation);
 
   const modes: Array<{
     id: TravelMode;
@@ -185,52 +188,11 @@ export function RouteLateralBar() {
               <ArrowUpDown className="h-[18px] w-[18px]" strokeWidth={2} />
             </button>
           </div>
-
-          <div className="mt-3">
-            <NomenclatureToggle />
-          </div>
         </div>
 
         <div className="h-[6px] w-full shrink-0 border-y border-red-700/20 bg-red-50" />
 
         <div className="flex-1 overflow-y-auto bg-white">
-          {clickedLocation && clickedLocation.id !== `nom-${selectedPlace?.fid ?? ''}` && (
-            <section
-              aria-label="Set clicked location"
-              className="m-4 border-2 border-red-700 bg-white p-4 text-[#202124]"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-red-700">
-                Clicked location
-              </p>
-              <h3 className="mt-1 text-[16px] font-medium leading-tight">{clickedLocation.name}</h3>
-              {clickedLocation.subtitle && (
-                <p className="mt-1 text-[12px] text-neutral-600">{clickedLocation.subtitle}</p>
-              )}
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => assignClickedLocation('source')}
-                  className="flex-1 cursor-pointer border border-red-700 bg-white px-3 py-2 text-[13px] font-medium text-red-700 transition-colors hover:bg-red-700 hover:text-white"
-                >
-                  Set as start
-                </button>
-                <button
-                  type="button"
-                  onClick={() => assignClickedLocation('destination')}
-                  className="flex-1 cursor-pointer bg-red-700 px-3 py-2 text-[13px] font-medium text-white transition-colors hover:bg-red-900"
-                >
-                  Set as finish
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={clearClickedLocation}
-                className="mt-3 cursor-pointer text-[12px] text-neutral-500 hover:text-red-700"
-              >
-                Dismiss
-              </button>
-            </section>
-          )}
           <LocationDetailsPanel
             hit={selectedPlace}
             onClose={() => clearSelectedPlace(null)}

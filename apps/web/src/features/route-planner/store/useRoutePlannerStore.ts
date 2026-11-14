@@ -16,10 +16,6 @@ interface RoutePlannerState {
   /** Place from the latest map click. Pins are not drawn until it is assigned. */
   clickedLocation: RouteLocation | null;
 
-  /**
-   * Placeholder operational metrics (kept null until routing & metric
-   * calculations are implemented).
-   */
   distanceKm: number | null;
   marswalkEta: string | null;
   roverEta: string | null;
@@ -27,6 +23,11 @@ interface RoutePlannerState {
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
   setTravelMode: (mode: TravelMode) => void;
+  setTraverseSummary: (summary: {
+    distanceKm: number | null;
+    marswalkEta: string | null;
+    roverEta: string | null;
+  }) => void;
   setSource: (location: RouteLocation | null) => void;
   setDestination: (location: RouteLocation | null) => void;
   swapLocations: () => void;
@@ -55,6 +56,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   setOpen: (isOpen) => set({ isOpen }),
   toggleOpen: () => set((state) => ({ isOpen: !state.isOpen })),
   setTravelMode: (travelMode) => set({ travelMode }),
+  setTraverseSummary: (summary) => set(summary),
 
   setSource: (source) =>
     set((state) => ({
@@ -118,10 +120,27 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
     }),
 
   presentClickedLocation: (clickedLocation) =>
-    set({
-      clickedLocation,
-      isOpen: true,
-      activeTab: 'mission',
+    set((state) => {
+      const waitingForStart =
+        state.destination !== null &&
+        state.source === null &&
+        state.destination.id !== clickedLocation.id;
+
+      if (waitingForStart) {
+        return {
+          source: clickedLocation,
+          clickedLocation: null,
+          isOpen: true,
+          activeTab: 'mission',
+          activeInputSlot: 'destination',
+        };
+      }
+
+      return {
+        clickedLocation,
+        isOpen: true,
+        activeTab: 'mission',
+      };
     }),
 
   clearClickedLocation: () => set({ clickedLocation: null }),

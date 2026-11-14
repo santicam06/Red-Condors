@@ -1,20 +1,14 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BookOpen, ChevronDown, ExternalLink, MapPin, Ruler, X } from 'lucide-react';
+import { IndicationsIcon } from '../location/LocationInfoPanel';
 import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
-import {
-  DESCRIPTOR_TERMS_NOTE,
-  describeFeatureType,
-} from './descriptorTerms';
-import {
-  USGS_DESCRIPTOR_TERMS_PAGE,
-  USGS_MARS_TARGET_PAGE,
-} from './sources';
+import { describeFeatureType } from './descriptorTerms';
+import { USGS_DESCRIPTOR_TERMS_PAGE, USGS_MARS_TARGET_PAGE } from './sources';
 import { PLACE_IMAGE_LAYERS, signedLongitude } from './placeImagery';
 import { PlacePhoto } from './PlacePhoto';
 import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
 import type { RouteLocation } from '../../features/route-planner/types';
 import { lookupUsgsFeature } from './usgsGazetteer';
-import type { UsgsFeatureRecord } from './types';
 
 interface LocationDetailsPanelProps {
   hit: NomenclatureLabelHit | null;
@@ -27,10 +21,14 @@ interface LocationDetailsPanelProps {
  */
 export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
-  const assignClickedLocation = useRoutePlannerStore((state) => state.assignClickedLocation);
   const openIndicationsForLocation = useRoutePlannerStore(
     (state) => state.openIndicationsForLocation
   );
+  const [moreInfo, setMoreInfo] = useState(false);
+
+  useEffect(() => {
+    setMoreInfo(false);
+  }, [hit?.fid]);
 
   useEffect(() => {
     if (!hit) return;
@@ -52,10 +50,7 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
   const photoLatitude = record?.centerLatitude ?? hit.latitude;
   const photoLongitude =
     record?.centerLongitude != null ? signedLongitude(record.centerLongitude) : hit.longitude;
-  const centerText =
-    record?.centerLatitude != null && record.centerLongitude != null
-      ? `${formatLat(record.centerLatitude)} · ${formatLon360(record.centerLongitude)}`
-      : `${formatLat(hit.latitude, 5)} · ${formatLon180(hit.longitude, 5)}`;
+  const centerText = `Lat: ${hit.latitude.toFixed(5)}°, Lon: ${hit.longitude.toFixed(5)}°`;
   const routePlace: RouteLocation = {
     id: `nom-${hit.fid}`,
     name: hit.name,
@@ -97,100 +92,92 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
             <p className="mt-1 text-[13.5px] text-[#5f6368]">
               {featureType || 'Named feature'} · Mars
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex items-center justify-center border-y border-red-700/25 py-3">
               <button
                 type="button"
                 onClick={() => openIndicationsForLocation(routePlace)}
-                className="cursor-pointer border border-red-700 bg-white px-3 py-2 text-[13px] font-medium text-red-700 hover:bg-red-700 hover:text-white"
+                aria-label={`Get indications to ${hit.name}`}
+                className="group flex cursor-pointer flex-col items-center gap-1.5 focus-visible:outline-none"
               >
-                Indications
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  useRoutePlannerStore.getState().presentClickedLocation(routePlace);
-                  assignClickedLocation('source');
-                }}
-                className="flex-1 cursor-pointer border border-red-700 bg-white px-3 py-2 text-[13px] font-medium text-red-700 hover:bg-red-700 hover:text-white"
-              >
-                Set as start
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  useRoutePlannerStore.getState().presentClickedLocation(routePlace);
-                  assignClickedLocation('destination');
-                }}
-                className="flex-1 cursor-pointer bg-red-700 px-3 py-2 text-[13px] font-medium text-white hover:bg-red-900"
-              >
-                Set as finish
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-red-700 bg-white text-red-700 shadow-sm transition-colors duration-150 group-hover:bg-red-700 group-hover:text-white group-active:bg-red-900">
+                  <IndicationsIcon className="h-6 w-6" />
+                </span>
+                <span className="text-[11px] font-medium tracking-wide text-red-700 group-hover:text-red-900">
+                  Indications
+                </span>
               </button>
             </div>
           </header>
 
+          <section className="mx-4 mb-3 border border-red-700/30 bg-red-50 p-3">
+            <div className="flex items-start gap-2.5">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+              <div className="min-w-0 text-[14px] font-medium leading-snug text-[#202124] tabular-nums">
+                {centerText}
+              </div>
+            </div>
+          </section>
+
+          <div className="px-4 pb-4">
+            <button
+              type="button"
+              aria-expanded={moreInfo}
+              onClick={() => setMoreInfo((open) => !open)}
+              className="cursor-pointer border border-red-700 bg-white px-3 py-2 text-[13px] font-medium text-red-700 hover:bg-red-700 hover:text-white"
+            >
+              {moreInfo ? 'Hide info' : 'More info'}
+            </button>
+          </div>
+
+          {moreInfo && (
+          <>
           <ul className="px-1 py-2">
-            <InfoRow icon={<MapPin size={18} />} label={centerText} detail={
-              record
-                ? 'Planetocentric, +East, 0–360 · USGS gazetteer'
-                : `On this map: ${formatLat(hit.latitude, 5)}, ${formatLon180(hit.longitude, 5)}`
-            } />
             {diameter > 0 && (
               <InfoRow icon={<Ruler size={18} />} label={formatKm(diameter)} detail="Feature diameter" />
             )}
             <InfoRow
               icon={<BookOpen size={18} />}
               label={description ?? 'Feature class listed on the USGS Mars target page'}
-              detail={hit.code ? `Descriptor code ${hit.code}` : 'IAU descriptor term'}
+              detail="IAU descriptor term"
             />
           </ul>
-
-          <Section title="On this map" defaultOpen>
-            <Fact
-              label="Label anchor"
-              value={`${formatLat(hit.latitude, 5)}, ${formatLon180(hit.longitude, 5)}`}
-            />
-            <p className="mt-2 text-[12px] leading-snug text-[#777]">
-              East-positive longitude from −180 to 180, matching the coordinate readout. Map label
-              priority {hit.level} of 7 is the Mars Trek display level, separate from the USGS record.
-            </p>
-          </Section>
 
           {record && (
             <Section title="Extent" defaultOpen>
               <Fact
                 label="Latitude"
-                value={`${formatSigned(record.southLatitude, 'S', 'N')} to ${formatSigned(record.northLatitude, 'S', 'N')}`}
+                value={
+                  <>
+                    {formatSigned(record.southLatitude, 'S', 'N')} <strong>to</strong>{' '}
+                    {formatSigned(record.northLatitude, 'S', 'N')}
+                  </>
+                }
               />
               <Fact
                 label="Longitude"
-                value={`${formatDeg(record.westLongitude)} to ${formatDeg(record.eastLongitude)} E`}
+                value={
+                  <>
+                    {formatDeg(record.westLongitude)} <strong>to</strong>{' '}
+                    {formatDeg(record.eastLongitude)} E
+                  </>
+                }
               />
-              <p className="mt-1 text-[12px] text-[#777]">
-                Southernmost to northernmost latitude, and westernmost to easternmost longitude (0–360).
-              </p>
             </Section>
           )}
 
           <Section title="Feature class" defaultOpen>
-            <p className="text-[13.5px] leading-relaxed text-[#333]">
-              {description ?? 'This feature class is listed on the USGS Mars target page.'}
-            </p>
-            {hit.code && (
-              <p className="mt-2 text-[12.5px] text-[#555]">Descriptor code {hit.code}</p>
-            )}
-            <p className="mt-2 text-[12px] leading-relaxed text-[#777]">{DESCRIPTOR_TERMS_NOTE}</p>
             <a
               href={USGS_DESCRIPTOR_TERMS_PAGE}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-[12.5px] text-red-700 hover:underline"
+              className="inline-flex items-center gap-1.5 text-[13.5px] text-red-700 hover:underline"
             >
-              USGS descriptor terms
+              {featureType || 'Named feature'}
               <ExternalLink size={12} />
             </a>
           </Section>
 
-          {record && (record.origin || record.approval || record.quadName) && (
+          {record && (record.origin || record.ethnicity || record.continent) && (
             <Section title="Name origin" defaultOpen>
               {record.origin && (
                 <p className="text-[13.5px] leading-relaxed text-[#333]">
@@ -203,19 +190,6 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
                   label="Name source"
                   value={[record.ethnicity, record.continent].filter(Boolean).join(' · ')}
                 />
-              )}
-              {record.approval && (
-                <Fact
-                  label="Approval"
-                  value={
-                    record.approvalDate
-                      ? `${record.approval} · ${formatApprovalDate(record.approvalDate)}`
-                      : record.approval
-                  }
-                />
-              )}
-              {record.quadName && (
-                <Fact label="Quadrangle" value={formatQuad(record)} />
               )}
             </Section>
           )}
@@ -259,14 +233,6 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
               Astrogeology Science Center.
             </p>
             <a
-              href={USGS_MARS_TARGET_PAGE}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 block text-[12.5px] break-all text-red-700 hover:underline"
-            >
-              {USGS_MARS_TARGET_PAGE}
-            </a>
-            <a
               href={featureUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -276,6 +242,8 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
               <ExternalLink size={14} />
             </a>
           </div>
+          </>
+          )}
         </div>
       </div>
     </section>
@@ -325,25 +293,13 @@ function Section({
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <p className="mt-2 text-[13.5px] text-[#222]">
       <span className="text-[#777]">{label}. </span>
       {value}
     </p>
   );
-}
-
-function formatLat(deg: number, digits = 2): string {
-  return `${Math.abs(deg).toFixed(digits)}° ${deg >= 0 ? 'N' : 'S'}`;
-}
-
-function formatLon180(deg: number, digits = 2): string {
-  return `${Math.abs(deg).toFixed(digits)}° ${deg >= 0 ? 'E' : 'W'}`;
-}
-
-function formatLon360(deg: number, digits = 2): string {
-  return `${deg.toFixed(digits)}° E`;
 }
 
 function formatDeg(deg: number | null): string {
@@ -358,22 +314,4 @@ function formatSigned(deg: number | null, neg: string, pos: string): string {
 
 function formatKm(km: number): string {
   return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(km)} km`;
-}
-
-function formatApprovalDate(raw: string): string {
-  const match = /^(\d{4})[-/](\d{2})[-/](\d{2})/.exec(raw);
-  if (!match) return raw;
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date);
-}
-
-function formatQuad(record: UsgsFeatureRecord): string {
-  const code = record.quadCode.trim();
-  const pretty = /^mc\d+$/i.test(code) ? code.toUpperCase().replace('MC', 'MC-') : code.toUpperCase();
-  return pretty ? `${record.quadName} (${pretty})` : record.quadName;
 }

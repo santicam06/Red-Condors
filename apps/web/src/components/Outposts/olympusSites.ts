@@ -107,3 +107,13 @@ export const KIND_LABEL: Record<OutpostKind, string> = {
 export function findSite(id: string): OlympusSite | undefined {
   return OLYMPUS_SITES.find((site) => site.id === id);
 }
+
+/** True when a point sits in the Olympus Mons crew-site rehearsal area. */
+export function isNearCrewSites(lat: number, lon: number): boolean {
+  const lonEast = ((lon % 360) + 360) % 360;
+  return OLYMPUS_SITES.some((site) => {
+    const dLat = lat - site.lat;
+    const dLon = (lonEast - site.lonEast) * Math.cos((site.lat * Math.PI) / 180);
+    return dLat * dLat + dLon * dLon < 1.5 * 1.5;
+  });
+}
