@@ -7,11 +7,7 @@ from fastapi.responses import FileResponse
 
 from app.core.config import get_settings
 from app.modules.rover_images.schemas import NearestStop, RoverStop
-from app.modules.rover_images.service import (
-    IndexNotBuiltError,
-    RoverImagesService,
-    StopNotFoundError,
-)
+from app.modules.rover_images.service import RoverImagesService, StopNotFoundError
 
 router = APIRouter(prefix="/rover-images", tags=["rover-images"])
 
@@ -20,7 +16,7 @@ router = APIRouter(prefix="/rover-images", tags=["rover-images"])
 def get_service() -> RoverImagesService:
     settings = get_settings()
     return RoverImagesService(
-        data_dir=settings.rover_images_data_dir,
+        cache_dir=settings.rover_images_cache_dir,
         api_prefix=settings.api_prefix,
         panorama_max_px=settings.rover_images_panorama_max_px,
     )
@@ -29,17 +25,10 @@ def get_service() -> RoverImagesService:
 Service = Annotated[RoverImagesService, Depends(get_service)]
 
 
-def _index_unavailable(exc: IndexNotBuiltError) -> HTTPException:
-    return HTTPException(status_code=503, detail=str(exc))
-
-
 @router.get("/stops", response_model=list[RoverStop])
 def list_stops(service: Service) -> list[RoverStop]:
-    """Every rover stop that has a 360° panorama (the droppable Street View dots)."""
-    try:
-        return service.list_stops()
-    except IndexNotBuiltError as exc:
-        raise _index_unavailable(exc) from exc
+    """The curated Street View tour stops, in order, with full provenance."""
+    return service.list_stops()
 
 
 @router.get("/nearest", response_model=NearestStop)
@@ -50,10 +39,7 @@ def nearest_stop(
     max_distance_m: Annotated[float, Query(gt=0)] = 1000,
 ) -> NearestStop:
     """Given a Martian lat/lon (East-positive), return the closest stop with a panorama."""
-    try:
-        result = service.nearest(lat, lon, max_distance_m)
-    except IndexNotBuiltError as exc:
-        raise _index_unavailable(exc) from exc
+    result = service.nearest(lat, lon, max_distance_m)
     if result is None:
         raise HTTPException(status_code=404, detail="No rover panorama within range")
     return result
@@ -61,11 +47,9 @@ def nearest_stop(
 
 @router.get("/stops/{stop_id}/panorama.jpg", response_class=FileResponse)
 def stop_panorama(stop_id: str, service: Service) -> FileResponse:
-    """Browser-sized JPEG of the stop's panorama (downloaded from PDS and cached on first use)."""
+    """Browser-sized JPEG of the stop's NASA panorama (fetched from PDS once, then cached)."""
     try:
         path = service.panorama_file(stop_id)
-    except IndexNotBuiltError as exc:
-        raise _index_unavailable(exc) from exc
     except StopNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Unknown stop") from exc
     except httpx.HTTPError as exc:

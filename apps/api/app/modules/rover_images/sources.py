@@ -1,11 +1,14 @@
-"""Remote data sources for rover Street View (Perseverance / Mars 2020 only, for now).
+"""Official NASA/JPL sources behind the rover Street View (Perseverance, Jezero Crater).
 
-1. MMGIS rover waypoints (where the rover stopped, with lat/lon and site/drive)
-   https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json
-2. PDS Imaging Node — Mars 2020 Navcam cylindrical (360°) mosaics
-   https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/
+Positions:  MMGIS rover waypoints (NASA/JPL-Caltech)
+            https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json
+Panoramas:  PDS Imaging Node, bundle `mars2020_navcam_ops_mosaic`, color cylindrical
+            Navcam mosaics (N_LRGB_*_CYL_*), public NASA planetary data
+            https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/
+Milestones: MMGIS layers M20_SAMPLE_v3, M20_surfaceexperience, m20_heli_waypoints,
+            M20_TF_Sample_Depot (same host as the waypoints)
 
-Credit: NASA/JPL-Caltech.
+Credit line required by the JPL Image Use Policy: "Courtesy NASA/JPL-Caltech".
 """
 
 import re
@@ -13,62 +16,25 @@ from dataclasses import dataclass
 
 M20_WAYPOINTS_URL = "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
 PDS_MOSAIC_ROOT = "https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic"
-PDS_BROWSE_SOL_ROOT = f"{PDS_MOSAIC_ROOT}/browse/sol"
-PDS_DATA_SOL_ROOT = f"{PDS_MOSAIC_ROOT}/data/sol"
 
-CREDIT = "NASA/JPL-Caltech"
-
-# e.g. N_LRGB_0012XRZS_0030000_CYL_L_AUTOGENJ03.png
-#        sol=0012, site=003, drive=0000, product tail=L_AUTOGENJ03
-_CYL_MOSAIC_RE = re.compile(
-    r"^N_LRGB_(?P<sol>\d{4})\w{4}_(?P<site>\d{3})(?P<drive>\d{4})_CYL_(?P<tail>\w+)\.png$"
-)
-_HREF_RE = re.compile(r'href="([^"?#/]+/?)"')
+# e.g. N_LRGB_0012XRZS_0030000_CYL_L_AUTOGENJ03
+#        sol=0012, site=003, drive=0000
+_CYL_MOSAIC_RE = re.compile(r"^N_LRGB_(?P<sol>\d{4})\w{4}_(?P<site>\d{3})(?P<drive>\d{4})_CYL_\w+$")
 
 
 @dataclass(frozen=True)
-class CylMosaic:
-    filename: str
+class MosaicId:
     sol: int
     site: int
     drive: int
-    tail: str
-
-    @property
-    def stem(self) -> str:
-        return self.filename.removesuffix(".png")
-
-    @property
-    def browse_url(self) -> str:
-        return f"{PDS_BROWSE_SOL_ROOT}/{self.sol:05d}/ids/rdr/mosaic/{self.filename}"
-
-    @property
-    def label_url(self) -> str:
-        return f"{PDS_DATA_SOL_ROOT}/{self.sol:05d}/ids/rdr/mosaic/{self.stem}.xml"
-
-    @property
-    def preference(self) -> tuple[int, str]:
-        """Higher is better: auto-generated full mosaics first, then latest version."""
-        return (1 if "AUTOGEN" in self.tail else 0, self.tail)
 
 
-def parse_cyl_mosaic(filename: str) -> CylMosaic | None:
-    """Parse a PDS color Navcam cylindrical mosaic filename, or return None."""
-    match = _CYL_MOSAIC_RE.match(filename)
+def parse_mosaic_id(product_id: str) -> MosaicId | None:
+    """Parse a PDS color Navcam cylindrical mosaic product ID (no extension)."""
+    match = _CYL_MOSAIC_RE.match(product_id)
     if not match:
         return None
-    return CylMosaic(
-        filename=filename,
-        sol=int(match["sol"]),
-        site=int(match["site"]),
-        drive=int(match["drive"]),
-        tail=match["tail"],
-    )
-
-
-def parse_directory_listing(html: str) -> list[str]:
-    """Extract entry names (files and `dir/`) from a PDS Apache-style directory listing."""
-    return sorted(set(_HREF_RE.findall(html)))
+    return MosaicId(sol=int(match["sol"]), site=int(match["site"]), drive=int(match["drive"]))
 
 
 _LABEL_FIELDS = {

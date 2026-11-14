@@ -77,7 +77,7 @@ export function PegmanControl({ controller }: PegmanControlProps) {
       if (nearest) {
         useStreetViewStore.getState().open(nearest.stop);
       } else {
-        setHint('Drag me onto a glowing dot in Jezero Crater');
+        setHint('Drag me onto a numbered stop in Jezero Crater');
       }
     } catch {
       setHint('Street View is unavailable right now');
@@ -123,7 +123,7 @@ export function PegmanControl({ controller }: PegmanControlProps) {
     ? stopsStatus === 'loading'
       ? 'Loading rover 360° views…'
       : `Street View unavailable: ${stopsError ?? 'API not reachable'}`
-    : 'Drag onto a glowing dot to see the rover’s 360° view';
+    : 'Drag onto a numbered stop to see the rover’s 360° view';
 
   return (
     <div className="pointer-events-auto relative flex flex-col items-center gap-1">

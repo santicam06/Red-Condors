@@ -24,6 +24,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["app*"]
 
+[tool.setuptools.package-data]
+app = ["modules/rover_images/showcase_stops.json"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

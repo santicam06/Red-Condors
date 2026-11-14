@@ -13,8 +13,10 @@ class Settings(BaseSettings):
     env: str = "development"
     api_prefix: str = "/api"
 
-    # Rover Street View: generated index + cached panoramas (gitignored).
-    rover_images_data_dir: Path = Path(__file__).resolve().parents[2] / "data" / "rover_images"
+    # Rover Street View: resized NASA panoramas cached on first use (gitignored).
+    rover_images_cache_dir: Path = (
+        Path(__file__).resolve().parents[2] / "data" / "rover_images" / "panoramas"
+    )
     rover_images_panorama_max_px: int = 8192
 
 

@@ -17,16 +17,13 @@ const CLUSTER_VIEW_ALTITUDE_M = 25_000;
 /** Altitude of the map camera after opening a stop (so closing returns there). */
 const STOP_VIEW_ALTITUDE_M = 4_000;
 
-const FULL_COLOR = Cesium.Color.fromCssColorString('#FACC15'); // 360° coverage
-const PARTIAL_COLOR = Cesium.Color.fromCssColorString('#FB923C'); // partial coverage
+const STOP_COLOR = Cesium.Color.fromCssColorString('#FACC15');
 const HOVER_COLOR = Cesium.Color.fromCssColorString('#22D3EE');
 const OUTLINE = Cesium.Color.fromCssColorString('#7F1D1D');
-
-const isFullPanorama = (stop: RoverStop) =>
-  stop.panorama.az_max - stop.panorama.az_min >= 350;
+const HOVER_SCALE = 1.4;
 
 /**
- * Renders rover stops with 360° panoramas as dots, and turns the HUD's dragged
+ * Renders the curated rover tour stops as numbered dots, and turns the HUD's dragged
  * astronaut/rover into map actions: highlight the nearest dot while dragging,
  * open its panorama on drop, or zoom into the rover area when dropped from far away.
  */
@@ -98,14 +95,20 @@ export class RoverStopsManager {
       this.positions.set(stop.id, position);
       const entity = this.channel.entities.add({
         id: `streetview:${stop.id}`,
-        name: `Sol ${stop.sol} panorama`,
+        name: `${stop.order}. ${stop.title}`,
         position,
         show: this.visible,
-        point: {
-          pixelSize: isFullPanorama(stop) ? 9 : 7,
-          color: isFullPanorama(stop) ? FULL_COLOR : PARTIAL_COLOR,
-          outlineColor: OUTLINE,
-          outlineWidth: 1.5,
+        // Numbered badge: a label with a filled background (points would hide the text).
+        label: {
+          text: ` ${stop.order} `,
+          font: '700 12px "JetBrains Mono", monospace',
+          fillColor: OUTLINE,
+          style: Cesium.LabelStyle.FILL,
+          showBackground: true,
+          backgroundColor: STOP_COLOR,
+          backgroundPadding: new Cesium.Cartesian2(4, 3),
+          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          verticalOrigin: Cesium.VerticalOrigin.CENTER,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
       });
@@ -120,7 +123,7 @@ export class RoverStopsManager {
       position: Cesium.Cartesian3.fromDegrees(lon, lat, 10, MARS_ELLIPSOID),
       show: false,
       label: {
-        text: 'Rover 360° views — drop here',
+        text: 'Perseverance 360° tour — drop here',
         font: '500 13px "JetBrains Mono", monospace',
         fillColor: Cesium.Color.WHITE,
         outlineColor: OUTLINE,
@@ -236,21 +239,16 @@ export class RoverStopsManager {
 
   private highlight(stopId: string | null): void {
     if (this.highlightedId === stopId) return;
-    const stops = useStreetViewStore.getState().stops;
-
     const restore = this.highlightedId ? this.entities.get(this.highlightedId) : undefined;
-    const restoreStop = stops.find((s) => s.id === this.highlightedId);
-    if (restore?.point && restoreStop) {
-      restore.point.color = new Cesium.ConstantProperty(
-        isFullPanorama(restoreStop) ? FULL_COLOR : PARTIAL_COLOR
-      );
-      restore.point.pixelSize = new Cesium.ConstantProperty(isFullPanorama(restoreStop) ? 9 : 7);
+    if (restore?.label) {
+      restore.label.backgroundColor = new Cesium.ConstantProperty(STOP_COLOR);
+      restore.label.scale = new Cesium.ConstantProperty(1);
     }
 
     const target = stopId ? this.entities.get(stopId) : undefined;
-    if (target?.point) {
-      target.point.color = new Cesium.ConstantProperty(HOVER_COLOR);
-      target.point.pixelSize = new Cesium.ConstantProperty(15);
+    if (target?.label) {
+      target.label.backgroundColor = new Cesium.ConstantProperty(HOVER_COLOR);
+      target.label.scale = new Cesium.ConstantProperty(HOVER_SCALE);
     }
     this.highlightedId = stopId;
     this.viewer.scene.requestRender();
