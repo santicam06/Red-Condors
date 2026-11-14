@@ -1,4 +1,4 @@
-import { ArrowUpDown, MapPin, Navigation, X } from 'lucide-react';
+import { ArrowUpDown, MapPin, X } from 'lucide-react';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
 import type { RouteTab, TravelMode } from '../types';
 import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
@@ -52,29 +52,13 @@ export function RouteLateralBar() {
     distanceKm !== null ? `${distanceKm.toFixed(1)} km` : '-- km';
 
   return (
-    <>
-      {/* Reopen button in top-left corner when lateral bar is closed */}
-      {!isOpen && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          title="Open displacement route planner"
-          aria-label="Open displacement route planner"
-          className="font-jetbrains pointer-events-auto fixed top-3 left-3 sm:top-4 sm:left-4 z-20 flex cursor-pointer items-center gap-2 border border-red-700 bg-white px-3 py-2 text-[12.5px] font-medium text-red-700 shadow-md transition-colors hover:bg-red-700 hover:text-white active:bg-red-900"
-        >
-          <Navigation className="h-4 w-4" strokeWidth={2.1} />
-          <span>Route Planner</span>
-        </button>
-      )}
-
-      {/* Google Maps–style left lateral bar */}
-      <aside
-        aria-label="Martian traversal route planner"
-        aria-hidden={!isOpen}
-        className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[384px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
-        }`}
-      >
+    <aside
+      aria-label="Martian traversal route planner"
+      aria-hidden={!isOpen}
+      className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[384px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
+      }`}
+    >
         {/* Top section: Travel modes (Marswalk & Rover) + ETA below each icon + Close button */}
         <div className="px-4 pt-3.5 pb-4">
           <div className="relative flex items-start justify-center">
@@ -230,7 +214,6 @@ export function RouteLateralBar() {
           aria-labelledby={`route-tab-${activeTab}`}
           className="flex-1 overflow-y-auto bg-white"
         />
-      </aside>
-    </>
+    </aside>
   );
 }

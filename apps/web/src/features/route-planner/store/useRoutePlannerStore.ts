@@ -30,11 +30,12 @@ interface RoutePlannerState {
   swapLocations: () => void;
   setActiveInputSlot: (slot: ActiveInputSlot) => void;
   setActiveTab: (tab: RouteTab) => void;
+  openIndicationsForLocation: (location: RouteLocation) => void;
   selectLocationFromMap: (location: RouteLocation) => void;
 }
 
 export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
-  isOpen: true,
+  isOpen: false,
   travelMode: 'marswalk',
   source: null,
   destination: null,
@@ -67,14 +68,26 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   setActiveInputSlot: (activeInputSlot) => set({ activeInputSlot }),
   setActiveTab: (activeTab) => set({ activeTab }),
 
+  openIndicationsForLocation: (location) =>
+    set((state) => ({
+      isOpen: true,
+      destination: location,
+      source: state.source?.id === location.id ? null : state.source,
+      activeInputSlot: 'source',
+    })),
+
   /**
-   * Emulates Google Maps click-to-fill behavior:
-   * - Opens the lateral bar if closed.
+   * Emulates Google Maps click-to-fill behavior while the Route Planner is open:
+   * - Does nothing if the Route Planner is closed (opened exclusively via "Indications").
    * - Populates whichever box is currently active/focused; if Source was just
    *   filled and Destination is still empty, advances focus to Destination.
    */
   selectLocationFromMap: (location) =>
     set((state) => {
+      if (!state.isOpen) {
+        return state;
+      }
+
       let targetSlot: ActiveInputSlot = state.activeInputSlot;
       if (state.source === null && state.destination === null) {
         targetSlot = 'source';
@@ -87,14 +100,12 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
 
       if (targetSlot === 'source') {
         return {
-          isOpen: true,
           source: location,
           activeInputSlot: state.destination === null ? 'destination' : 'source',
         };
       }
 
       return {
-        isOpen: true,
         destination: location,
         activeInputSlot: 'destination',
       };
