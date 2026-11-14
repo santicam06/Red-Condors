@@ -4,10 +4,11 @@
 This repository contains **Red Condors'** project for the **NASA Space Apps Hackathon in Toronto (November 14–15)**, tackling the challenge **"Interplanetary Survival Guide: Martian Map"** (see `docs/challenge.md`).
 
 > **Current Stage — Structural Baseline:**
-> The repository uses a monorepo with a **React + Vite + TypeScript** frontend in
-> `apps/web` and a reserved **Python modular monolith** boundary in `apps/api`.
-> The exact target region, backend runtime implementation, database, and specific
-> scientific mission scenarios remain TBD.
+> The repository is a monorepo with exactly **one frontend** (React + Vite + TypeScript +
+> CesiumJS in `apps/web`) and exactly **one backend** (**FastAPI** modular monolith in
+> `apps/api`). The frontend reaches the backend through relative `/api/*` URLs (proxied by
+> Vite in development). The target region, database, and specific scientific mission
+> scenarios remain TBD.
 
 ## Vision
 We are building a **"Google Earth for Mars"** style interactive mission-planning and rehearsal application that bridges global/regional planetary maps with hyperlocalized astronaut surface operations (Marswalks / EVAs and rover traverses).
@@ -42,10 +43,12 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
    - Every mission objective must be grounded in **real Martian scientific research** (e.g., geological sampling, mineral/spectral investigation, subsurface water-ice search, or astrobiology).
 
 ## Repository Structure (Current)
+- `README.md` — Team-facing overview and how to run the app.
 - `AGENTS.md` — Project context and guidelines for AI coding agents.
+- `scripts/dev.sh` — Single entry point to set up, run, and check the whole app.
 - `apps/web/` — React, TypeScript, Vite, and CesiumJS frontend.
 - `apps/web/src/features/` — Isolated frontend product capabilities.
-- `apps/api/` — Python modular-monolith boundary, organized by domain module.
+- `apps/api/` — FastAPI modular monolith (Python ≥ 3.12), organized by domain module under `app/modules/`.
 - `docs/architecture.md` — Current repository boundaries and dependency direction.
 - `docs/challenge.md` — Official NASA Space Apps challenge brief (*Interplanetary Survival Guide: Martian Map*).
 - `docs/source_attributions.md` — Central log for citing all datasets, APIs, imagery, and open-source libraries used.
@@ -57,7 +60,10 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
   - **Never** use official NASA logos (Meatball, Worm, Seal) or the JPL logo in the app UI or assets.
   - **Never** imply official endorsement by NASA, JPL, or Caltech.
 - **Open-Source Dependencies Only:** Any third-party libraries, map engines, or datasets must use **OSI-approved open-source licenses** or be unrestricted public-domain/open data. Avoid locking core features behind proprietary SaaS tokens.
-- **Protect Architecture Decisions:** Confirm backend framework, database, target
-  region, and other cross-cutting choices before implementation. Keep backend
-  product behavior inside `apps/api/app/modules/<domain>` rather than creating
-  separate deployable services.
+- **Protect Architecture Decisions:** The backend framework is **FastAPI** (decided).
+  Confirm the database, target region, and other cross-cutting choices before
+  implementation. Keep backend product behavior inside `apps/api/app/modules/<domain>`
+  rather than creating separate deployable services, and never add a second frontend or
+  backend app.
+- **Verify Before Committing:** Run `./scripts/dev.sh check` (web lint + build, Ruff,
+  pytest — the same checks CI runs) before committing.

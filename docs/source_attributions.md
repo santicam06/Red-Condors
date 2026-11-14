@@ -55,5 +55,12 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **Tailwind CSS (`tailwindcss`, `@tailwindcss/vite`)** | MIT | `https://github.com/tailwindlabs/tailwindcss` | Utility-first styling for HUD controls. |
 | **Lucide (`lucide-react`)** | ISC | `https://github.com/lucide-icons/lucide` | Open-source vector icons for zoom (`+`/`-`) and 3D/2D map view controls. |
 | **ESLint ecosystem (`eslint`, `typescript-eslint`, React Hooks/Refresh plugins)** | MIT | `https://github.com/eslint/eslint`, `https://github.com/typescript-eslint/typescript-eslint`, `https://github.com/facebook/react` | Automated frontend lint checks locally and in GitHub Actions. |
-| **GitHub-maintained Actions (`actions/checkout`, `actions/setup-node`)** | MIT | `https://github.com/actions/checkout`, `https://github.com/actions/setup-node` | Reproducible dependency installation and lint execution in pull requests and branch pushes. |
+| **GitHub-maintained Actions (`actions/checkout`, `actions/setup-node`, `actions/setup-python`)** | MIT | `https://github.com/actions/checkout`, `https://github.com/actions/setup-node`, `https://github.com/actions/setup-python` | Reproducible dependency installation, lint, and test execution in pull requests and branch pushes. |
+| **FastAPI (`fastapi`)** | MIT | `https://github.com/fastapi/fastapi` | Backend web framework for the `apps/api` modular monolith (routing, validation, OpenAPI docs). |
+| **Starlette (`starlette`, FastAPI dependency)** | BSD-3-Clause | `https://github.com/encode/starlette` | ASGI toolkit underlying FastAPI, including the test client. |
+| **Uvicorn (`uvicorn[standard]`)** | BSD-3-Clause | `https://github.com/encode/uvicorn` | ASGI server that runs the API locally (with auto-reload) and in deployment. |
+| **Pydantic (`pydantic`) & pydantic-settings** | MIT | `https://github.com/pydantic/pydantic`, `https://github.com/pydantic/pydantic-settings` | Request/response schemas and `RC_*` environment-based configuration. |
+| **pytest (`pytest`)** | MIT | `https://github.com/pytest-dev/pytest` | Backend unit and integration tests. |
+| **HTTPX (`httpx`)** | BSD-3-Clause | `https://github.com/encode/httpx` | HTTP client used by FastAPI's `TestClient` in backend tests. |
+| **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
