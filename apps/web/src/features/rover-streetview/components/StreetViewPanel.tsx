@@ -14,6 +14,30 @@ function initialAzimuth(stop: RoverStop): number {
   return az_max - az_min >= 350 ? 0 : (az_min + az_max) / 2;
 }
 
+function createViewer(
+  container: HTMLDivElement,
+  stop: RoverStop,
+  handlers: { onLoaded: () => void; onError: () => void; onAzimuth: (deg: number) => void }
+): Viewer {
+  const viewer = new Viewer({
+    container,
+    panorama: stop.panorama.url,
+    panoData: (image) => buildPanoData(stop.panorama, image),
+    defaultYaw: azimuthToYawRad(initialAzimuth(stop)),
+    defaultPitch: 0,
+    defaultZoomLvl: 30,
+    loadingTxt: '',
+    navbar: ['zoom', 'move', 'fullscreen'],
+    mousewheelCtrlKey: false,
+  });
+  viewer.addEventListener('panorama-loaded', handlers.onLoaded);
+  viewer.addEventListener('panorama-error', handlers.onError);
+  viewer.addEventListener('position-updated', ({ position }) =>
+    handlers.onAzimuth(yawToAzimuthDeg(position.yaw))
+  );
+  return viewer;
+}
+
 /** Full-screen ground-level 360° view of the active rover stop. */
 export function StreetViewPanel() {
   const stop = useStreetViewStore((s) => s.activeStop);
@@ -41,25 +65,22 @@ function StreetViewScene({ stop, onClose }: { stop: RoverStop; onClose: () => vo
     const container = containerRef.current;
     if (!container) return;
 
-    const viewer = new Viewer({
-      container,
-      panorama: stop.panorama.url,
-      panoData: (image) => buildPanoData(stop.panorama, image),
-      defaultYaw: azimuthToYawRad(initialAzimuth(stop)),
-      defaultPitch: 0,
-      defaultZoomLvl: 30,
-      loadingTxt: '',
-      navbar: ['zoom', 'move', 'fullscreen'],
-      mousewheelCtrlKey: false,
-    });
-
-    viewer.addEventListener('panorama-loaded', () => setLoadState('ready'));
-    viewer.addEventListener('panorama-error', () => setLoadState('error'));
-    viewer.addEventListener('position-updated', ({ position }) =>
-      setAzimuth(yawToAzimuthDeg(position.yaw))
-    );
-
-    return () => viewer.destroy();
+    // Create the viewer one tick later. React StrictMode mounts, unmounts and remounts
+    // synchronously; three.js shares in-flight downloads between loaders of the same URL,
+    // so destroying a throwaway viewer would abort the real viewer's download and leave
+    // it stuck on "loading" forever (PSV swallows abort errors silently).
+    let viewer: Viewer | null = null;
+    const timer = window.setTimeout(() => {
+      viewer = createViewer(container, stop, {
+        onLoaded: () => setLoadState('ready'),
+        onError: () => setLoadState('error'),
+        onAzimuth: setAzimuth,
+      });
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      viewer?.destroy();
+    };
   }, [stop]);
 
   const heading = Math.round(azimuth) % 360;
