@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { fetchNearestStop } from '../api/roverImagesApi';
+import { prewarmPanoramaViewer } from '../lib/panoramaViewer';
 import { useStreetViewStore } from '../store/useStreetViewStore';
 import type { StreetViewAvatar } from '../types/roverStop';
 import { AstronautIcon } from './avatars/AstronautIcon';
@@ -84,7 +85,12 @@ export function PegmanControl({ controller }: PegmanControlProps) {
     }
   };
 
+  // Showing intent (hover/focus on the avatar) warms up the 360° viewer in the
+  // background, so the first panorama opens without the WebGL start-up freeze.
+  const prewarm = () => prewarmPanoramaViewer(useStreetViewStore.getState().stops[0]);
+
   const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    prewarm();
     if (disabled || event.button !== 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     pressStart.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
@@ -138,6 +144,8 @@ export function PegmanControl({ controller }: PegmanControlProps) {
         title={title}
         aria-label={title}
         disabled={disabled}
+        onPointerEnter={prewarm}
+        onFocus={prewarm}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

@@ -1,5 +1,3 @@
-import '@photo-sphere-viewer/core/index.css';
-import { Viewer } from '@photo-sphere-viewer/core';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -9,42 +7,13 @@ import {
   FlaskConical,
   MapPin,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { azimuthToYawRad, buildPanoData, compassLabel, yawToAzimuthDeg } from '../lib/panoData';
+import { type ReactNode, useEffect, useState } from 'react';
+import { compassLabel } from '../lib/panoData';
+import { hidePanorama, preloadPanoramas, showPanorama } from '../lib/panoramaViewer';
 import { useStreetViewStore } from '../store/useStreetViewStore';
 import type { RoverStop } from '../types/roverStop';
 
 type LoadState = 'loading' | 'ready' | 'error';
-
-function initialAzimuth(stop: RoverStop): number {
-  const { az_min, az_max } = stop.panorama;
-  // Full panoramas start facing north; partial ones start at the middle of their coverage.
-  return az_max - az_min >= 350 ? 0 : (az_min + az_max) / 2;
-}
-
-function createViewer(
-  container: HTMLDivElement,
-  stop: RoverStop,
-  handlers: { onLoaded: () => void; onError: () => void; onAzimuth: (deg: number) => void }
-): Viewer {
-  const viewer = new Viewer({
-    container,
-    panorama: stop.panorama.url,
-    panoData: (image) => buildPanoData(stop.panorama, image),
-    defaultYaw: azimuthToYawRad(initialAzimuth(stop)),
-    defaultPitch: 0,
-    defaultZoomLvl: 30,
-    loadingTxt: '',
-    navbar: ['zoom', 'move', 'fullscreen'],
-    mousewheelCtrlKey: false,
-  });
-  viewer.addEventListener('panorama-loaded', handlers.onLoaded);
-  viewer.addEventListener('panorama-error', handlers.onError);
-  viewer.addEventListener('position-updated', ({ position }) =>
-    handlers.onAzimuth(yawToAzimuthDeg(position.yaw))
-  );
-  return viewer;
-}
 
 /** Full-screen ground-level 360° view of the active rover stop. */
 export function StreetViewPanel() {
@@ -60,6 +29,12 @@ export function StreetViewPanel() {
     return () => window.removeEventListener('keydown', onKey);
   }, [stop, close]);
 
+  // Hide (never destroy) the shared viewer when the panel closes.
+  const isOpen = stop !== null;
+  useEffect(() => {
+    if (!isOpen) hidePanorama();
+  }, [isOpen]);
+
   if (!stop) return null;
   return <StreetViewScene key={stop.id} stop={stop} onClose={close} />;
 }
@@ -70,7 +45,7 @@ function SourceLink({ href, children }: { href: string; children: ReactNode }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-0.5 text-red-700 hover:underline"
+      className="pointer-events-auto inline-flex items-center gap-0.5 text-red-700 hover:underline"
     >
       {children}
       <ExternalLink className="h-2.5 w-2.5" />
@@ -83,31 +58,26 @@ function StreetViewScene({ stop, onClose }: { stop: RoverStop; onClose: () => vo
   const open = useStreetViewStore((s) => s.open);
   const previous = stops.find((s) => s.order === stop.order - 1);
   const next = stops.find((s) => s.order === stop.order + 1);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('loading');
-  const [azimuth, setAzimuth] = useState(() => initialAzimuth(stop));
+  const [azimuth, setAzimuth] = useState(0);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // Create the viewer one tick later. React StrictMode mounts, unmounts and remounts
-    // synchronously; three.js shares in-flight downloads between loaders of the same URL,
-    // so destroying a throwaway viewer would abort the real viewer's download and leave
-    // it stuck on "loading" forever (PSV swallows abort errors silently).
-    let viewer: Viewer | null = null;
-    const timer = window.setTimeout(() => {
-      viewer = createViewer(container, stop, {
-        onLoaded: () => setLoadState('ready'),
-        onError: () => setLoadState('error'),
-        onAzimuth: setAzimuth,
+    let cancelled = false;
+    showPanorama(stop, (deg) => {
+      if (!cancelled) setAzimuth(deg);
+    })
+      .then(() => {
+        if (!cancelled) setLoadState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setLoadState('error');
       });
-    }, 0);
+    // Warm the browser cache so Next / Previous open instantly.
+    preloadPanoramas([next, previous]);
     return () => {
-      window.clearTimeout(timer);
-      viewer?.destroy();
+      cancelled = true;
     };
-  }, [stop]);
+  }, [stop, next, previous]);
 
   const heading = Math.round(azimuth) % 360;
   const pano = stop.panorama;
@@ -115,10 +85,8 @@ function StreetViewScene({ stop, onClose }: { stop: RoverStop; onClose: () => vo
   return (
     <section
       aria-label={`360° view: ${stop.title}`}
-      className="font-jetbrains fixed inset-0 z-30 bg-black"
+      className="font-jetbrains pointer-events-none fixed inset-0 z-[31]"
     >
-      <div ref={containerRef} className="absolute inset-0" />
-
       {loadState !== 'ready' && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="max-w-sm border-2 border-red-700 bg-white px-5 py-4 text-center text-black shadow-2xl">
@@ -140,7 +108,7 @@ function StreetViewScene({ stop, onClose }: { stop: RoverStop; onClose: () => vo
         </div>
       )}
 
-      <aside className="absolute left-3 top-3 z-10 max-h-[calc(100vh-5rem)] w-[min(360px,calc(100vw-1.5rem))] overflow-y-auto border-2 border-red-700 bg-white text-black shadow-2xl sm:left-4 sm:top-4">
+      <aside className="pointer-events-auto absolute left-3 top-3 z-10 max-h-[calc(100vh-5rem)] w-[min(360px,calc(100vw-1.5rem))] overflow-y-auto border-2 border-red-700 bg-white text-black shadow-2xl sm:left-4 sm:top-4">
         <header className="flex items-start gap-3 px-3.5 py-3">
           <button
             type="button"

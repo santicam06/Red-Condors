@@ -37,6 +37,7 @@ export class RoverStopsManager {
   private clusterLabel: Cesium.Entity | null = null;
   private highlightedId: string | null = null;
   private lastDropSeq = 0;
+  private pausedRenderLoop: boolean | null = null;
   private visible = false;
 
   constructor(private readonly controller: MarsViewerController) {
@@ -57,8 +58,9 @@ export class RoverStopsManager {
         if (state.hoveredStopId !== prev.hoveredStopId) {
           this.highlight(state.hoveredStopId);
         }
-        if (state.activeStop !== prev.activeStop && state.activeStop) {
-          this.flyToStop(state.activeStop);
+        if (state.activeStop !== prev.activeStop) {
+          if (state.activeStop) this.flyToStop(state.activeStop);
+          this.setMapRenderingPaused(state.activeStop !== null);
         }
         this.updateVisibility();
       })
@@ -266,7 +268,25 @@ export class RoverStopsManager {
     });
   }
 
+  /**
+   * The full-screen panorama completely covers the map, so stop Cesium's render loop
+   * while it is open: otherwise both WebGL scenes compete for the GPU every frame and
+   * dragging the panorama feels laggy. The previous setting is restored on close.
+   */
+  private setMapRenderingPaused(paused: boolean): void {
+    if (this.viewer.isDestroyed()) return;
+    if (paused && this.pausedRenderLoop === null) {
+      this.pausedRenderLoop = this.viewer.useDefaultRenderLoop;
+      this.viewer.useDefaultRenderLoop = false;
+    } else if (!paused && this.pausedRenderLoop !== null) {
+      this.viewer.useDefaultRenderLoop = this.pausedRenderLoop;
+      this.pausedRenderLoop = null;
+      this.viewer.scene.requestRender();
+    }
+  }
+
   public destroy(): void {
+    this.setMapRenderingPaused(false);
     for (const unsubscribe of this.unsubscribers) unsubscribe();
     if (!this.clickHandler.isDestroyed()) this.clickHandler.destroy();
     this.channel.entities.removeAll();
