@@ -4,6 +4,8 @@ import { MarsViewport } from './components/MarsViewport';
 import type { MarsViewerController } from './core/MarsViewerController';
 import { PerseverancePointPanel } from './features/perseverance/components/PerseverancePointPanel';
 import { PerseverancePointLayer } from './features/perseverance/map/PerseverancePointLayer';
+import { StreetViewPanel } from './features/rover-streetview/components/StreetViewPanel';
+import { RoverStopsLayer } from './features/rover-streetview/map/RoverStopsLayer';
 
 export function App() {
   const [controller, setController] = useState<MarsViewerController | null>(null);
@@ -61,6 +63,7 @@ export function App() {
         controller={controller}
         onHoverChange={handlePerseveranceHover}
       />
+      <RoverStopsLayer controller={controller} />
       <MapHUD controller={controller} />
       {perseverancePointOpen && (
         <PerseverancePointPanel
@@ -69,6 +72,7 @@ export function App() {
           onPointerLeave={scheduleHoverClose}
         />
       )}
+      <StreetViewPanel />
     </main>
   );
 }

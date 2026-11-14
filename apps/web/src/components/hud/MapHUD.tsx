@@ -1,4 +1,5 @@
 import type { MarsViewerController } from '../../core/MarsViewerController';
+import { PegmanControl } from '../../features/rover-streetview/components/PegmanControl';
 import { AttributionCredit } from './AttributionCredit';
 import { CoordinateReadout } from './CoordinateReadout';
 import { NomenclatureToggle } from './NomenclatureToggle';
@@ -26,6 +27,7 @@ export function MapHUD({ controller }: MapHUDProps) {
         <AttributionCredit />
 
         <div className="flex flex-col items-end gap-2.5">
+          <PegmanControl controller={controller} />
           <NomenclatureToggle />
 
           <div className="flex items-end gap-2">

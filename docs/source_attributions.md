@@ -46,6 +46,21 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **License:** CC BY 4.0 for the compiled Hugging Face dataset; upstream NASA products remain subject to NASA/PDS usage guidance
 - **Usage in Project:** Dataset-level metadata and documented summary statistics are displayed at a representative Perseverance point in Jezero Crater. The point is explicitly labeled approximate and the values are historical dataset statistics, not live conditions.
 
+### 1.6 Mars 2020 Perseverance Rover Waypoints (MMGIS "Where is the rover?" map)
+- **Endpoint:** `https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json`
+- **Mission:** NASA Mars 2020 Perseverance rover
+- **Provider / Credit:** Courtesy NASA/JPL-Caltech
+- **License / Terms:** NASA open data / NASA Media Usage Guidelines
+- **Usage in Project:** Rover stop positions (lat/lon, sol, site/drive) used to place the Street View dots. Joined to the Navcam mosaics below by `apps/api/app/modules/rover_images/index_builder.py`; the generated index is not committed.
+
+### 1.7 Mars 2020 Navcam Cylindrical Mosaics (PDS Imaging Node)
+- **Bundle:** `mars2020_navcam_ops_mosaic` (`https://planetarydata.jpl.nasa.gov/img/data/mars2020/mars2020_navcam_ops_mosaic/`)
+- **Products Used:** Color cylindrical (`N_LRGB_*_CYL_*`) browse mosaics and their PDS4 XML labels (azimuth/elevation coverage)
+- **Mission / Instrument:** NASA Mars 2020 Perseverance — Navigation Cameras (Navcam)
+- **Provider / Credit:** Courtesy NASA/JPL-Caltech (shown in the Street View panel)
+- **License / Terms:** Public Domain (NASA Planetary Data System) / NASA Media Usage Guidelines
+- **Usage in Project:** 360° ground-level panoramas for the Rover Street View. The API downloads each mosaic on first use, resizes it to a browser-friendly JPEG, and caches it locally (`apps/api/data/`, gitignored).
+
 ---
 
 ## 2. Open-Source Libraries & Tooling
@@ -69,7 +84,10 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **Uvicorn (`uvicorn[standard]`)** | BSD-3-Clause | `https://github.com/encode/uvicorn` | ASGI server that runs the API locally (with auto-reload) and in deployment. |
 | **Pydantic (`pydantic`) & pydantic-settings** | MIT | `https://github.com/pydantic/pydantic`, `https://github.com/pydantic/pydantic-settings` | Request/response schemas and `RC_*` environment-based configuration. |
 | **pytest (`pytest`)** | MIT | `https://github.com/pytest-dev/pytest` | Backend unit and integration tests. |
-| **HTTPX (`httpx`)** | BSD-3-Clause | `https://github.com/encode/httpx` | HTTP client used by FastAPI's `TestClient` in backend tests. |
+| **HTTPX (`httpx`)** | BSD-3-Clause | `https://github.com/encode/httpx` | HTTP client used by FastAPI's `TestClient` in backend tests and by the rover Street View module to download NASA waypoints and PDS mosaics. |
 | **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
 | **JetBrains Mono** | SIL Open Font License 1.1 | `https://github.com/JetBrains/JetBrainsMono` | Monospaced typography for the Perseverance weather point marker and information panel. |
+| **Pillow (`pillow`)** | MIT-CMU (HPND) | `https://github.com/python-pillow/Pillow` | Resizes ~60 MB PDS Navcam mosaics into cached, browser-sized JPEG panoramas. |
+| **Photo Sphere Viewer (`@photo-sphere-viewer/core`)** | MIT | `https://github.com/mistic100/Photo-Sphere-Viewer` | Interactive 360° panorama viewer for the Rover Street View (partial/cropped equirectangular panoramas). |
+| **three.js (`three`, Photo Sphere Viewer dependency)** | MIT | `https://github.com/mrdoob/three.js` | WebGL rendering underlying Photo Sphere Viewer. |
