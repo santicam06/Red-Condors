@@ -4,7 +4,7 @@ export type ActiveInputSlot = 'source' | 'destination';
 
 export type RouteTab = 'mission' | 'considerations';
 
-export type RouteLocationCategory = 'outpost' | 'nomenclature';
+export type RouteLocationCategory = 'outpost' | 'nomenclature' | 'pin';
 
 export interface RouteLocation {
   id: string;

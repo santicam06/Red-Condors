@@ -8,6 +8,7 @@ import type { MarsViewMode } from '../store/useMapStore';
 import { createVikingBasemapProvider } from './layers/createVikingBasemap';
 import {
   NomenclatureManager,
+  type NomenclatureLabelHit,
   type PickedMapFeature,
 } from './layers/NomenclatureManager';
 import {
@@ -19,6 +20,7 @@ import {
 export type { PickedMapFeature };
 export type CursorCoordinateListener = (coords: MarsLatLon | null) => void;
 export type FeatureClickListener = (feature: PickedMapFeature) => void;
+export type SurfaceClickListener = (coords: MarsLatLon) => void;
 
 const CLICK_MAX_DRAG_DISTANCE_PX = 6;
 
@@ -39,6 +41,7 @@ export class MarsViewerController {
   private readonly overlayDataSources = new Map<string, Cesium.CustomDataSource>();
   private readonly cursorListeners = new Set<CursorCoordinateListener>();
   private readonly featureClickListeners = new Set<FeatureClickListener>();
+  private readonly surfaceClickListeners = new Set<SurfaceClickListener>();
 
   private zoomAnimationFrame: number | null = null;
   private cursorRafPending = false;
@@ -139,7 +142,8 @@ export class MarsViewerController {
       (click: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
         const downPos = this.leftDownPosition;
         this.leftDownPosition = null;
-        if (!downPos || this.featureClickListeners.size === 0) return;
+        if (!downPos) return;
+        if (this.featureClickListeners.size === 0 && this.surfaceClickListeners.size === 0) return;
 
         const dragDist = Cesium.Cartesian2.distance(downPos, click.position);
         if (dragDist > CLICK_MAX_DRAG_DISTANCE_PX) return;
@@ -149,6 +153,14 @@ export class MarsViewerController {
           for (const listener of this.featureClickListeners) {
             listener(picked);
           }
+          return;
+        }
+
+        if (this.surfaceClickListeners.size === 0) return;
+        const coords = pickMarsCoordinates(this.viewer, click.position);
+        if (!coords) return;
+        for (const listener of this.surfaceClickListeners) {
+          listener(coords);
         }
       },
       Cesium.ScreenSpaceEventType.LEFT_UP
@@ -184,7 +196,8 @@ export class MarsViewerController {
     const { scene } = this.viewer;
     const globe = scene.globe;
 
-    this.viewer.resolutionScale = window.devicePixelRatio || 1;
+    const pixelRatio = window.devicePixelRatio || 1;
+    this.viewer.resolutionScale = Math.min(2, Math.max(pixelRatio, 1.5));
 
     // In 3D, opaque black clears behind the Tycho-2 SkyBox; in 2D, transparent clears reveal the starfield backdrop
     scene.backgroundColor =
@@ -202,7 +215,7 @@ export class MarsViewerController {
     globe.enableLighting = false;
     globe.baseColor = Cesium.Color.fromCssColorString('#1c110c');
     globe.depthTestAgainstTerrain = false;
-    globe.maximumScreenSpaceError = 1.0; // Force sharper WMTS tile LOD selection
+    globe.maximumScreenSpaceError = 0.5;
 
     // Disable FXAA post-processing blur; rely on hardware MSAA (msaaSamples: 4) for crisp edges and imagery
     scene.postProcessStages.fxaa.enabled = false;
@@ -416,6 +429,26 @@ export class MarsViewerController {
   }
 
   /**
+   * Flies the camera to a point on the Martian ellipsoid. Altitude is meters
+   * above the surface in both the 3D globe and the 2D map.
+   */
+  public flyToLatLon(lonDeg: number, latDeg: number, altitudeMeters: number): void {
+    if (this.viewer.isDestroyed()) return;
+    this.cancelActiveZoomAnimation();
+
+    const altitude = Cesium.Math.clamp(
+      altitudeMeters,
+      CAMERA_BOUNDS.minZoomDistanceMeters,
+      CAMERA_BOUNDS.maxZoomDistanceMeters
+    );
+
+    this.viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(lonDeg, latDeg, altitude, MARS_ELLIPSOID),
+      duration: 1.4,
+    });
+  }
+
+  /**
    * In 2D mode, locks vertical panning when the entire Martian map (-90°..+90°)
    * fits inside the viewport (allowing only horizontal dragging), and when zoomed
    * in, constrains vertical panning so the poles never scroll off into blank space.
@@ -450,6 +483,21 @@ export class MarsViewerController {
     this.nomenclatureManager.setVisible(visible);
   }
 
+  /** Hit-tests a visible nomenclature label at a canvas-relative pixel. */
+  public pickNomenclature(screenX: number, screenY: number): NomenclatureLabelHit | null {
+    return this.nomenclatureManager.pickAt(screenX, screenY);
+  }
+
+  /** Drives the hover/selection enlarge-and-red treatment on one label. */
+  public setNomenclatureLabelVisual(fid: number, scale: number, blueMix: number): void {
+    this.nomenclatureManager.setLabelVisual(fid, scale, blueMix);
+  }
+
+  /** Puts square brackets on named start and end labels and enlarges them slightly. */
+  public setNamedRouteLabels(fids: number[]): void {
+    this.nomenclatureManager.setRouteNames(fids);
+  }
+
   /**
    * Subscribes to live cursor `(lat, lon)` updates (or `null` when over black space).
    * Returns an unsubscribe cleanup function.
@@ -469,6 +517,17 @@ export class MarsViewerController {
     this.featureClickListeners.add(listener);
     return () => {
       this.featureClickListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Clicks on the Martian surface that miss a named label or marker.
+   * Used to drop a start or end pin the way Google Maps drops a pin.
+   */
+  public onSurfaceClick(listener: SurfaceClickListener): () => void {
+    this.surfaceClickListeners.add(listener);
+    return () => {
+      this.surfaceClickListeners.delete(listener);
     };
   }
 

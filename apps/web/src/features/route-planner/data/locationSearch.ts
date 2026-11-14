@@ -1,18 +1,8 @@
 import { loadNomenclatureGeoJSON } from '../../../core/layers/nomenclatureData';
-import { PERSEVERANCE_JEZERO_POINT } from '../../perseverance/types/perseverancePoint';
 import type { RouteLocation } from '../types';
 import { CUSTOM_LOCATIONS } from './customLocations';
 
 let cachedNomenclatureLocations: RouteLocation[] | null = null;
-
-const PERSEVERANCE_ROUTE_LOCATION: RouteLocation = {
-  id: PERSEVERANCE_JEZERO_POINT.id,
-  name: PERSEVERANCE_JEZERO_POINT.name,
-  subtitle: `${PERSEVERANCE_JEZERO_POINT.locationName}, Mars`,
-  lat: PERSEVERANCE_JEZERO_POINT.latitude,
-  lon: PERSEVERANCE_JEZERO_POINT.longitude,
-  category: 'outpost',
-};
 
 /**
  * Converts cached Mars Nomenclature GeoJSON features into searchable
@@ -36,12 +26,7 @@ export async function getSearchableLocations(): Promise<RouteLocation[]> {
     });
   }
 
-  const customIds = new Set(CUSTOM_LOCATIONS.map((loc) => loc.id));
-  const builtinOutposts = customIds.has(PERSEVERANCE_ROUTE_LOCATION.id)
-    ? []
-    : [PERSEVERANCE_ROUTE_LOCATION];
-
-  return [...CUSTOM_LOCATIONS, ...builtinOutposts, ...cachedNomenclatureLocations];
+  return [...CUSTOM_LOCATIONS, ...cachedNomenclatureLocations];
 }
 
 /**
