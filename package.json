@@ -1,0 +1,31 @@
+{
+  "name": "red-condors-martian-map",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Red Condors — Interplanetary Survival Guide: Martian Map (NASA Space Apps)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "fetch:nomenclature": "node scripts/fetch-nomenclature.mjs"
+  },
+  "dependencies": {
+    "cesium": "^1.126.0",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.9",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0",
+    "vite-plugin-static-copy": "^2.3.0"
+  }
+}
