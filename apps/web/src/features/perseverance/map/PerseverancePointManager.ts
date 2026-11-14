@@ -29,6 +29,14 @@ export class PerseverancePointManager {
         350,
         MARS_ELLIPSOID
       ),
+      properties: {
+        id: point.id,
+        name: point.name,
+        subtitle: `${point.locationName}, Mars`,
+        lat: point.latitude,
+        lon: point.longitude,
+        kind: 'outpost',
+      },
       point: {
         pixelSize: 12,
         color: ACCENT_RED,

@@ -1,11 +1,12 @@
-import type { MarsViewerController } from '../../core/MarsViewerController';
-import { WalkableAreaLegend } from '../../features/routing/components/WalkableAreaLegend';
-import { WalkableAreaToggle } from '../../features/routing/components/WalkableAreaToggle';
-import { AttributionCredit } from './AttributionCredit';
-import { CoordinateReadout } from './CoordinateReadout';
-import { NomenclatureToggle } from './NomenclatureToggle';
-import { ViewModeToggle } from './ViewModeToggle';
-import { ZoomControls } from './ZoomControls';
+import type { MarsViewerController } from "../../core/MarsViewerController";
+import { WalkableAreaLegend } from "../../features/routing/components/WalkableAreaLegend";
+import { WalkableAreaToggle } from "../../features/routing/components/WalkableAreaToggle";
+import { useRoutePlannerStore } from "../../features/route-planner/store/useRoutePlannerStore";
+import { AttributionCredit } from "./AttributionCredit";
+import { CoordinateReadout } from "./CoordinateReadout";
+import { NomenclatureToggle } from "./NomenclatureToggle";
+import { ViewModeToggle } from "./ViewModeToggle";
+import { ZoomControls } from "./ZoomControls";
 
 interface MapHUDProps {
   controller: MarsViewerController | null;
@@ -18,8 +19,14 @@ interface MapHUDProps {
  * dedicated slots without refactoring the base map controls.
  */
 export function MapHUD({ controller }: MapHUDProps) {
+  const isRouteBarOpen = useRoutePlannerStore((s) => s.isOpen);
+
   return (
-    <div className="font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4">
+    <div
+      className={`font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4 transition-[padding] duration-250 ease-out ${
+        isRouteBarOpen ? "sm:pl-[400px]" : ""
+      }`}
+    >
       {/* Top row: left reserved for future mission rehearsal / environmental status overlays */}
       <div className="flex items-start justify-between">
         <div />

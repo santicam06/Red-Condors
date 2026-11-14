@@ -6,14 +6,21 @@ import {
 } from '../config/marsConfig';
 import type { MarsViewMode } from '../store/useMapStore';
 import { createVikingBasemapProvider } from './layers/createVikingBasemap';
-import { NomenclatureManager } from './layers/NomenclatureManager';
+import {
+  NomenclatureManager,
+  type PickedMapFeature,
+} from './layers/NomenclatureManager';
 import {
   type MarsLatLon,
   normalizeLongitude180,
   pickMarsCoordinates,
 } from './pickMarsCoordinates';
 
+export type { PickedMapFeature };
 export type CursorCoordinateListener = (coords: MarsLatLon | null) => void;
+export type FeatureClickListener = (feature: PickedMapFeature) => void;
+
+const CLICK_MAX_DRAG_DISTANCE_PX = 6;
 
 const TAN_HALF_DEFAULT_FOV = Math.tan(Cesium.Math.toRadians(30)); // 60° reference horizontal FOV
 
@@ -31,10 +38,12 @@ export class MarsViewerController {
   private readonly eventHandler: Cesium.ScreenSpaceEventHandler;
   private readonly overlayDataSources = new Map<string, Cesium.CustomDataSource>();
   private readonly cursorListeners = new Set<CursorCoordinateListener>();
+  private readonly featureClickListeners = new Set<FeatureClickListener>();
 
   private zoomAnimationFrame: number | null = null;
   private cursorRafPending = false;
   private latestMousePosition = new Cesium.Cartesian2(-1, -1);
+  private leftDownPosition: Cesium.Cartesian2 | null = null;
   private mouseInsideCanvas = false;
   private handleMouseLeaveBound: () => void;
   private removePostUpdateListener: (() => void) | null = null;
@@ -118,6 +127,33 @@ export class MarsViewerController {
       Cesium.ScreenSpaceEventType.MOUSE_MOVE
     );
 
+    // Distinguish stationary feature clicks from camera drags
+    this.eventHandler.setInputAction(
+      (click: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+        this.leftDownPosition = Cesium.Cartesian2.clone(click.position);
+      },
+      Cesium.ScreenSpaceEventType.LEFT_DOWN
+    );
+
+    this.eventHandler.setInputAction(
+      (click: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+        const downPos = this.leftDownPosition;
+        this.leftDownPosition = null;
+        if (!downPos || this.featureClickListeners.size === 0) return;
+
+        const dragDist = Cesium.Cartesian2.distance(downPos, click.position);
+        if (dragDist > CLICK_MAX_DRAG_DISTANCE_PX) return;
+
+        const picked = this.pickFeatureAt(click.position.x, click.position.y);
+        if (picked) {
+          for (const listener of this.featureClickListeners) {
+            listener(picked);
+          }
+        }
+      },
+      Cesium.ScreenSpaceEventType.LEFT_UP
+    );
+
     // Also update cursor readout while zooming/panning if pointer remains stationary
     this.viewer.camera.changed.addEventListener(() => {
       if (this.mouseInsideCanvas) {
@@ -128,6 +164,7 @@ export class MarsViewerController {
 
     this.handleMouseLeaveBound = () => {
       this.mouseInsideCanvas = false;
+      this.viewer.scene.canvas.style.cursor = '';
       this.broadcastCursorCoordinates(null);
     };
     this.viewer.scene.canvas.addEventListener('mouseleave', this.handleMouseLeaveBound);
@@ -424,6 +461,86 @@ export class MarsViewerController {
     };
   }
 
+  /**
+   * Subscribes to clicks on interactive map features (visible nomenclature labels
+   * or custom overlay markers). Returns an unsubscribe cleanup function.
+   */
+  public onFeatureClick(listener: FeatureClickListener): () => void {
+    this.featureClickListeners.add(listener);
+    return () => {
+      this.featureClickListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Resolves any clickable map feature at `(x, y)` CSS canvas pixels, prioritizing
+   * custom overlay entities before falling back to visible nomenclature labels.
+   */
+  public pickFeatureAt(x: number, y: number): PickedMapFeature | null {
+    return this.inspectPointerTarget(x, y).feature;
+  }
+
+  private inspectPointerTarget(
+    x: number,
+    y: number
+  ): { feature: PickedMapFeature | null; hasInteractiveEntity: boolean } {
+    if (this.viewer.isDestroyed()) {
+      return { feature: null, hasInteractiveEntity: false };
+    }
+
+    const picked = this.viewer.scene.pick(new Cesium.Cartesian2(x, y)) as
+      | { id?: unknown }
+      | undefined;
+
+    const hasInteractiveEntity = Boolean(picked?.id);
+
+    if (picked?.id && typeof picked.id === 'object') {
+      const candidate = picked.id as Record<string, unknown>;
+      if (
+        typeof candidate.name === 'string' &&
+        typeof candidate.lat === 'number' &&
+        typeof candidate.lon === 'number' &&
+        (candidate.kind === 'outpost' || candidate.kind === 'nomenclature')
+      ) {
+        return {
+          feature: candidate as unknown as PickedMapFeature,
+          hasInteractiveEntity: true,
+        };
+      }
+
+      if (picked.id instanceof Cesium.Entity && picked.id.properties) {
+        const bag = picked.id.properties.getValue(Cesium.JulianDate.now()) as
+          | Record<string, unknown>
+          | undefined;
+        if (
+          bag &&
+          typeof bag.id === 'string' &&
+          typeof bag.name === 'string' &&
+          typeof bag.lat === 'number' &&
+          typeof bag.lon === 'number'
+        ) {
+          return {
+            feature: {
+              id: bag.id,
+              name: bag.name,
+              subtitle: typeof bag.subtitle === 'string' ? bag.subtitle : undefined,
+              lat: bag.lat,
+              lon: bag.lon,
+              kind: bag.kind === 'outpost' ? 'outpost' : 'nomenclature',
+            },
+            hasInteractiveEntity: true,
+          };
+        }
+      }
+    }
+
+    const nomFeature = this.nomenclatureManager.pickAtWindowPosition(x, y);
+    return {
+      feature: nomFeature,
+      hasInteractiveEntity: hasInteractiveEntity || nomFeature !== null,
+    };
+  }
+
   private scheduleCursorBroadcast(): void {
     if (this.cursorRafPending) return;
     this.cursorRafPending = true;
@@ -432,11 +549,18 @@ export class MarsViewerController {
       this.cursorRafPending = false;
       if (this.viewer.isDestroyed()) return;
       if (!this.mouseInsideCanvas) {
+        this.viewer.scene.canvas.style.cursor = '';
         this.broadcastCursorCoordinates(null);
         return;
       }
       const coords = pickMarsCoordinates(this.viewer, this.latestMousePosition);
       this.broadcastCursorCoordinates(coords);
+
+      const { hasInteractiveEntity } = this.inspectPointerTarget(
+        this.latestMousePosition.x,
+        this.latestMousePosition.y
+      );
+      this.viewer.scene.canvas.style.cursor = hasInteractiveEntity ? 'pointer' : '';
     });
   }
 
@@ -500,6 +624,7 @@ export class MarsViewerController {
     this.eventHandler.destroy();
     this.nomenclatureManager.destroy();
     this.cursorListeners.clear();
+    this.featureClickListeners.clear();
     this.overlayDataSources.clear();
     if (!this.viewer.isDestroyed()) {
       this.viewer.destroy();
