@@ -29,7 +29,7 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **Upstream Catalog:** Gazetteer of Planetary Nomenclature (`https://planetarynames.wr.usgs.gov/`)
 - **Provider / Credit:** International Astronomical Union (IAU) Working Group for Planetary System Nomenclature (WGPSN) / USGS Astrogeology Science Center / NASA JPL Mars Trek
 - **License / Terms:** Public Domain / Open Scientific Data
-- **Usage in Project:** Cached in `public/data/mars_nomenclature.geojson` (via `scripts/fetch-nomenclature.mjs`, 1,783 approved Martian surface feature names and priority levels `1`–`7`) to render toggleable Martian area and landform labels matching Mars Trek. Visible labels can be hovered (enlarged, blue) and clicked to open a location-details card.
+- **Usage in Project:** Cached in `apps/web/public/data/mars_nomenclature.geojson` (via `apps/web/scripts/fetch-nomenclature.mjs`, 1,783 approved Martian surface feature names and priority levels `1`–`7`) to render toggleable Martian area and landform labels matching Mars Trek. Visible labels can be hovered (enlarged, blue) and clicked to open a location-details card.
 
 ### 1.4 USGS Gazetteer of Planetary Nomenclature — Target: Mars
 - **Catalog page:** `https://planetarynames.wr.usgs.gov/Page/MARS/target`
@@ -38,7 +38,14 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **Center-point download:** `https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MARS_nomenclature_center_pts.zip` (linked from the Mars target page under GIS Downloads; snapshot dated 2026-11-14)
 - **Provider / Credit:** International Astronomical Union (IAU) Working Group for Planetary System Nomenclature (WGPSN) / USGS Astrogeology Science Center
 - **License / Terms:** Public Domain / Open Scientific Data (U.S. Government)
-- **Usage in Project:** `src/components/Locations/usgsGazetteer.json` stores the approved Mars center-point attributes (name, center, extent, diameter, origin, approval, quadrangle, and feature-page URL). The location card looks up the clicked label by clean name and cites `https://planetarynames.wr.usgs.gov/Page/MARS/target` as the source. Individual records link to `https://planetarynames.wr.usgs.gov/Feature/{id}` when the gazetteer includes that feature.
+- **Usage in Project:** `apps/web/src/components/Locations/usgsGazetteer.json` stores the approved Mars center-point attributes (name, center, extent, diameter, origin, approval, quadrangle, and feature-page URL). The location card looks up the clicked label by clean name and cites `https://planetarynames.wr.usgs.gov/Page/MARS/target` as the source. Individual records link to `https://planetarynames.wr.usgs.gov/Feature/{id}` when the gazetteer includes that feature.
+
+### 1.5 Deep Star Maps / Tycho-2 Celestial Skybox (`tycho2t3_80`)
+- **Upstream Source:** NASA Goddard Space Flight Center Scientific Visualization Studio — *Deep Star Maps* (`https://svs.gsfc.nasa.gov/vis/a000000/a003500/a003572/`) & NASA/JPL-Caltech (`http://maps.jpl.nasa.gov/stars.html`), derived from the Hipparcos & Tycho-2 star catalogs
+- **Assets Used:** `Assets/Textures/SkyBox/tycho2t3_80_{px,mx,py,my,pz,mz}.jpg` (bundled with CesiumJS and matching NASA Mars Trek's 3D Globe view)
+- **Provider / Credit:** Courtesy NASA / Goddard Space Flight Center Scientific Visualization Studio / JPL-Caltech
+- **License / Terms:** Public Domain / NASA Media Usage Guidelines (also redistributed under CesiumJS Apache-2.0 third-party notices)
+- **Usage in Project:** 3D celestial starfield skybox (`Cesium.SkyBox.createEarthSkyBox()`) surrounding Mars in 3D Globe view, replicating NASA Mars Trek's deep-space background.
 
 ---
 
@@ -53,7 +60,7 @@ The place card opened from a nomenclature name shows a photo of that spot, cente
 - **Mission / Instrument:** NASA Viking 1 & Viking 2 Orbiters — Visual Imaging Subsystem (VIS), MDIM 2.1 color mosaic, about 232 m/pixel
 - **Provider / Credit:** Courtesy NASA / JPL-Caltech / USGS Astrogeology Science Center
 - **License / Terms:** Public Domain (U.S. Government / NASA & USGS open planetary science data)
-- **Usage in Project:** First photo in the location card (`src/components/Locations/PlacePhoto.tsx`). This is the same mosaic as the globe basemap, cropped around the clicked feature. Cross-origin tile reads are allowed (`Access-Control-Allow-Origin: *`).
+- **Usage in Project:** First photo in the location card (`apps/web/src/components/Locations/PlacePhoto.tsx`). This is the same mosaic as the globe basemap, cropped around the clicked feature. Cross-origin tile reads are allowed (`Access-Control-Allow-Origin: *`).
 
 ### 2.2 Mars Global Surveyor MOLA Color Shaded Relief (place photo)
 - **Layer Identifier:** `Mars_MGS_MOLA_ClrShade_merge_global_463m`
@@ -64,13 +71,13 @@ The place card opened from a nomenclature name shows a photo of that spot, cente
 - **Provider / Credit:** Courtesy NASA / JPL-Caltech / Goddard Space Flight Center (GSFC)
 - **Portal:** NASA Mars Trek (`https://trek.nasa.gov/mars/`)
 - **License / Terms:** Public Domain (U.S. Government / NASA open planetary science data)
-- **Usage in Project:** Second photo in the location card, switched with the on-image arrows. Zoom follows the feature’s diameter so a crater and a regional terra are both framed. Tile math and credits live in `src/components/Locations/placeImagery.ts`.
+- **Usage in Project:** Second photo in the location card, switched with the on-image arrows. Zoom follows the feature’s diameter so a crater and a regional terra are both framed. Tile math and credits live in `apps/web/src/components/Locations/placeImagery.ts`.
 
 ---
 
-### 1.5 Hypothetical Olympus Mons crew sites
+### 2.3 Hypothetical Olympus Mons crew sites
 - **Landform coordinates:** Center points for Olympus Mons, Olympus Rupes, Olympus Paterae, Lycus Sulci, Pangboche, and Karzok are taken from the USGS gazetteer snapshot in §1.4.
-- **Usage in Project:** `src/components/Outposts/olympusSites.ts` places fictional rehearsal infrastructure (base camp, habitat, science stops, and a short-walk sample pad) on those landforms. These camps are original scenario content. They are not NASA, JPL, or mission facilities, and the app labels them as hypothetical.
+- **Usage in Project:** `apps/web/src/components/Outposts/olympusSites.ts` places fictional rehearsal infrastructure (base camp, habitat, science stops, and a short-walk sample pad) on those landforms. These camps are original scenario content. They are not NASA, JPL, or mission facilities, and the app labels them as hypothetical.
 - **Navigation:** The Olympus rehearsal compares the straight ellipsoid line with a slope-and-dust path for a rover and a suited walk. Speeds are rehearsal values: 10 km/h (rover) and 1.5 km/h (Marswalk). See §4.
 
 ## 3. Open-Source Libraries & Tooling
@@ -87,7 +94,17 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **Zustand (`zustand`)** | MIT | `https://github.com/pmndrs/zustand` | Lightweight reactive state store for map mode (`3D` / `2D`) and layer toggles. |
 | **Tailwind CSS (`tailwindcss`, `@tailwindcss/vite`)** | MIT | `https://github.com/tailwindlabs/tailwindcss` | Utility-first styling for HUD controls. |
 | **Lucide (`lucide-react`)** | ISC | `https://github.com/lucide-icons/lucide` | Open-source vector icons for zoom (`+`/`-`) and 3D/2D map view controls. |
+| **ESLint ecosystem (`eslint`, `typescript-eslint`, React Hooks/Refresh plugins)** | MIT | `https://github.com/eslint/eslint`, `https://github.com/typescript-eslint/typescript-eslint`, `https://github.com/facebook/react` | Automated frontend lint checks locally and in GitHub Actions. |
+| **GitHub-maintained Actions (`actions/checkout`, `actions/setup-node`, `actions/setup-python`)** | MIT | `https://github.com/actions/checkout`, `https://github.com/actions/setup-node`, `https://github.com/actions/setup-python` | Reproducible dependency installation, lint, and test execution in pull requests and branch pushes. |
+| **FastAPI (`fastapi`)** | MIT | `https://github.com/fastapi/fastapi` | Backend web framework for the `apps/api` modular monolith (routing, validation, OpenAPI docs). |
+| **Starlette (`starlette`, FastAPI dependency)** | BSD-3-Clause | `https://github.com/encode/starlette` | ASGI toolkit underlying FastAPI, including the test client. |
+| **Uvicorn (`uvicorn[standard]`)** | BSD-3-Clause | `https://github.com/encode/uvicorn` | ASGI server that runs the API locally (with auto-reload) and in deployment. |
+| **Pydantic (`pydantic`) & pydantic-settings** | MIT | `https://github.com/pydantic/pydantic`, `https://github.com/pydantic/pydantic-settings` | Request/response schemas and `RC_*` environment-based configuration. |
+| **pytest (`pytest`)** | MIT | `https://github.com/pytest-dev/pytest` | Backend unit and integration tests. |
+| **HTTPX (`httpx`)** | BSD-3-Clause | `https://github.com/encode/httpx` | HTTP client used by FastAPI's `TestClient` in backend tests. |
+| **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
+| **JetBrains Mono** | SIL Open Font License 1.1 | `https://github.com/JetBrains/JetBrainsMono` | Monospaced typography for the map HUD and route bar. |
 
 ---
 
@@ -105,7 +122,7 @@ These products feed the Olympus Mons rehearsal. The straight line is drawn in re
 - **What a pixel is:** Planetary radius minus the areoid, in meters, IAU 2000. Signed 16-bit integer.
 - **Provider / Credit:** Courtesy NASA / Goddard Space Flight Center. MOLA team, principal investigator David E. Smith. Archived at the NASA PDS Geosciences Node.
 - **License / Terms:** Public domain (U.S. Government / NASA)
-- **Usage in Project:** `src/components/Outposts/molaOlympus.json` keeps the rows from 32°N to 12°N and 208°E to 242°E. The router turns neighboring elevations into a slope. A Marswalk stops above 15°. A rover stops above 25°.
+- **Usage in Project:** `apps/web/src/components/Outposts/molaOlympus.json` keeps the rows from 32°N to 12°N and 208°E to 242°E. The router turns neighboring elevations into a slope. A Marswalk stops above 15°. A rover stops above 25°.
 
 ### 4.2 MRO MCS column dust optical depth (gridded, Mars Year 36)
 - **Product:** Gridded column dust optical depth, version 2.5, Mars Year 36. Infrared absorption at 9.3 μm, normalized to 610 Pa. One map per sol on a 5° latitude by 6° longitude grid.
@@ -116,7 +133,7 @@ These products feed the Olympus Mons rehearsal. The straight line is drawn in re
 - **Provider / Credit:** Luca Montabone and co-authors, from NASA MRO MCS observations. Contact listed on the file: Luca Montabone.
 - **License / Terms:** Creative Commons Attribution-ShareAlike 3.0 (`https://creativecommons.org/licenses/by-sa/3.0/`). This dust grid is not public-domain. Credit the authors, and keep that license on adaptations.
 - **Why this is not a live feed:** MCS profile files at the PDS Atmospheres Node (`https://pds-atmospheres.nmsu.edu/data_and_services/atmospheres_data/MARS/aerosols.html`) are the nearer-to-present archive, but they are along-track profiles, not a filled map, and the published volumes lag the current Earth date. The route uses the newest full daily maps (Mars Year 36).
-- **Usage in Project:** `src/components/Outposts/dustSeason.json` stores two sols from that file.
+- **Usage in Project:** `apps/web/src/components/Outposts/dustSeason.json` stores two sols from that file.
   - **Present season:** sol at Ls 21.5°, chosen because 14 November 2026 falls at about Ls 21.6° (northern spring, usually clear). Dust over Olympus is about 0.05–0.12.
   - **Dust-storm season:** sol at Ls 315°, the dustiest stretch of Mars Year 36 in this file. A rehearsal case, not today’s weather. Dust over this region rises to about 0.5–1.1.
 - **How the route uses it:** A walking step is refused above optical depth 1.0. A rover step is refused above 1.3. Below those caps, dust slows the ETA. In the present season the dust is too light to move the path, so MOLA slope picks the corridor. In the storm rehearsal, dusty cells can close the walk before they close the rover.

@@ -11,7 +11,8 @@
 ### In Scope
 1. **Interchangeable 3D Globe & 2D Map Views** using a unified Martian coordinate system and preserving camera center/zoom across mode switches.
 2. **Mars Trek Visual Fidelity** by streaming NASA Mars Trek's exact default global basemap (`Mars_Viking_MDIM21_ClrMosaic_global_232m`) with true Martian coloration (no Earth blue atmospheric tinting or solar day/night shadows).
-3. **Pure Black Space Background (`#000000`)** in both 3D and 2D views — no starfields, sun/moon sprites, skyboxes, or decorative UI chrome yet.
+3. **Deep-Space Background** matching Mars Trek: Tycho-2 starfield skybox in 3D and a seeded starfield backdrop (`StarfieldBackdrop.tsx`) behind the 2D map. No sun/moon sprites or decorative UI chrome yet.
+   > *Update:* this replaced the original pure-black (`#000000`) requirement. Sections 4.2 and 7 below still describe the earlier black-only baseline; `src/core/MarsViewerController.ts` is the source of truth.
 4. **Fluid Navigation Controls** matching Mars Trek:
    - Smooth mouse-drag panning/rotation with inertia in 3D and 2D.
    - Smooth mouse scroll-wheel zoom in/out.
@@ -75,7 +76,7 @@ All endpoints below have been verified directly against NASA Mars Trek's live co
   - `level` (`1` through `7` integer): Mars Trek's curated label priority hierarchy (`1` = major planetary regions such as *Margaritifer Terra*, *Acidalia Planitia*, *Vastitas Borealis*; `2`–`5` = regional chaos/chasma/planum features such as *Iani Chaos* [3], *Aureum Chaos* [4], *Arsinoes Chaos* [5]; `6`–`7` = local craters and smaller features).
   - `diameter` (km) & `type` (e.g., `"Terra, terrae"`, `"Chaos, chaoses"`, `"Crater, craters"`).
 - **Caching Strategy (Reliability + Speed):**
-  - Provide a one-command fetch script (`scripts/fetch-nomenclature.mjs`) that queries `FID < 1000` and `FID >= 1000` from `combinedNom/MapServer/0/query` and saves a normalized GeoJSON bundle to `public/data/mars_nomenclature.geojson` (~300 KB).
+  - Provide a one-command fetch script (`apps/web/scripts/fetch-nomenclature.mjs`) that queries `FID < 1000` and `FID >= 1000` from `combinedNom/MapServer/0/query` and saves a normalized GeoJSON bundle to `apps/web/public/data/mars_nomenclature.geojson` (~300 KB).
   - Load from `/data/mars_nomenclature.geojson` at runtime (with optional fallback to the live NASA REST endpoint) so toggling Nomenclature is instantaneous (`0 ms` network delay) and resilient to hackathon Wi-Fi drops.
 
 ---
@@ -181,7 +182,7 @@ Disable all default Cesium chrome in `Viewer` constructor options:
     ```text
     Lat: --, Lon: --
     ```
-    *(Define `export const OFF_MAP_COORD_PLACEHOLDER = '--';` in `src/config/marsConfig.ts` so the team can switch between `--` and `"` in one character if desired.)*
+    *(Define `export const OFF_MAP_COORD_PLACEHOLDER = '--';` in `apps/web/src/config/marsConfig.ts` so the team can switch between `--` and `"` in one character if desired.)*
 - **Exact Raycast & Bounds Validation Logic (`pickMarsCoordinates`):**
   1. Attach a `Cesium.ScreenSpaceEventHandler` listening to `ScreenSpaceEventType.MOUSE_MOVE` (plus `mouseleave` on the canvas DOM element to reset to placeholder).
   2. Call `const cartesian = viewer.camera.pickEllipsoid(movement.endPosition, MARS_ELLIPSOID)`.
@@ -209,53 +210,37 @@ Design the directory layout so Core Features 2–6 mount cleanly onto this templ
 Red-Condors/
 ├── AGENTS.md
 ├── AGENTS_mapping.md
+├── apps/
+│   ├── api/                           # Reserved Python modular monolith
+│   │   ├── app/
+│   │   │   ├── api/                  # Shared HTTP transport
+│   │   │   ├── core/                 # Shared configuration/infrastructure
+│   │   │   └── modules/              # Points, weather, rover-images domains
+│   │   └── tests/
+│   └── web/
+│       ├── public/
+│       │   └── data/
+│       │       └── mars_nomenclature.geojson
+│       ├── scripts/
+│       │   └── fetch-nomenclature.mjs
+│       ├── src/
+│       │   ├── config/
+│       │   ├── core/
+│       │   ├── store/
+│       │   ├── features/             # Isolated product capabilities (route planner)
+│       │   ├── components/           # HUD, nomenclature hover card, Olympus rehearsal
+│       │   ├── App.tsx
+│       │   ├── main.tsx
+│       │   └── index.css
+│       ├── index.html
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── vite.config.ts
 ├── docs/
+│   ├── architecture.md
 │   ├── challenge.md
 │   └── source_attributions.md        # Updated with Mars Trek WMTS, Nomenclature & OSS citations
-├── public/
-│   └── data/
-│       └── mars_nomenclature.geojson # Pre-fetched 1,783 Mars Trek IAU nomenclature features
-├── scripts/
-│   └── fetch-nomenclature.mjs        # Reproducible Node script to pull combinedNom/MapServer/0
-├── src/
-│   ├── config/
-│   │   └── marsConfig.ts             # MARS_ELLIPSOID, WMTS URLs, zoom bounds, LOD thresholds, constants
-│   ├── core/
-│   │   ├── MarsViewerController.ts   # Imperative Cesium Viewer lifecycle, 3D<->2D switch, zoom, layer slots
-│   │   ├── pickMarsCoordinates.ts    # Reusable screen -> Martian (lat, lon) raycaster (used by HUD & future Pegman/Waypoints)
-│   │   └── layers/
-│   │       ├── createVikingBasemap.ts    # Mars_Viking_MDIM21_ClrMosaic_global_232m WMTS provider
-│   │       └── NomenclatureManager.ts    # LabelCollection + level 1–7 LOD + 3D horizon occlusion
-│   ├── store/
-│   │   └── useMapStore.ts            # Zustand store: viewMode ('3d' | '2d'), nomenclatureVisible, viewerReady
-│   ├── components/
-│   │   ├── MarsViewport.tsx          # Full-viewport WebGL canvas host (#000000 background)
-│   │   ├── Locations/                # Nomenclature hover, click, and USGS location-details card
-│   │   │   ├── NomenclatureLocations.tsx
-│   │   │   ├── LocationDetailsPanel.tsx
-│   │   │   ├── PlacePhoto.tsx            # Centered Viking + MOLA place photos
-│   │   │   ├── placeImagery.ts
-│   │   │   ├── attachNomenclaturePointer.ts
-│   │   │   ├── nomenclatureEmphasis.ts
-│   │   │   ├── frameFeatureBesidePanel.ts
-│   │   │   ├── usgsGazetteer.ts
-│   │   │   ├── usgsGazetteer.json    # USGS Mars center-point snapshot, keyed by clean name
-│   │   │   ├── descriptorTerms.ts
-│   │   │   └── sources.ts
-│   │   └── hud/
-│   │       ├── MapHUD.tsx            # Pointer-events-none overlay shell with modular corner slots
-│   │       ├── ViewModeToggle.tsx    # 3D Globe <-> 2D Map switcher button
-│   │       ├── ZoomControls.tsx      # Zoom In (+) and Zoom Out (-) buttons
-│   │       ├── NomenclatureToggle.tsx# Mars Trek-style "Nomenclature" toggle switch (Image 1)
-│   │       ├── CoordinateReadout.tsx # Bottom-right "Lat: ..., Lon: ..." readout (Image 2)
-│   │       └── AttributionCredit.tsx # Discrete "Courtesy NASA/JPL-Caltech/USGS" text credit
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css                     # Fullscreen reset (#000000), Tailwind directives, hide Cesium Ion bar
-├── index.html
-├── package.json
-├── tsconfig.json
-└── vite.config.ts                    # vite-plugin-static-copy for Cesium Workers/Assets/Widgets
+└── package.json                       # Root npm workspace commands
 ```
 
 ### How Future Features Plug Into `MarsViewerController`
@@ -275,7 +260,7 @@ Red-Condors/
 4. Configure global CSS (`html, body, #root { width: 100%; height: 100%; margin: 0; background: #000; overflow: hidden; }`).
 
 ### Phase 2 — Mars Trek 3D Globe & 2D Map Core Engine
-1. Create `src/config/marsConfig.ts` with `MARS_ELLIPSOID` (`Cesium.Ellipsoid.MARS`), WMTS template constants, camera zoom limits, and `OFF_MAP_COORD_PLACEHOLDER`.
+1. Create `apps/web/src/config/marsConfig.ts` with `MARS_ELLIPSOID` (`Cesium.Ellipsoid.MARS`), WMTS template constants, camera zoom limits, and `OFF_MAP_COORD_PLACEHOLDER`.
 2. Implement `createVikingBasemap.ts` using `Cesium.WebMapTileServiceImageryProvider` (`Mars_Viking_MDIM21_ClrMosaic_global_232m`, `default028mm`, `GeographicTilingScheme` `2×1`, `maximumLevel: 7`).
 3. Implement `MarsViewerController.ts`:
    - Enforce pure black background, disable skybox/sun/moon/skyAtmosphere/groundAtmosphere/lighting/fog.
@@ -283,7 +268,7 @@ Red-Condors/
    - Implement state-preserving `setViewMode('3d' | '2d')` and smooth `zoomIn()` / `zoomOut()` methods.
 
 ### Phase 3 — Mars Nomenclature Data & Dynamic Labels
-1. Create and run `scripts/fetch-nomenclature.mjs` to download all 1,783 Mars Trek nomenclature records from `combinedNom/MapServer/0` into `public/data/mars_nomenclature.geojson`.
+1. Create and run `apps/web/scripts/fetch-nomenclature.mjs` to download all 1,783 Mars Trek nomenclature records from `combinedNom/MapServer/0` into `apps/web/public/data/mars_nomenclature.geojson`.
 2. Implement `NomenclatureManager.ts`:
    - Render centered white-with-dark-halo sans-serif labels matching Image 1.
    - Filter visibility dynamically by feature `level` (`1`–`7`) based on current 3D/2D camera altitude so regional views match Image 1 (`Margaritifer Terra`, `Iani Chaos`, `Aureum Chaos`, `Arsinoes Chaos`).
