@@ -2,34 +2,26 @@ import * as Cesium from 'cesium';
 import {
   MARS_CIRCUMFERENCE_METERS,
   MARS_ELLIPSOID,
-  NOMENCLATURE_GEOJSON_URL,
   NOMENCLATURE_LEVEL_MAX_ALTITUDE_METERS,
 } from '../../config/marsConfig';
+import {
+  type NomenclatureGeoJSON,
+  loadNomenclatureGeoJSON,
+} from './nomenclatureData';
 
-interface NomenclatureFeatureProperties {
-  fid: number;
+export interface PickedMapFeature {
+  id: string;
   name: string;
-  type: string;
-  code: string;
-  diameter: number;
-  level: number;
-  score: number;
-}
-
-interface NomenclatureGeoJSON {
-  type: 'FeatureCollection';
-  features: Array<{
-    type: 'Feature';
-    geometry: {
-      type: 'Point';
-      coordinates: [number, number];
-    };
-    properties: NomenclatureFeatureProperties;
-  }>;
+  subtitle?: string;
+  lat: number;
+  lon: number;
+  kind: 'nomenclature' | 'outpost';
+  priorityLevel?: number;
 }
 
 interface LabelEntry {
   label: Cesium.Label;
+  feature: PickedMapFeature;
   position3D: Cesium.Cartesian3;
   occludeePoint: Cesium.Cartesian3;
   level: number;
@@ -42,6 +34,11 @@ interface ScreenBox {
   maxX: number;
   minY: number;
   maxY: number;
+}
+
+interface HitBoxEntry {
+  box: ScreenBox;
+  feature: PickedMapFeature;
 }
 
 /**
@@ -61,6 +58,7 @@ export class NomenclatureManager {
   private readonly scratchWindowPos = new Cesium.Cartesian2();
 
   private entries: LabelEntry[] = [];
+  private visibleHitBoxes: HitBoxEntry[] = [];
   private visible: boolean;
   private destroyed = false;
   private removePostRenderListener: (() => void) | null = null;
@@ -107,11 +105,7 @@ export class NomenclatureManager {
 
   public async load(): Promise<void> {
     try {
-      const response = await fetch(NOMENCLATURE_GEOJSON_URL);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} loading ${NOMENCLATURE_GEOJSON_URL}`);
-      }
-      const data = (await response.json()) as NomenclatureGeoJSON;
+      const data = await loadNomenclatureGeoJSON();
       if (this.destroyed) return;
 
       this.populateLabels(data);
@@ -129,6 +123,8 @@ export class NomenclatureManager {
     if (visible) {
       this.forceRefresh = true;
       this.updateLabelVisibilityIfNeeded();
+    } else {
+      this.visibleHitBoxes = [];
     }
     if (!this.viewer.isDestroyed()) {
       this.viewer.scene.requestRender();
@@ -139,14 +135,48 @@ export class NomenclatureManager {
     this.forceRefresh = true;
   }
 
+  /**
+   * Hit-tests currently visible nomenclature labels at `(x, y)` CSS canvas pixels
+   * across both 3D Globe and 2D Infinite-Scroll Map modes.
+   */
+  public pickAtWindowPosition(x: number, y: number): PickedMapFeature | null {
+    if (this.destroyed || !this.visible || this.visibleHitBoxes.length === 0) {
+      return null;
+    }
+
+    const pad = 4;
+    for (let i = 0; i < this.visibleHitBoxes.length; i++) {
+      const { box, feature } = this.visibleHitBoxes[i];
+      if (
+        x >= box.minX - pad &&
+        x <= box.maxX + pad &&
+        y >= box.minY - pad &&
+        y <= box.maxY + pad
+      ) {
+        return feature;
+      }
+    }
+    return null;
+  }
+
   private populateLabels(geojson: NomenclatureGeoJSON): void {
     const fillWhite = Cesium.Color.WHITE;
     const outlineDark = Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.85);
 
-    this.entries = geojson.features.map((feature) => {
-      const [lon, lat] = feature.geometry.coordinates;
-      const { name, level } = feature.properties;
+    this.entries = geojson.features.map((featureItem) => {
+      const [lon, lat] = featureItem.geometry.coordinates;
+      const { fid, name, type, level } = featureItem.properties;
       const clampedLevel = Math.max(1, Math.min(7, level || 7));
+
+      const feature: PickedMapFeature = {
+        id: `nom-${fid}`,
+        name,
+        subtitle: type,
+        lat,
+        lon,
+        kind: 'nomenclature',
+        priorityLevel: clampedLevel,
+      };
 
       const position3D = Cesium.Cartesian3.fromDegrees(lon, lat, 0, MARS_ELLIPSOID);
       const occludeePoint = Cesium.Cartesian3.fromDegrees(lon, lat, 250, MARS_ELLIPSOID);
@@ -161,6 +191,7 @@ export class NomenclatureManager {
       const halfHeightPx = isMajorRegion ? 11 : 10;
 
       const label = this.labelCollection.add({
+        id: feature,
         position: position3D,
         text: name,
         font,
@@ -176,6 +207,7 @@ export class NomenclatureManager {
 
       return {
         label,
+        feature,
         position3D,
         occludeePoint,
         level: clampedLevel,
@@ -219,6 +251,7 @@ export class NomenclatureManager {
     const canvasWidth = scene.canvas.clientWidth;
     const canvasHeight = scene.canvas.clientHeight;
     const placedBoxes: ScreenBox[] = [];
+    const nextHitBoxes: HitBoxEntry[] = [];
 
     // In 2D INFINITE_SCROLL, compute pixel width of one full 360° Mars circumference
     // so wrapped coordinates across the ±180° antimeridian are also collision-checked cleanly
@@ -313,24 +346,32 @@ export class NomenclatureManager {
         entry.label.show = false;
       } else {
         placedBoxes.push(candidate);
+        nextHitBoxes.push({ box: candidate, feature: entry.feature });
         // Also reserve ±360° wrapped positions in 2D INFINITE_SCROLL so edge-spanning labels never overlap across the seam
         if (!is3D && circumferenceWidthPx > 0) {
-          placedBoxes.push({
+          const leftWrap: ScreenBox = {
             minX: candidate.minX - circumferenceWidthPx,
             maxX: candidate.maxX - circumferenceWidthPx,
             minY: candidate.minY,
             maxY: candidate.maxY,
-          });
-          placedBoxes.push({
+          };
+          const rightWrap: ScreenBox = {
             minX: candidate.minX + circumferenceWidthPx,
             maxX: candidate.maxX + circumferenceWidthPx,
             minY: candidate.minY,
             maxY: candidate.maxY,
-          });
+          };
+          placedBoxes.push(leftWrap, rightWrap);
+          nextHitBoxes.push(
+            { box: leftWrap, feature: entry.feature },
+            { box: rightWrap, feature: entry.feature }
+          );
         }
         entry.label.show = true;
       }
     }
+
+    this.visibleHitBoxes = nextHitBoxes;
   }
 
   public destroy(): void {
@@ -343,5 +384,6 @@ export class NomenclatureManager {
       this.viewer.scene.primitives.remove(this.labelCollection);
     }
     this.entries = [];
+    this.visibleHitBoxes = [];
   }
 }

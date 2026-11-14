@@ -1,4 +1,5 @@
 import type { MarsViewerController } from '../../core/MarsViewerController';
+import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
 import { AttributionCredit } from './AttributionCredit';
 import { CoordinateReadout } from './CoordinateReadout';
 import { NomenclatureToggle } from './NomenclatureToggle';
@@ -16,8 +17,14 @@ interface MapHUDProps {
  * dedicated slots without refactoring the base map controls.
  */
 export function MapHUD({ controller }: MapHUDProps) {
+  const isRouteBarOpen = useRoutePlannerStore((s) => s.isOpen);
+
   return (
-    <div className="font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4">
+    <div
+      className={`font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4 transition-[padding] duration-250 ease-out ${
+        isRouteBarOpen ? 'sm:pl-[400px]' : ''
+      }`}
+    >
       {/* Top row reserved for future mission rehearsal / environmental status overlays */}
       <div className="flex items-start justify-between" />
 
