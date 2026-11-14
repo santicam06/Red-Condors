@@ -12,6 +12,10 @@ body,
   font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+.font-jetbrains {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
 /* Ensure Cesium canvas fills 100% of viewport with transparent background (for 2D starfield) and no default Ion bar */
 .mars-cesium-container .cesium-viewer,
 .mars-cesium-container .cesium-viewer-cesiumWidgetContainer,

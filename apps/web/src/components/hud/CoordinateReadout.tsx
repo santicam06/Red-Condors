@@ -37,10 +37,7 @@ export function CoordinateReadout({ controller }: CoordinateReadoutProps) {
   return (
     <div
       aria-live="off"
-      className="pointer-events-none font-['Roboto',sans-serif] text-[13.5px] font-normal tracking-[0.01em] text-[#DCDCDC] tabular-nums"
-      style={{
-        textShadow: '0 1px 3px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.85)',
-      }}
+      className="pointer-events-none border border-red-700 bg-white px-2.5 py-1.5 text-[12px] font-medium tracking-[0.01em] text-red-700 shadow-md tabular-nums"
     >
       Lat: {latText}, Lon: {lonText}
     </div>
