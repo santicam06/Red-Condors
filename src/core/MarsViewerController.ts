@@ -6,7 +6,10 @@ import {
 } from '../config/marsConfig';
 import type { MarsViewMode } from '../store/useMapStore';
 import { createVikingBasemapProvider } from './layers/createVikingBasemap';
-import { NomenclatureManager } from './layers/NomenclatureManager';
+import {
+  NomenclatureManager,
+  type NomenclatureLabelHit,
+} from './layers/NomenclatureManager';
 import {
   type MarsLatLon,
   normalizeLongitude180,
@@ -370,6 +373,16 @@ export class MarsViewerController {
    */
   public setNomenclatureVisible(visible: boolean): void {
     this.nomenclatureManager.setVisible(visible);
+  }
+
+  /** Hit-tests a visible nomenclature label at a canvas-relative pixel. */
+  public pickNomenclature(screenX: number, screenY: number): NomenclatureLabelHit | null {
+    return this.nomenclatureManager.pickAt(screenX, screenY);
+  }
+
+  /** Drives the hover/selection enlarge-and-blue treatment on one label. */
+  public setNomenclatureLabelVisual(fid: number, scale: number, blueMix: number): void {
+    this.nomenclatureManager.setLabelVisual(fid, scale, blueMix);
   }
 
   /**
