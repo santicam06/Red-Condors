@@ -52,13 +52,17 @@ def compute_routes(request: RouteRequest, reader: DemReader, settings: Settings)
     cols = patch.elevation.shape[1]
     source_px = _nearest_pixel(patch, source)
     goal_px = _nearest_pixel(patch, destination)
+    start, goal = node_id(*source_px, cols), node_id(*goal_px, cols)
+    # Computed up front so a "no safe route" error can still show the terrain that blocks it
+    walkable_area = _walkable_area(patch, terrain, goal)
+
     for name, (row, col) in (("source", source_px), ("destination", goal_px)):
         if not terrain.traversable[row, col]:
             raise NoSafeRouteError(
                 f"The {name} sits on terrain steeper than the {max_slope:g}° slope limit "
-                f"({terrain.pixel_slope_deg[row, col]:.1f}°)."
+                f"({terrain.pixel_slope_deg[row, col]:.1f}°).",
+                walkable_area,
             )
-    start, goal = node_id(*source_px, cols), node_id(*goal_px, cols)
 
     paths: dict[RouteKind, list[int]] = {}
     for kind, weight in ROUTE_WEIGHTS.items():
@@ -66,7 +70,8 @@ def compute_routes(request: RouteRequest, reader: DemReader, settings: Settings)
             paths[kind] = nx.dijkstra_path(terrain.graph, start, goal, weight=weight)
         except (nx.NetworkXNoPath, nx.NodeNotFound) as exc:
             raise NoSafeRouteError(
-                f"No route between the points stays under the {max_slope:g}° slope limit."
+                f"No route between the points stays under the {max_slope:g}° slope limit.",
+                walkable_area,
             ) from exc
 
     routes = [
@@ -77,7 +82,7 @@ def compute_routes(request: RouteRequest, reader: DemReader, settings: Settings)
         dem_resolution_m=patch.resolution_m,
         max_slope_deg=max_slope,
         warnings=_duplicate_warnings(paths),
-        walkable_area=_walkable_area(patch, terrain, goal),
+        walkable_area=walkable_area,
     )
 
 

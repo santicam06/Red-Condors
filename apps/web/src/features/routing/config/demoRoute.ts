@@ -52,10 +52,22 @@ export const DEMO_ROUTES = {
     // ~390 km northwest of the Argyre Planitia centre
     destination: { lat: -45.6158, lon: -50.7994 },
   },
+  /**
+   * Valles Marineris canyon wall, ~125 km from Nectaris Montes: NO SAFE ROUTE (API returns
+   * 422). Points ~19.4 km apart, both on traversable ground in large regions (~500-600 km²
+   * each), but the source is on the plateau at +2,362 m and the destination on the canyon floor
+   * at -2,440 m: a 4.8 km drop with no ramp under 15° anywhere in the planning area.
+   */
+  noSafeRoute: {
+    // Plateau above the canyon, ~19.4 km north of the destination
+    source: { lat: -13.3287, lon: -56.4923 },
+    // Canyon floor
+    destination: { lat: -13.6521, lon: -56.4356 },
+  },
 } satisfies Record<string, RouteRequest>;
 
 /** The demo request sent on load. Switch the key to test another location. */
-export const DEMO_ROUTE_REQUEST: RouteRequest = DEMO_ROUTES.argyreRim;
+export const DEMO_ROUTE_REQUEST: RouteRequest = DEMO_ROUTES.noSafeRoute;
 
 /** Maximum source-to-destination distance accepted by the API (km). */
 export const ROUTE_SOURCE_MAX_DISTANCE_KM = 20;

@@ -11,7 +11,14 @@ class OutsideDemError(RoutingError):
 
 
 class NoSafeRouteError(RoutingError):
-    """Every path between the points crosses terrain steeper than the slope limit."""
+    """Every path between the points crosses terrain steeper than the slope limit.
+
+    Carries the traversable-area grid (when it was computed) so clients can still show why.
+    """
+
+    def __init__(self, message: str, walkable_area: object | None = None) -> None:
+        super().__init__(message)
+        self.walkable_area = walkable_area
 
 
 class DemUnavailableError(RoutingError):

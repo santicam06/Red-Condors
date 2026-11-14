@@ -71,8 +71,16 @@ def test_routes_detour_through_the_gap_in_a_steep_wall(synthetic_dem):
 
 def test_closed_wall_has_no_safe_route(synthetic_dem):
     closed = synthetic_dem(lambda lat, lon: wall(lat, lon, gap=None))
-    with pytest.raises(NoSafeRouteError):
+    with pytest.raises(NoSafeRouteError) as excinfo:
         compute_routes(request(), closed, SETTINGS)
+
+    # The error carries the terrain grid; the source side is walled off from the destination
+    area = excinfo.value.walkable_area
+    assert area is not None
+    grid = np.array(list(area.cells)).reshape(area.rows, area.cols)
+    lat_grid, lon_grid = cell_centres(area)
+    assert (grid[(lon_grid < 0.0) & (grid != "0")] == "4").all()
+    assert (grid[(lon_grid > WALL_EAST + 0.02) & (grid != "0")] == "1").all()
 
 
 def test_source_beyond_twenty_km_is_rejected(synthetic_dem):

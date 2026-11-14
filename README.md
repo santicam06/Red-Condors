@@ -175,9 +175,10 @@ licenses is in [`docs/source_attributions.md`](docs/source_attributions.md).
 Team Red Condors. 
 
 - Santiago Camacho Moyano (Team Lead - AI Developer)
-- Fabricio Alejandro Ortiz Fiallos (Front-end Developer)
-- Samuel Esteban Pineda Benavides (Back-end Developer)
+- Fabricio Alejandro Ortiz Fiallos (Full-Stack Developer)
+- Samuel Esteban Pineda Benavides (Full-Stack Developer)
 - Miguel Rincon (Full-Stack Developer)
+- Conan Olatunji (Full-Stack Developer)
 
 ## License
 
