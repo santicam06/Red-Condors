@@ -1,5 +1,6 @@
 import { ArrowUpDown, MapPin, Navigation, X } from 'lucide-react';
 import { LocationDetailsPanel } from '../../../components/Locations/LocationDetailsPanel';
+import { OlympusRehearsal } from '../../../components/Outposts/OlympusRehearsal';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
 import { usePlannedTraverse } from '../map/usePlannedTraverse';
@@ -197,6 +198,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
             hit={selectedPlace}
             onClose={() => clearSelectedPlace(null)}
           />
+          <OlympusRehearsal controller={controller} />
         </div>
       </aside>
     </>
