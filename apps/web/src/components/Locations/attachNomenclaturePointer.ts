@@ -1,6 +1,7 @@
 import * as Cesium from 'cesium';
 import type { MarsViewerController } from '../../core/MarsViewerController';
 import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
+import { pickOlympusSiteAt } from '../Outposts/olympusSites';
 import { NomenclatureEmphasis } from './nomenclatureEmphasis';
 
 /**
@@ -17,6 +18,15 @@ export function attachNomenclaturePointer(
   let hoveredFid: number | null = null;
 
   const updateHover = (x: number, y: number) => {
+    const campHit = pickOlympusSiteAt(viewer, new Cesium.Cartesian2(x, y));
+    if (campHit) {
+      if (hoveredFid !== null) {
+        hoveredFid = null;
+        emphasis.setHover(null);
+      }
+      canvas.style.cursor = 'pointer';
+      return;
+    }
     const hit = controller.pickNomenclature(x, y);
     const fid = hit?.fid ?? null;
     if (fid === hoveredFid) return;
@@ -30,6 +40,12 @@ export function attachNomenclaturePointer(
   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
   handler.setInputAction((click: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+    if (
+      pickOlympusSiteAt(viewer, click.position) ||
+      controller.pickFeatureAt(click.position.x, click.position.y)?.kind === 'outpost'
+    ) {
+      return;
+    }
     const hit = controller.pickNomenclature(click.position.x, click.position.y);
     if (!hit) return;
     emphasis.setSelected(hit.fid);

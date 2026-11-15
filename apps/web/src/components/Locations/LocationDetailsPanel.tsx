@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { BookOpen, ChevronDown, ExternalLink, MapPin, Ruler, X } from 'lucide-react';
 import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
 import { describeFeatureType } from './descriptorTerms';
@@ -18,11 +18,6 @@ interface LocationDetailsPanelProps {
  */
 export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
-  const [moreInfo, setMoreInfo] = useState(false);
-
-  useEffect(() => {
-    setMoreInfo(false);
-  }, [hit?.fid]);
 
   useEffect(() => {
     if (!hit) return;
@@ -51,6 +46,7 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="relative shrink-0">
           <PlacePhoto
+            key={`${photoLatitude}:${photoLongitude}:${diameter}`}
             latitude={photoLatitude}
             longitude={photoLongitude}
             diameterKm={diameter}
@@ -88,19 +84,6 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
             </div>
           </section>
 
-          <div className="px-4 pb-4">
-            <button
-              type="button"
-              aria-expanded={moreInfo}
-              onClick={() => setMoreInfo((open) => !open)}
-              className="cursor-pointer border border-red-700 bg-white px-3 py-2 text-[13px] font-medium text-red-700 hover:bg-red-700 hover:text-white"
-            >
-              {moreInfo ? 'Hide info' : 'More info'}
-            </button>
-          </div>
-
-          {moreInfo && (
-          <>
           <ul className="px-1 py-2">
             {diameter > 0 && (
               <InfoRow icon={<Ruler size={18} />} label={formatKm(diameter)} detail="Feature diameter" />
@@ -212,8 +195,6 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
               <ExternalLink size={14} />
             </a>
           </div>
-          </>
-          )}
         </div>
       </div>
     </section>

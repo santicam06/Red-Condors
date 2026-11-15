@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { MapPin, X } from 'lucide-react';
-import { filterLocations, getSearchableLocations } from '../data/locationSearch';
+import { getAllCampLocations } from '../data/customLocations';
+import { filterLocations } from '../data/locationSearch';
 import type { RouteLocation } from '../types';
 
 interface LocationInputBoxProps {
@@ -30,25 +31,21 @@ export function LocationInputBox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [allLocations, setAllLocations] = useState<RouteLocation[]>([]);
+  const allLocations = useMemo(() => getAllCampLocations(), []);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [hasTyped, setHasTyped] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   useEffect(() => {
-    let active = true;
-    getSearchableLocations()
-      .then((items) => {
-        if (active) setAllLocations(items);
-      })
-      .catch((err) => {
-        console.error('Failed to load searchable Mars locations:', err);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (value) {
+      setQuery(value.name);
+      setIsEditing(false);
+      setHasTyped(false);
+      setDropdownOpen(false);
+    }
+  }, [value]);
 
   // Close dropdown on outside pointer down
   useEffect(() => {
@@ -58,6 +55,7 @@ export function LocationInputBox({
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
         setIsEditing(false);
+        setHasTyped(false);
       }
     };
 
@@ -67,9 +65,9 @@ export function LocationInputBox({
     };
   }, [dropdownOpen]);
 
-  const effectiveQuery = isEditing ? query : '';
+  const effectiveQuery = isEditing && hasTyped ? query : '';
   const suggestions = useMemo(
-    () => filterLocations(allLocations, effectiveQuery, 8),
+    () => filterLocations(allLocations, effectiveQuery),
     [allLocations, effectiveQuery]
   );
 
@@ -79,6 +77,7 @@ export function LocationInputBox({
     onSelect(location);
     setQuery(location.name);
     setIsEditing(false);
+    setHasTyped(false);
     setDropdownOpen(false);
     inputRef.current?.blur();
   };
@@ -87,6 +86,7 @@ export function LocationInputBox({
     onSelect(null);
     setQuery('');
     setIsEditing(true);
+    setHasTyped(false);
     setDropdownOpen(true);
     setHighlightedIndex(0);
     onFocusSlot();
@@ -116,6 +116,7 @@ export function LocationInputBox({
             onFocusSlot();
             setQuery(value?.name ?? '');
             setIsEditing(true);
+            setHasTyped(false);
             setDropdownOpen(true);
             setHighlightedIndex(0);
           }}
@@ -123,6 +124,7 @@ export function LocationInputBox({
             const next = e.target.value;
             setQuery(next);
             setIsEditing(true);
+            setHasTyped(true);
             setDropdownOpen(true);
             setHighlightedIndex(0);
             if (next.trim() === '' && value !== null) {
@@ -160,6 +162,7 @@ export function LocationInputBox({
               e.preventDefault();
               setDropdownOpen(false);
               setIsEditing(false);
+              setHasTyped(false);
               inputRef.current?.blur();
             }
           }}
@@ -228,6 +231,12 @@ export function LocationInputBox({
             );
           })}
         </ul>
+      )}
+
+      {dropdownOpen && suggestions.length === 0 && (
+        <div className="absolute top-[calc(100%+4px)] left-0 z-30 w-full rounded-[8px] border border-[#E0E0E0] bg-white px-3 py-2.5 text-[12.5px] text-[#5F6368] shadow-[0_6px_18px_rgba(0,0,0,0.16)]">
+          No matching camps found
+        </div>
       )}
     </div>
   );

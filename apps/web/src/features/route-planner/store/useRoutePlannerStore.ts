@@ -1,9 +1,10 @@
 import { create } from 'zustand';
-import type {
-  ActiveInputSlot,
-  RouteLocation,
-  RouteTab,
-  TravelMode,
+import {
+  isCampRouteLocation,
+  type ActiveInputSlot,
+  type RouteLocation,
+  type RouteTab,
+  type TravelMode,
 } from '../types';
 
 interface RoutePlannerState {
@@ -14,8 +15,6 @@ interface RoutePlannerState {
   destination: RouteLocation | null;
   activeInputSlot: ActiveInputSlot;
   activeTab: RouteTab;
-  /** Place from the latest map click. Pins are not drawn until it is assigned. */
-  clickedLocation: RouteLocation | null;
 
   distanceKm: number | null;
   marswalkEta: string | null;
@@ -36,9 +35,6 @@ interface RoutePlannerState {
   setActiveTab: (tab: RouteTab) => void;
   openIndicationsForLocation: (location: RouteLocation) => void;
   selectLocationFromMap: (location: RouteLocation) => void;
-  presentClickedLocation: (location: RouteLocation) => void;
-  clearClickedLocation: () => void;
-  assignClickedLocation: (slot: ActiveInputSlot) => void;
 }
 
 export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
@@ -49,7 +45,6 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   destination: null,
   activeInputSlot: 'source',
   activeTab: 'mission',
-  clickedLocation: null,
 
   distanceKm: null,
   marswalkEta: null,
@@ -69,13 +64,34 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   setTraverseSummary: (summary) => set(summary),
 
   setSource: (source) =>
-    set((state) => ({
-      source,
-      activeInputSlot:
-        source !== null && state.destination === null ? 'destination' : state.activeInputSlot,
-    })),
+    set((state) => {
+      if (source !== null && !isCampRouteLocation(source)) {
+        return state;
+      }
+      const nextDestination =
+        source !== null && state.destination?.id === source.id ? null : state.destination;
+      return {
+        source,
+        destination: nextDestination,
+        activeInputSlot:
+          source !== null && nextDestination === null ? 'destination' : state.activeInputSlot,
+      };
+    }),
 
-  setDestination: (destination) => set({ destination }),
+  setDestination: (destination) =>
+    set((state) => {
+      if (destination !== null && !isCampRouteLocation(destination)) {
+        return state;
+      }
+      const nextSource =
+        destination !== null && state.source?.id === destination.id ? null : state.source;
+      return {
+        destination,
+        source: nextSource,
+        activeInputSlot:
+          destination !== null && nextSource === null ? 'source' : state.activeInputSlot,
+      };
+    }),
 
   swapLocations: () =>
     set((state) => ({
@@ -87,23 +103,33 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
 
   openIndicationsForLocation: (location) =>
-    set((state) => ({
-      isOpen: true,
-      isRouteCalculatorOpen: true,
-      destination: location,
-      source: state.source?.id === location.id ? null : state.source,
-      activeInputSlot: 'source',
-    })),
+    set((state) => {
+      if (!isCampRouteLocation(location)) {
+        return state;
+      }
+      return {
+        isOpen: true,
+        isRouteCalculatorOpen: true,
+        destination: location,
+        source: state.source?.id === location.id ? null : state.source,
+        activeInputSlot: 'source',
+      };
+    }),
 
   /**
-   * Emulates Google Maps click-to-fill behavior while the Route Planner is open:
-   * - Does nothing if the Route Planner is closed (opened exclusively via "Indications").
+   * Emulates Google Maps click-to-fill behavior for camp markers while the
+   * Route Calculator is open:
+   * - Ignores clicks when the Route Calculator is closed or if the feature is
+   *   not an eligible camp / outpost.
    * - Populates whichever box is currently active/focused; if Source was just
    *   filled and Destination is still empty, advances focus to Destination.
    */
   selectLocationFromMap: (location) =>
     set((state) => {
-      if (!state.isOpen) {
+      if (!state.isOpen || !state.isRouteCalculatorOpen) {
+        return state;
+      }
+      if (!isCampRouteLocation(location)) {
         return state;
       }
 
@@ -112,64 +138,29 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
         targetSlot = 'source';
       } else if (state.source === null && state.activeInputSlot !== 'source') {
         targetSlot = 'source';
-      } else if (state.destination === null && state.source !== null && state.activeInputSlot === 'source') {
-        // Keep explicit 'source' slot if user specifically focused Source, unless Source is already this exact item
-        targetSlot = state.activeInputSlot;
       }
 
       if (targetSlot === 'source') {
+        if (state.source === null && state.destination?.id === location.id) {
+          return state;
+        }
+        const nextDestination =
+          state.destination?.id === location.id ? null : state.destination;
         return {
           source: location,
-          activeInputSlot: state.destination === null ? 'destination' : 'source',
+          destination: nextDestination,
+          activeInputSlot: nextDestination === null ? 'destination' : 'source',
         };
       }
 
+      if (state.destination === null && state.source?.id === location.id) {
+        return state;
+      }
+      const nextSource = state.source?.id === location.id ? null : state.source;
       return {
         destination: location,
-        activeInputSlot: 'destination',
-      };
-    }),
-
-  presentClickedLocation: (clickedLocation) =>
-    set((state) => {
-      const waitingForStart =
-        state.destination !== null &&
-        state.source === null &&
-        state.destination.id !== clickedLocation.id;
-
-      if (waitingForStart) {
-        return {
-          source: clickedLocation,
-          clickedLocation: null,
-          isOpen: true,
-          activeTab: 'mission',
-          activeInputSlot: 'destination',
-        };
-      }
-
-      return {
-        clickedLocation,
-        isOpen: true,
-        activeTab: 'mission',
-      };
-    }),
-
-  clearClickedLocation: () => set({ clickedLocation: null }),
-
-  assignClickedLocation: (slot) =>
-    set((state) => {
-      if (!state.clickedLocation) return {};
-      if (slot === 'source') {
-        return {
-          source: state.clickedLocation,
-          clickedLocation: null,
-          activeInputSlot: state.destination === null ? 'destination' : 'source',
-        };
-      }
-      return {
-        destination: state.clickedLocation,
-        clickedLocation: null,
-        activeInputSlot: 'destination',
+        source: nextSource,
+        activeInputSlot: nextSource === null ? 'source' : 'destination',
       };
     }),
 }));

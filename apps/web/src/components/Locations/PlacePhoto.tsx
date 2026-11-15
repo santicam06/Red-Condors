@@ -4,7 +4,10 @@ import {
   PLACE_IMAGE_LAYERS,
   chooseImageryZoom,
   trekTileUrl,
+  type PlaceImageLayer,
 } from './placeImagery';
+
+const AUTO_SWIPE_INTERVAL_MS = 7000;
 
 interface PlacePhotoProps {
   latitude: number;
@@ -12,15 +15,13 @@ interface PlacePhotoProps {
   diameterKm: number;
 }
 
-/**
- * Centered photo of the feature, swapped like a Google Maps photo strip.
- * Tiles are drawn so the place sits in the middle even when it falls on a tile edge.
- */
-export function PlacePhoto({ latitude, longitude, diameterKm }: PlacePhotoProps) {
-  const [index, setIndex] = useState(0);
+interface PlacePhotoSlideProps extends PlacePhotoProps {
+  layer: PlaceImageLayer;
+}
+
+function PlacePhotoSlide({ layer, latitude, longitude, diameterKm }: PlacePhotoSlideProps) {
   const [failed, setFailed] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const layer = PLACE_IMAGE_LAYERS[index] ?? PLACE_IMAGE_LAYERS[0];
 
   useEffect(() => {
     setFailed(false);
@@ -91,6 +92,34 @@ export function PlacePhoto({ latitude, longitude, diameterKm }: PlacePhotoProps)
     };
   }, [latitude, longitude, diameterKm, layer]);
 
+  return (
+    <div className="relative h-full w-full shrink-0">
+      <canvas ref={canvasRef} className="h-full w-full" aria-label={layer.title} />
+      {failed && (
+        <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-[13px] text-white/80">
+          Imagery for this view could not be loaded.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Centered photo of the feature, swapped like a Google Maps photo strip.
+ * Tiles are drawn so the place sits in the middle even when it falls on a tile edge.
+ */
+export function PlacePhoto({ latitude, longitude, diameterKm }: PlacePhotoProps) {
+  const [index, setIndex] = useState(0);
+  const layer = PLACE_IMAGE_LAYERS[index] ?? PLACE_IMAGE_LAYERS[0];
+
+  useEffect(() => {
+    if (PLACE_IMAGE_LAYERS.length < 2) return;
+    const timer = window.setTimeout(() => {
+      setIndex((current) => (current + 1) % PLACE_IMAGE_LAYERS.length);
+    }, AUTO_SWIPE_INTERVAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [index]);
+
   const showPrevious = () => {
     setIndex((current) => (current === 0 ? PLACE_IMAGE_LAYERS.length - 1 : current - 1));
   };
@@ -99,13 +128,21 @@ export function PlacePhoto({ latitude, longitude, diameterKm }: PlacePhotoProps)
   };
 
   return (
-    <div className="relative h-[210px] w-full bg-[#1c110c]">
-      <canvas ref={canvasRef} className="h-full w-full" aria-label={layer.title} />
-      {failed && (
-        <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-[13px] text-white/80">
-          Imagery for this view could not be loaded.
-        </p>
-      )}
+    <div className="relative h-[210px] w-full overflow-hidden bg-[#1c110c]">
+      <div
+        className="flex h-full w-full transition-transform duration-500 ease-in-out motion-reduce:transition-none"
+        style={{ transform: `translateX(-${index * 100}%)` }}
+      >
+        {PLACE_IMAGE_LAYERS.map((item) => (
+          <PlacePhotoSlide
+            key={item.id}
+            layer={item}
+            latitude={latitude}
+            longitude={longitude}
+            diameterKm={diameterKm}
+          />
+        ))}
+      </div>
 
       <button
         type="button"

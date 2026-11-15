@@ -1,55 +1,38 @@
-import { loadNomenclatureGeoJSON } from '../../../core/layers/nomenclatureData';
-import type { RouteLocation } from '../types';
-import { CUSTOM_LOCATIONS } from './customLocations';
-
-let cachedNomenclatureLocations: RouteLocation[] | null = null;
+import { isCampRouteLocation, type RouteLocation } from '../types';
+import { getAllCampLocations } from './customLocations';
 
 /**
- * Converts cached Mars Nomenclature GeoJSON features into searchable
- * `RouteLocation` items, combined with any custom outpost locations.
+ * Returns all crew camps / outposts eligible to be selected as Source or
+ * Destination for route calculations. Planetary nomenclature features are
+ * excluded (nomenclatures are used only for viewing feature details).
  */
 export async function getSearchableLocations(): Promise<RouteLocation[]> {
-  if (!cachedNomenclatureLocations) {
-    const geojson = await loadNomenclatureGeoJSON();
-    cachedNomenclatureLocations = geojson.features.map((feature) => {
-      const [lon, lat] = feature.geometry.coordinates;
-      const { fid, name, type, level } = feature.properties;
-      return {
-        id: `nom-${fid}`,
-        name,
-        subtitle: type,
-        lat,
-        lon,
-        category: 'nomenclature',
-        priorityLevel: level,
-      };
-    });
-  }
-
-  return [...CUSTOM_LOCATIONS, ...cachedNomenclatureLocations];
+  return getAllCampLocations();
 }
 
 /**
- * Ranks and filters locations for Source / Destination autocomplete.
- * Custom outposts appear first, followed by prefix matches and major Martian
- * regions (`priorityLevel` 1 -> 7).
+ * Ranks and filters camp locations for Source / Destination autocomplete.
+ * Every camp kind (base-camp, habitat, science, waypoint, and future camp
+ * types) is eligible.
  */
 export function filterLocations(
   locations: RouteLocation[],
   rawQuery: string,
-  limit = 8
+  limit = 50
 ): RouteLocation[] {
+  const eligible = locations.filter(isCampRouteLocation);
   const query = rawQuery.trim().toLowerCase();
 
   if (!query) {
-    return locations.slice(0, limit);
+    return eligible.slice(0, limit);
   }
 
   const scored: Array<{ item: RouteLocation; score: number }> = [];
 
-  for (const item of locations) {
+  for (const item of eligible) {
     const lowerName = item.name.toLowerCase();
     const lowerSubtitle = item.subtitle?.toLowerCase() ?? '';
+    const lowerKind = item.campKind?.toLowerCase() ?? '';
 
     let matchTier = 0;
     if (lowerName === query) {
@@ -58,17 +41,15 @@ export function filterLocations(
       matchTier = 3;
     } else if (lowerName.includes(query)) {
       matchTier = 2;
-    } else if (lowerSubtitle.includes(query)) {
+    } else if (lowerSubtitle.includes(query) || lowerKind.includes(query)) {
       matchTier = 1;
     }
 
     if (matchTier === 0) continue;
 
-    const categoryBoost = item.category === 'outpost' ? 100 : 0;
-    const levelBoost = 8 - Math.min(7, Math.max(1, item.priorityLevel ?? 7));
     scored.push({
       item,
-      score: categoryBoost + matchTier * 10 + levelBoost,
+      score: matchTier * 10,
     });
   }
 

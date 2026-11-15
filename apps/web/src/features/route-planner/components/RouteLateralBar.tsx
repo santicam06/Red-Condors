@@ -151,7 +151,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
               <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                 <LocationInputBox
                   label="Source location"
-                  placeholder="Choose starting point, or click map..."
+                  placeholder="Choose starting camp..."
                   value={source}
                   isActiveSlot={activeInputSlot === 'source'}
                   onFocusSlot={() => setActiveInputSlot('source')}
@@ -159,7 +159,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
                 />
                 <LocationInputBox
                   label="Destination location"
-                  placeholder="Choose destination..."
+                  placeholder="Choose destination camp..."
                   value={destination}
                   isActiveSlot={activeInputSlot === 'destination'}
                   onFocusSlot={() => setActiveInputSlot('destination')}
@@ -201,7 +201,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
           hit={selectedPlace}
           onClose={() => clearSelectedPlace(null)}
         />
-        <OlympusRehearsal controller={controller} />
+        <OlympusRehearsal controller={controller} hidePanel={Boolean(selectedPlace)} />
       </div>
     </aside>
   );
