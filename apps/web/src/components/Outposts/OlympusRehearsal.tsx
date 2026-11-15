@@ -331,6 +331,9 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
     useRoutePlannerStore
       .getState()
       .openIndicationsForLocation(olympusSiteToRouteLocation(selected));
+    // Hand the side bar over to the route planner: no camp/place details while planning
+    useOutpostSelection.getState().setOpen(false);
+    useNomenclatureSelection.getState().setHit(null);
   };
 
   const handleClose = () => {

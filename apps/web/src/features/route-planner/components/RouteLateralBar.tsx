@@ -11,6 +11,7 @@ import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
 import type { TravelMode } from '../types';
 import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
 import { LocationInputBox } from './LocationInputBox';
+import { RouteDetails } from './RouteDetails';
 import { RouteResults } from './RouteResults';
 
 interface RouteLateralBarProps {
@@ -25,6 +26,9 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const destination = useRoutePlannerStore((s) => s.destination);
   const activeInputSlot = useRoutePlannerStore((s) => s.activeInputSlot);
   useCampSafeRoute();
+  // While a camp-to-camp route is shown, the bar lists only the routes (no camp/place details card)
+  const hasRoute = useRoutingStore((s) => s.request !== null);
+  const routesReady = useRoutingStore((s) => s.status === 'ready');
   const selectedRoute = useRoutingStore(
     (s) => s.routes.find((r) => r.kind === (s.highlightedKind ?? DEFAULT_ROUTE_KIND)) ?? null
   );
@@ -109,7 +113,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
                         <Icon className="h-[25px] w-[25px]" />
                       </span>
                       <span
-                        className={`text-[12px] leading-tight tabular-nums transition-colors duration-150 ${
+                        className={`text-[13px] leading-tight tabular-nums transition-colors duration-150 ${
                           active
                             ? 'font-semibold text-[#A50E0E]'
                             : 'font-normal text-[#5F6368] group-hover:text-[#B3261E]'
@@ -137,7 +141,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
             <div className="mt-2.5 mb-3.5 text-center">
               <span
                 aria-label="Traversal distance in kilometers"
-                className="text-[22px] font-semibold tracking-tight text-[#202124] tabular-nums"
+                className="text-[26px] font-semibold tracking-tight text-[#202124] tabular-nums"
               >
                 {formattedDistance}
               </span>
@@ -211,11 +215,17 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
       )}
 
       <div className="flex-1 overflow-y-auto bg-white">
-        <LocationDetailsPanel
-          hit={selectedPlace}
-          onClose={() => clearSelectedPlace(null)}
+        {hasRoute && routesReady && selectedRoute && <RouteDetails route={selectedRoute} />}
+        {!hasRoute && (
+          <LocationDetailsPanel
+            hit={selectedPlace}
+            onClose={() => clearSelectedPlace(null)}
+          />
+        )}
+        <OlympusRehearsal
+          controller={controller}
+          hidePanel={hasRoute || Boolean(selectedPlace)}
         />
-        <OlympusRehearsal controller={controller} hidePanel={Boolean(selectedPlace)} />
       </div>
     </aside>
   );
