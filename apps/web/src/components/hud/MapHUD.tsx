@@ -1,4 +1,5 @@
 import type { MarsViewerController } from "../../core/MarsViewerController";
+import { BasemapControl } from "../../features/map-layers/BasemapControl";
 import { PegmanControl } from "../../features/rover-streetview/components/PegmanControl";
 import { WalkableAreaLegend } from "../../features/routing/components/WalkableAreaLegend";
 import { useRoutePlannerStore } from "../../features/route-planner/store/useRoutePlannerStore";
@@ -43,6 +44,7 @@ export function MapHUD({ controller }: MapHUDProps) {
             onZoomIn={() => controller?.zoomIn()}
             onZoomOut={() => controller?.zoomOut()}
           />
+          <BasemapControl />
           <AttributionCredit />
         </div>
 

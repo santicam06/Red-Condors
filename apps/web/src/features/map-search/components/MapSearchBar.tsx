@@ -4,6 +4,7 @@ import type { OutpostKind } from '../../../components/Outposts/olympusSites';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { AstronautIcon } from '../../rover-streetview/components/avatars/AstronautIcon';
 import { RoverIcon } from '../../rover-streetview/components/avatars/RoverIcon';
+import { useRoutePlannerStore } from '../../route-planner/store/useRoutePlannerStore';
 import { useStreetViewStore } from '../../rover-streetview/store/useStreetViewStore';
 import { clearSearchPin, selectSearchResult } from '../actions/selectSearchResult';
 import { rankResults } from '../data/rankResults';
@@ -79,6 +80,8 @@ export function MapSearchBar({ controller }: MapSearchBarProps) {
   );
   const stops = useStreetViewStore((s) => s.stops);
   const panoramaOpen = useStreetViewStore((s) => s.activeStop !== null);
+  // While the side card is open the bar spans its full width (475px card minus 12px margins)
+  const sideCardOpen = useRoutePlannerStore((s) => s.isOpen);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -168,7 +171,11 @@ export function MapSearchBar({ controller }: MapSearchBarProps) {
   return (
     <div
       ref={rootRef}
-      className="font-jetbrains pointer-events-auto fixed left-3 top-3 z-[21] w-[360px] max-w-[calc(100vw-1.5rem)]"
+      className={`font-jetbrains pointer-events-auto fixed left-3 top-3 z-[21] transition-[width] duration-250 ease-out ${
+        sideCardOpen
+          ? 'w-[451px] max-w-[calc(100vw-4.5rem)]'
+          : 'w-[360px] max-w-[calc(100vw-1.5rem)]'
+      }`}
     >
       <div className="flex h-11 items-center gap-2 rounded-lg border border-red-700/40 bg-white px-3 shadow-[0_2px_6px_rgba(0,0,0,0.3)] focus-within:border-red-700">
         <Search className="h-4 w-4 shrink-0 text-red-700" strokeWidth={2.25} />

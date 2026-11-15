@@ -20,7 +20,7 @@ route planning.
 
 | # | Feature | Status |
 | :-: | :--- | :--- |
-| 1 | 3D globe & 2D map of Mars with Mars Trek imagery, nomenclature labels, coordinate readout, zoom | ✅ Implemented |
+| 1 | 3D globe & 2D map of Mars with Mars Trek imagery (Satellite or altitude-colored Terrain via the bottom-left Layers button), nomenclature labels, coordinate readout, zoom | ✅ Implemented |
 | 2 | Martian "Street View": rover surface imagery as clickable dots | 🛠 Planned |
 | 3 | Outpost locations & EVA / rover route rehearsals (distance, ETA) | 🟡 Started: hypothetical Olympus Mons crew sites, plus the route bar |
 | 4 | Climate & environmental tracking with dynamic rerouting | 🟡 Started: Olympus dust-season rehearsal reroutes a traverse |

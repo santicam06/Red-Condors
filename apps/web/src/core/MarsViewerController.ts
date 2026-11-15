@@ -74,6 +74,7 @@ export class MarsViewerController {
   private readonly scratchEntityCarto = new Cesium.Cartographic();
   private readonly scratchKineticDir = new Cesium.Cartesian3();
 
+  private baseImageryLayer: Cesium.ImageryLayer | null = null;
   private zoomAnimationFrame: number | null = null;
   private cursorRafPending = false;
   private latestMousePosition = new Cesium.Cartesian2(-1, -1);
@@ -154,7 +155,7 @@ export class MarsViewerController {
 
     // Add verified NASA Mars Trek global Viking Color Mosaic WMTS basemap
     const vikingBasemap = createVikingBasemapProvider();
-    this.viewer.imageryLayers.addImageryProvider(vikingBasemap);
+    this.baseImageryLayer = this.viewer.imageryLayers.addImageryProvider(vikingBasemap);
 
     // Set initial Mars Trek framing
     this.viewer.camera.setView({
@@ -1150,6 +1151,17 @@ export class MarsViewerController {
     this.nomenclatureManager.raiseToTop();
     this.overlayDataSources.set(channelId, ds);
     return ds;
+  }
+
+  /** Swaps the globe imagery (Satellite or Terrain) and keeps every overlay above it. */
+  public replaceBasemap(provider: Cesium.ImageryProvider): void {
+    if (this.viewer.isDestroyed()) return;
+    const layers = this.viewer.imageryLayers;
+    if (this.baseImageryLayer) {
+      layers.remove(this.baseImageryLayer, true);
+    }
+    this.baseImageryLayer = layers.addImageryProvider(provider, 0);
+    this.viewer.scene.requestRender();
   }
 
   /**

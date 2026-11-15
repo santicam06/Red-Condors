@@ -62,7 +62,7 @@ The place card opened from a nomenclature name shows a photo of that spot, cente
 - **License / Terms:** Public Domain (U.S. Government / NASA & USGS open planetary science data)
 - **Usage in Project:** First photo in the location card (`apps/web/src/components/Locations/PlacePhoto.tsx`). This is the same mosaic as the globe basemap, cropped around the clicked feature. Cross-origin tile reads are allowed (`Access-Control-Allow-Origin: *`).
 
-### 2.2 Mars Global Surveyor MOLA Color Shaded Relief (place photo)
+### 2.2 Mars Global Surveyor MOLA Color Shaded Relief (place photo and Terrain basemap)
 - **Layer Identifier:** `Mars_MGS_MOLA_ClrShade_merge_global_463m`
 - **WMTS Capabilities:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml`
 - **Tile Template:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{TileMatrix}/{TileRow}/{TileCol}.jpg`
@@ -71,7 +71,7 @@ The place card opened from a nomenclature name shows a photo of that spot, cente
 - **Provider / Credit:** Courtesy NASA / JPL-Caltech / Goddard Space Flight Center (GSFC)
 - **Portal:** NASA Mars Trek (`https://trek.nasa.gov/mars/`)
 - **License / Terms:** Public Domain (U.S. Government / NASA open planetary science data)
-- **Usage in Project:** Second photo in the location card, switched with the on-image arrows. Zoom follows the feature’s diameter so a crater and a regional terra are both framed. Tile math and credits live in `apps/web/src/components/Locations/placeImagery.ts`.
+- **Usage in Project:** Second photo in the location card, switched with the on-image arrows. Zoom follows the feature’s diameter so a crater and a regional terra are both framed. Tile math and credits live in `apps/web/src/components/Locations/placeImagery.ts`. The same layer is also the **Terrain** globe view, chosen from the bottom-left Layers button (`apps/web/src/features/map-layers/basemaps.ts`), which colors Mars by altitude.
 
 ### 1.6 MOLA Global Digital Elevation Model (`mola128_mola64_merge_90Nto90S_SimpleC_clon0.tif`)
 - **Product:** Mars MGS MOLA DEM, 128 pixels/degree merged with 64 ppd where 128 ppd is unavailable (~463 m/pixel), Simple Cylindrical, centre longitude 0°, Int16 metres relative to the Mars areoid

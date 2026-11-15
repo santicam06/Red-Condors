@@ -42,7 +42,7 @@ export function AttributionCredit() {
         >
           <img src="/favicon.png" alt="RoaMars" className="h-12 w-12 shrink-0 object-contain" />
           <span>
-            Imagery: Courtesy NASA/JPL-Caltech/USGS • Nomenclature: IAU/USGS • Elevation: MGS MOLA, NASA/GSFC/USGS
+            Satellite: Viking color mosaic, Courtesy NASA/JPL-Caltech/USGS • Terrain: MGS MOLA color shaded relief, Courtesy NASA/JPL-Caltech/GSFC • Nomenclature: IAU/USGS • Elevation: MGS MOLA, NASA/GSFC/USGS
           </span>
         </div>
       )}
