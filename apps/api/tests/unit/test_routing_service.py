@@ -83,10 +83,33 @@ def test_closed_wall_has_no_safe_route(synthetic_dem):
     assert (grid[(lon_grid > WALL_EAST + 0.02) & (grid != "0")] == "1").all()
 
 
-def test_source_beyond_twenty_km_is_rejected(synthetic_dem):
-    far_source = {"lat": 0.0, "lon": -0.2}  # ~23.7 km from the destination
+def test_source_beyond_the_maximum_distance_is_rejected(synthetic_dem):
+    far_source = {"lat": 0.0, "lon": -14.0}  # ~830 km from the destination
     with pytest.raises(SourceTooFarError):
         compute_routes(request(source=far_source), synthetic_dem(flat), SETTINGS)
+
+
+def test_long_traverse_is_planned_on_a_coarsened_grid(synthetic_dem):
+    # ~150 km apart: far beyond the native-resolution window, like the Olympus crew camps
+    source, destination = {"lat": 0.0, "lon": -1.25}, {"lat": 0.0, "lon": 1.25}
+    response = compute_routes(request(source, destination), synthetic_dem(flat), SETTINGS)
+
+    assert [r.kind for r in response.routes] == ["shortest", "fastest", "safest"]
+    assert response.dem_resolution_m > 463
+    assert any("Long traverse" in w for w in response.warnings)
+    area = response.walkable_area
+    assert max(area.rows, area.cols) <= SETTINGS.route_graph_max_side_px
+    straight = float(haversine_m(0.0, -1.25, 0.0, 1.25))
+    assert response.routes[0].distance_m == pytest.approx(straight, rel=0.02)
+    assert response.routes[0].coordinates[0][:2] == (-1.25, 0.0)
+    assert response.routes[0].coordinates[-1][:2] == (1.25, 0.0)
+
+
+def test_short_traverse_keeps_native_resolution(synthetic_dem):
+    response = compute_routes(request(), synthetic_dem(flat), SETTINGS)
+
+    assert response.dem_resolution_m == pytest.approx(463, abs=1)
+    assert not any("Long traverse" in w for w in response.warnings)
 
 
 @pytest.mark.parametrize("limit", [8.0, 15.0])

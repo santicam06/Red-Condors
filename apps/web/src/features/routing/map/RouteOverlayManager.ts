@@ -1,7 +1,7 @@
 import * as Cesium from 'cesium';
 import { MARS_ELLIPSOID } from '../../../config/marsConfig';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
-import { ROUTE_SOURCE_MAX_DISTANCE_KM, ROUTE_STYLE } from '../config/demoRoute';
+import { ROUTE_STYLE } from '../config/routeStyle';
 import { WALKABLE_CELL_RGBA } from '../config/walkableAreaStyle';
 import {
   type LatLon,
@@ -16,6 +16,12 @@ const LABEL_FONT = '500 12px "JetBrains Mono", monospace';
 /** Each DEM pixel is drawn as an N×N block so cell edges stay crisp when resampled */
 const CELL_UPSCALE = 4;
 const WALKABLE_LAYER_ALPHA = 0.85;
+/** Route labels stay visible from far enough out to frame long camp-to-camp traverses */
+const LABEL_MAX_DISTANCE_M = 5_000_000;
+/** Extra margin around the framed route, as a fraction of its extent */
+const FRAME_PADDING = 0.25;
+/** Minimum framed half-extent (degrees of latitude), so short routes are not over-zoomed */
+const FRAME_MIN_HALF_DEG = 0.25;
 
 export interface RouteOverlayState {
   request: RouteRequest | null;
@@ -61,7 +67,7 @@ export class RouteOverlayManager {
     // Frame once per request, also when there is no route but the blocking terrain is shown
     if ((routes.length > 0 || walkableArea) && this.lastFramedRequest !== request) {
       this.lastFramedRequest = request;
-      this.frame(request.destination);
+      this.frame(request, routes);
     }
     this.requestRender();
   }
@@ -105,7 +111,7 @@ export class RouteOverlayManager {
         horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
         pixelOffset: new Cesium.Cartesian2(12, offsetY),
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 600_000),
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, LABEL_MAX_DISTANCE_M),
       },
     });
   }
@@ -169,18 +175,32 @@ export class RouteOverlayManager {
     this.walkableLayer = null;
   }
 
-  /** Flies the camera to frame the planning area around the destination (3D and 2D). */
-  private frame(center: LatLon) {
-    const halfLat = Cesium.Math.toDegrees(
-      (ROUTE_SOURCE_MAX_DISTANCE_KM * 1300) / MARS_ELLIPSOID.maximumRadius
+  /** Flies the camera to frame both endpoints and every route between them (3D and 2D). */
+  private frame(request: RouteRequest, routes: Route[]) {
+    const points: LatLon[] = [request.source, request.destination];
+    for (const route of routes) {
+      for (const [lon, lat] of route.coordinates) points.push({ lat, lon });
+    }
+    const lats = points.map((p) => p.lat);
+    const lons = points.map((p) => p.lon);
+    const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const centerLon = (Math.min(...lons) + Math.max(...lons)) / 2;
+    const lonScale = Math.max(Math.cos(Cesium.Math.toRadians(centerLat)), 0.05);
+
+    const halfLat = Math.max(
+      ((Math.max(...lats) - Math.min(...lats)) / 2) * (1 + FRAME_PADDING),
+      FRAME_MIN_HALF_DEG
     );
-    const halfLon = halfLat / Math.max(Math.cos(Cesium.Math.toRadians(center.lat)), 0.05);
+    const halfLon = Math.max(
+      ((Math.max(...lons) - Math.min(...lons)) / 2) * (1 + FRAME_PADDING),
+      FRAME_MIN_HALF_DEG / lonScale
+    );
     this.controller.viewer.camera.flyTo({
       destination: Cesium.Rectangle.fromDegrees(
-        center.lon - halfLon,
-        center.lat - halfLat,
-        center.lon + halfLon,
-        center.lat + halfLat
+        centerLon - halfLon,
+        centerLat - halfLat,
+        centerLon + halfLon,
+        centerLat + halfLat
       ),
       duration: 2.5,
     });

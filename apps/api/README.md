@@ -43,6 +43,12 @@ Settings come from `RC_*` environment variables or a local `.env` file (see `.en
 (git-ignored), or point `RC_MOLA_DEM_PATH` at it. Without it the endpoint returns 503 and the
 real-DEM integration test is skipped.
 
+Routes are planned over a disc centred between source and destination (up to
+`RC_ROUTE_SOURCE_MAX_DISTANCE_M`, default 800 km apart). Short traverses use the native
+~463 m grid; longer ones are block-averaged so the grid stays within
+`RC_ROUTE_GRAPH_MAX_SIDE_PX` (default 400) pixels per side, and the response carries a
+"Long traverse" warning with the coarser cell size.
+
 ## Check it
 
 ```bash

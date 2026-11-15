@@ -3,11 +3,15 @@ import { LocationDetailsPanel } from '../../../components/Locations/LocationDeta
 import { OlympusRehearsal } from '../../../components/Outposts/OlympusRehearsal';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
-import { usePlannedTraverse } from '../map/usePlannedTraverse';
+import { DEFAULT_ROUTE_KIND } from '../../routing/config/routeStyle';
+import { formatDuration, formatKm } from '../../routing/map/RouteOverlayManager';
+import { useRoutingStore } from '../../routing/store/useRoutingStore';
+import { useCampSafeRoute } from '../map/useCampSafeRoute';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
 import type { TravelMode } from '../types';
 import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
 import { LocationInputBox } from './LocationInputBox';
+import { RouteResults } from './RouteResults';
 
 interface RouteLateralBarProps {
   controller: MarsViewerController | null;
@@ -20,10 +24,12 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const source = useRoutePlannerStore((s) => s.source);
   const destination = useRoutePlannerStore((s) => s.destination);
   const activeInputSlot = useRoutePlannerStore((s) => s.activeInputSlot);
-  const distanceKm = useRoutePlannerStore((s) => s.distanceKm);
-  const marswalkEta = useRoutePlannerStore((s) => s.marswalkEta);
-  const roverEta = useRoutePlannerStore((s) => s.roverEta);
-  usePlannedTraverse(controller);
+  useCampSafeRoute();
+  const selectedRoute = useRoutingStore(
+    (s) => s.routes.find((r) => r.kind === (s.highlightedKind ?? DEFAULT_ROUTE_KIND)) ?? null
+  );
+  const marswalkEta = selectedRoute ? formatDuration(selectedRoute.eta_eva_s) : null;
+  const roverEta = selectedRoute ? formatDuration(selectedRoute.eta_rover_s) : null;
 
   const setOpen = useRoutePlannerStore((s) => s.setOpen);
   const setTravelMode = useRoutePlannerStore((s) => s.setTravelMode);
@@ -59,8 +65,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
     },
   ];
 
-  const formattedDistance =
-    distanceKm !== null ? `${distanceKm.toFixed(1)} km` : '-- km';
+  const formattedDistance = selectedRoute ? formatKm(selectedRoute.distance_m) : '-- km';
 
   return (
     <aside
@@ -186,6 +191,8 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
               </button>
             </div>
           </div>
+
+          <RouteResults travelMode={travelMode} />
 
           <div className="h-[6px] w-full shrink-0 border-y border-red-700/20 bg-red-50" />
         </>

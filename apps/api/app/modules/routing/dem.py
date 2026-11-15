@@ -1,7 +1,7 @@
 """Windowed access to the MOLA global DEM.
 
-Only the small window around a destination is ever read, so the ~2 GB file never has to be
-loaded into memory.
+Only the window around a route is ever read, so the ~2 GB file never has to be loaded into
+memory. Large windows (long traverses) are averaged down to a bounded grid size.
 """
 
 import math
@@ -28,10 +28,27 @@ class DemPatch:
     lats: np.ndarray  # (rows,) pixel-centre latitudes, degrees
     lons: np.ndarray  # (cols,) pixel-centre longitudes, degrees East [-180, 180]
     resolution_m: float  # north-south pixel size in metres
+    downsample: int = 1  # DEM pixels averaged per patch pixel along each axis (1 = native)
 
 
 class DemReader(Protocol):
-    def read_patch(self, lat: float, lon: float, radius_m: float) -> DemPatch: ...
+    def read_patch(
+        self, lat: float, lon: float, radius_m: float, max_side_px: int | None = None
+    ) -> DemPatch:
+        """Reads the square-ish window ``radius_m`` around ``(lat, lon)``.
+
+        When ``max_side_px`` is set and the native window is larger, the patch is resampled
+        (block average) by an integer factor so neither side exceeds it.
+        """
+        ...
+
+
+def downsample_factor(rows: int, cols: int, max_side_px: int | None) -> int:
+    """Smallest integer factor that brings both sides of a ``rows`` x ``cols`` grid within
+    ``max_side_px`` (1 = native resolution)."""
+    if not max_side_px or max(rows, cols) <= max_side_px:
+        return 1
+    return math.ceil(max(rows, cols) / max_side_px)
 
 
 class RasterioDemReader:
@@ -50,7 +67,10 @@ class RasterioDemReader:
         if not self._dataset.crs or not self._dataset.crs.is_geographic:
             raise DemUnavailableError("Expected a DEM in geographic (degree) coordinates.")
 
-    def read_patch(self, lat: float, lon: float, radius_m: float) -> DemPatch:
+    def read_patch(
+        self, lat: float, lon: float, radius_m: float, max_side_px: int | None = None
+    ) -> DemPatch:
+        from rasterio.enums import Resampling
         from rasterio.windows import Window
 
         ds = self._dataset
@@ -71,18 +91,32 @@ class RasterioDemReader:
         col0, row0 = max(col0, 0), max(row0, 0)
         col1, row1 = min(col1, ds.width), min(row1, ds.height)
 
-        with self._lock:
-            raw = ds.read(1, window=Window(col0, row0, col1 - col0, row1 - row0))
+        # Coarsen long-traverse windows: whole blocks of `factor` x `factor` pixels are averaged
+        factor = downsample_factor(row1 - row0, col1 - col0, max_side_px)
+        if factor > 1:
+            row1 = row0 + max(1, (row1 - row0) // factor) * factor
+            col1 = col0 + max(1, (col1 - col0) // factor) * factor
+            col1, row1 = min(col1, ds.width), min(row1, ds.height)
+        out_rows = math.ceil((row1 - row0) / factor)
+        out_cols = math.ceil((col1 - col0) / factor)
 
-        elevation = raw.astype(np.float64)
-        if ds.nodata is not None:
-            elevation[raw == ds.nodata] = np.nan
+        with self._lock:
+            raw = ds.read(
+                1,
+                window=Window(col0, row0, col1 - col0, row1 - row0),
+                out_shape=(out_rows, out_cols),
+                resampling=Resampling.average,
+                masked=True,
+            )
+
+        elevation = np.ma.filled(raw.astype(np.float64), np.nan)
         elevation = elevation * ds.scales[0] + ds.offsets[0]
 
-        lats = transform.f - (np.arange(row0, row1) + 0.5) * pixel_deg_y
-        lons = transform.c + (np.arange(col0, col1) + 0.5) * pixel_deg_x
-        resolution_m = math.radians(pixel_deg_y) * MARS_RADIUS_M
-        return DemPatch(elevation, lats, lons, resolution_m)
+        step_y, step_x = pixel_deg_y * factor, pixel_deg_x * factor
+        lats = transform.f - row0 * pixel_deg_y - (np.arange(out_rows) + 0.5) * step_y
+        lons = transform.c + col0 * pixel_deg_x + (np.arange(out_cols) + 0.5) * step_x
+        resolution_m = math.radians(step_y) * MARS_RADIUS_M
+        return DemPatch(elevation, lats, lons, resolution_m, factor)
 
 
 def resolve_dem_path(raw: str) -> Path:

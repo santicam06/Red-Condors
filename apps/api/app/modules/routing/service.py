@@ -43,11 +43,17 @@ def compute_routes(request: RouteRequest, reader: DemReader, settings: Settings)
             f"{settings.route_source_max_distance_m / 1000:.0f} km."
         )
 
-    patch = reader.read_patch(destination.lat, destination.lon, settings.route_graph_radius_m)
-    speed = SpeedModel(settings.rover_speed_kmh, settings.eva_speed_kmh, max_slope)
-    terrain = build_terrain(
-        patch, destination.lat, destination.lon, settings.route_graph_radius_m, speed
+    # Plan over a disc centred between the endpoints, padded so detours around obstacles fit.
+    # Antimeridian crossings are rejected by the reader, so a plain lat/lon mean is enough.
+    center_lat = (source.lat + destination.lat) / 2
+    center_lon = (source.lon + destination.lon) / 2
+    radius = max(
+        settings.route_graph_radius_m,
+        separation / 2 * (1 + settings.route_area_margin_fraction),
     )
+    patch = reader.read_patch(center_lat, center_lon, radius, settings.route_graph_max_side_px)
+    speed = SpeedModel(settings.rover_speed_kmh, settings.eva_speed_kmh, max_slope)
+    terrain = build_terrain(patch, center_lat, center_lon, radius, speed)
 
     cols = patch.elevation.shape[1]
     source_px = _nearest_pixel(patch, source)
@@ -81,7 +87,7 @@ def compute_routes(request: RouteRequest, reader: DemReader, settings: Settings)
         routes=routes,
         dem_resolution_m=patch.resolution_m,
         max_slope_deg=max_slope,
-        warnings=_duplicate_warnings(paths),
+        warnings=_resolution_warnings(patch) + _duplicate_warnings(paths),
         walkable_area=walkable_area,
     )
 
@@ -173,6 +179,15 @@ def _describe(
         max_slope_deg=round(float(slope.max(initial=0.0)), 2),
         mean_slope_deg=round(float((slope * length).sum() / distance) if distance else 0.0, 2),
     )
+
+
+def _resolution_warnings(patch: DemPatch) -> list[str]:
+    if patch.downsample <= 1:
+        return []
+    return [
+        f"Long traverse: terrain was sampled at ~{patch.resolution_m / 1000:.1f} km cells, so "
+        "slopes shorter than that are smoothed out. Re-plan short legs for full detail."
+    ]
 
 
 def _duplicate_warnings(paths: dict[RouteKind, list[int]]) -> list[str]:

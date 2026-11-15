@@ -23,8 +23,13 @@ class Settings(BaseSettings):
     # MOLA MEGDR 128/64 ppd merged DEM. Relative paths resolve against apps/api/.
     mola_dem_path: str = "data/mola128_mola64_merge_90Nto90S_SimpleC_clon0.tif"
     route_max_slope_deg: float = 15.0
-    route_source_max_distance_m: float = 20_000.0
+    # Long traverses (e.g. between the Olympus Mons crew camps) are planned on a coarsened DEM:
+    # the planning window is resampled so its longer side stays within `route_graph_max_side_px`.
+    route_source_max_distance_m: float = 800_000.0
     route_graph_radius_m: float = 25_000.0
+    route_graph_max_side_px: int = 400
+    # Padding around the source/destination pair, as a fraction of half their separation
+    route_area_margin_fraction: float = 0.25
     rover_speed_kmh: float = 10.0
     eva_speed_kmh: float = 3.5
 

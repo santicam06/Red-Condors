@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
-import { DEMO_ROUTE_REQUEST } from '../config/demoRoute';
 import { useRoutingStore } from '../store/useRoutingStore';
 import { RouteOverlayManager } from './RouteOverlayManager';
 
@@ -9,10 +8,10 @@ interface RouteLayerProps {
 }
 
 /**
- * Renders safe routes from `useRoutingStore` onto the map. Has no UI of its own.
+ * Renders safe routes from `useRoutingStore` onto the map. Has no UI of its own: requests come
+ * from the route planner (see `useCampSafeRoute`).
  */
 export function RouteLayer({ controller }: RouteLayerProps) {
-  // Draw whatever is in the routing store, redrawing on every change.
   useEffect(() => {
     if (!controller) return;
 
@@ -25,13 +24,6 @@ export function RouteLayer({ controller }: RouteLayerProps) {
         walkableArea: state.walkableArea,
         walkableAreaVisible: state.walkableAreaVisible,
       });
-      // TODO(routing-ui): surface `status`, `error` and `warnings` in the route-planner UI.
-      if (state.status === 'error') {
-        console.warn('[routing] Route request failed:', state.error);
-      }
-      for (const warning of state.warnings) {
-        console.warn('[routing]', warning);
-      }
     };
 
     draw(useRoutingStore.getState());
@@ -40,16 +32,6 @@ export function RouteLayer({ controller }: RouteLayerProps) {
       unsubscribe();
       manager.destroy();
     };
-  }, [controller]);
-
-  // TODO(routing-ui): replace this static demo request with input from the custom
-  // route-planner UI, which should call:
-  //   useRoutingStore.getState().setRequest({ source, destination })
-  // with `source` within 20 km of `destination`. Delete this effect once that UI exists.
-  useEffect(() => {
-    if (!controller) return;
-    if (useRoutingStore.getState().request) return;
-    void useRoutingStore.getState().setRequest(DEMO_ROUTE_REQUEST);
   }, [controller]);
 
   return null;

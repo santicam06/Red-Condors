@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { RouteRequestError, fetchRoutes } from '../api/routingClient';
+import { DEFAULT_ROUTE_KIND } from '../config/routeStyle';
 import type { Route, RouteKind, RouteRequest, WalkableArea } from '../types/routing';
 
 export type RoutingStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -10,11 +11,11 @@ interface RoutingState {
   warnings: string[];
   /** Per-pixel terrain classes (gentle / moderate / steep / unreachable) around the destination */
   walkableArea: WalkableArea | null;
-  /** Whether the walkable-area overlay is drawn (for a future UI toggle) */
+  /** Whether the walkable-area overlay is drawn (HUD toggle) */
   walkableAreaVisible: boolean;
   status: RoutingStatus;
   error: string | null;
-  /** Route drawn emphasised on the map (for a future route-card hover, etc.) */
+  /** Route drawn emphasised on the map and summarised in the route planner */
   highlightedKind: RouteKind | null;
   /**
    * Entry point for any UI: sets source/destination and fetches the 3 safe routes.
@@ -36,7 +37,7 @@ export const useRoutingStore = create<RoutingState>((set) => ({
   walkableAreaVisible: true,
   status: 'idle',
   error: null,
-  highlightedKind: null,
+  highlightedKind: DEFAULT_ROUTE_KIND,
 
   setRequest: async (request) => {
     inFlight?.abort();

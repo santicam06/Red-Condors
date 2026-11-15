@@ -16,18 +16,9 @@ interface RoutePlannerState {
   activeInputSlot: ActiveInputSlot;
   activeTab: RouteTab;
 
-  distanceKm: number | null;
-  marswalkEta: string | null;
-  roverEta: string | null;
-
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
   setTravelMode: (mode: TravelMode) => void;
-  setTraverseSummary: (summary: {
-    distanceKm: number | null;
-    marswalkEta: string | null;
-    roverEta: string | null;
-  }) => void;
   setSource: (location: RouteLocation | null) => void;
   setDestination: (location: RouteLocation | null) => void;
   swapLocations: () => void;
@@ -46,10 +37,6 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   activeInputSlot: 'source',
   activeTab: 'mission',
 
-  distanceKm: null,
-  marswalkEta: null,
-  roverEta: null,
-
   setOpen: (isOpen) =>
     set(() =>
       isOpen
@@ -60,9 +47,6 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
             source: null,
             destination: null,
             activeInputSlot: 'source',
-            distanceKm: null,
-            marswalkEta: null,
-            roverEta: null,
           }
     ),
   toggleOpen: () =>
@@ -75,13 +59,9 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
             source: null,
             destination: null,
             activeInputSlot: 'source',
-            distanceKm: null,
-            marswalkEta: null,
-            roverEta: null,
           }
     ),
   setTravelMode: (travelMode) => set({ travelMode }),
-  setTraverseSummary: (summary) => set(summary),
 
   setSource: (source) =>
     set((state) => {
