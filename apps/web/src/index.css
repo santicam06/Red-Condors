@@ -102,14 +102,14 @@ body,
     inset 4px 4px 0 0 #7f1d1d;
 }
 
-/* Pixel rover parked on the button: drives right while the button is hovered or focused. */
+/* Pixel rover parked on the button: drives right while the button is hovered.
+   Hover only: the button is auto-focused on load, so a focus trigger would start the drive by itself. */
 .pixel-rover {
   transform: translateX(0);
   transition: transform 1.1s steps(22);
 }
 
-.pixel-start:hover .pixel-rover,
-.pixel-start:focus-visible .pixel-rover {
+.pixel-start:hover .pixel-rover {
   transform: translateX(var(--rover-travel));
 }
 
@@ -123,8 +123,7 @@ body,
   }
 }
 
-.pixel-start:hover .pixel-rover-body,
-.pixel-start:focus-visible .pixel-rover-body {
+.pixel-start:hover .pixel-rover-body {
   animation: pixel-wheel-bob 0.2s steps(2) infinite;
 }
 
@@ -133,8 +132,7 @@ body,
     transition: none;
   }
 
-  .pixel-start:hover .pixel-rover-body,
-  .pixel-start:focus-visible .pixel-rover-body {
+  .pixel-start:hover .pixel-rover-body {
     animation: none;
   }
 }

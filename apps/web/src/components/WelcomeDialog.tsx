@@ -51,11 +51,11 @@ export function WelcomeDialog() {
           onClick={() => setOpen(false)}
           className="pixel-start group relative mt-8 flex h-14 w-60 cursor-pointer items-center justify-center outline-none [--rover-travel:184px]"
         >
-          {/* Rover parked on top of the button; drives to the right on hover/focus. */}
+          {/* Rover parked on top of the button; drives to the right on hover. */}
           <span className="pixel-rover pointer-events-none absolute -top-[34px] left-1">
             <PixelRover />
           </span>
-          <span className="pixel-button font-pixel flex h-full w-full items-center justify-center bg-red-700 text-[16px] text-white transition-colors group-hover:bg-red-600 group-focus-visible:bg-red-600 group-active:translate-y-0.5">
+          <span className="pixel-button font-pixel flex h-full w-full items-center justify-center bg-red-700 text-[16px] text-white transition-colors group-hover:bg-red-600 group-active:translate-y-0.5">
             START
           </span>
         </button>
