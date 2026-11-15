@@ -4,11 +4,11 @@ import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { ROUTE_SOURCE_MAX_DISTANCE_KM, ROUTE_STYLE } from '../config/demoRoute';
 import { WALKABLE_CELL_RGBA } from '../config/walkableAreaStyle';
 import {
-  type LatLon,
-  type Route,
-  type RouteKind,
-  type RouteRequest,
-  type WalkableArea,
+    type LatLon,
+    type Route,
+    type RouteKind,
+    type RouteRequest,
+    type WalkableArea,
 } from '../types/routing';
 
 const OVERLAY_CHANNEL_ID = 'routing';
@@ -26,8 +26,8 @@ export interface RouteOverlayState {
 }
 
 /**
- * Draws the walkable-area overlay, the source/destination pins and the shortest / fastest /
- * safest routes on both the 3D globe and the 2D map.
+ * Draws the walkable-area overlay and the shortest / fastest / safest routes
+ * on both the 3D globe and the 2D map. Start and End pins are drawn by the route planner.
  */
 export class RouteOverlayManager {
   private readonly channel: Cesium.CustomDataSource;
@@ -55,8 +55,6 @@ export class RouteOverlayManager {
     for (const route of ordered) {
       this.addRoute(route, route.kind === highlighted);
     }
-    this.addPin(request.source, 'A', '#FFFFFF');
-    this.addPin(request.destination, 'B', '#B91C1C');
 
     // Frame once per request, also when there is no route but the blocking terrain is shown
     if ((routes.length > 0 || walkableArea) && this.lastFramedRequest !== request) {
@@ -106,30 +104,6 @@ export class RouteOverlayManager {
         pixelOffset: new Cesium.Cartesian2(12, offsetY),
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
         distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 600_000),
-      },
-    });
-  }
-
-  private addPin(point: LatLon, text: string, cssColor: string) {
-    this.channel.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, 0, MARS_ELLIPSOID),
-      point: {
-        pixelSize: 11,
-        color: Cesium.Color.fromCssColorString(cssColor),
-        outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 2,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      },
-      label: {
-        text,
-        font: '700 13px "JetBrains Mono", monospace',
-        fillColor: Cesium.Color.WHITE,
-        outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 3,
-        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        pixelOffset: new Cesium.Cartesian2(0, -10),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
     });
   }

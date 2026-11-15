@@ -5,27 +5,27 @@
 A "Google Earth for Mars" mission-planning and rehearsal tool built by **Team Red Condors** for the
 **NASA Space Apps Challenge — Toronto (November 14–15, 2026)**, challenge
 **"Interplanetary Survival Guide: Martian Map"** ([brief](docs/challenge.md)). It combines a
-Mars Trek-inspired map with rover observations, environmental conditions, and future EVA and rover
-route planning.
+Mars Trek-inspired map. Satellite and Terrain pictures, nomenclature cards, hypothetical
+Olympus camps, and a route bar with start and end pins are in the app now. Street View is still planned.
 
 > **Disclaimer:** This is an independent hackathon prototype. It is **not** endorsed by,
 > affiliated with, or an official product of NASA, JPL, Caltech, or USGS. No official NASA or JPL
 > logos are used.
 
-> **Project status:** The repo currently contains the structural baseline, an interactive web map,
-> and a minimal FastAPI backend. Route planning, surface imagery, environmental overlays, and
-> mission workflows are planned and not yet complete.
+> **Project status:** The map, Satellite and Terrain legends, nomenclature cards, hypothetical
+> Olympus camps, and the route bar are in place. A pin on unnamed ground shows Viking and MOLA
+> photos of that spot. Street View, dust on the map, and a database are not in this build.
 
 ## Features
 
 | # | Feature | Status |
 | :-: | :--- | :--- |
-| 1 | 3D globe & 2D map of Mars with Mars Trek imagery, nomenclature labels, coordinate readout, zoom | ✅ Implemented |
+| 1 | 3D globe and 2D map, Satellite and Terrain, legends with a ground scale, nomenclature, zoom | ✅ Implemented |
 | 2 | Martian "Street View": rover surface imagery as clickable dots | 🛠 Planned |
-| 3 | Outpost locations & EVA / rover route rehearsals (distance, ETA) | 🟡 Started: hypothetical Olympus Mons crew sites, plus the route bar |
-| 4 | Climate & environmental tracking with dynamic rerouting | 🟡 Started: Olympus dust-season rehearsal reroutes a traverse |
+| 3 | Hypothetical Olympus camps, Start and End pins, Person / Rover / Vehicle, best direction | 🟡 Started |
+| 4 | Climate tracking and dust rerouting | Not in this build. Dust is not drawn and does not change a route |
 | 5 | Topography-aware safe routing (craters, slopes, ridges) | 🟡 Started: Olympus routes avoid steep MOLA slopes |
-| 6 | Scientific research missions at waypoints | 🛠 Planned |
+| 6 | Scientific research missions at waypoints | 🟡 Started: camp field briefs. Checklists are still planned |
 
 The full product vision is in [`AGENTS.md`](AGENTS.md).
 
@@ -47,9 +47,9 @@ apps/
 ├── web/                     Frontend: the one and only web app
 │   ├── src/components/      Shared viewport and HUD components
 │   ├── src/core/            Dataset-agnostic Cesium map engine
-│   └── src/features/        Isolated product capabilities (route planner)
+│   └── src/features/        Map layers, route planner, and safe-route overlay
 └── api/                     Backend: the one and only API (FastAPI modular monolith)
-    └── app/modules/<domain>/  points, rover_images, weather, ...
+    └── app/modules/<domain>/  routing, points, rover_images, weather, ...
 docs/
 ├── architecture.md          Boundaries and dependency direction
 ├── challenge.md             NASA Space Apps challenge brief
@@ -131,13 +131,15 @@ port 8000, so no CORS setup is needed.
 
 ## Using the map
 
-1. Start the app (Option A or B) and open <http://localhost:5173>.
+1. Start the app and open <http://localhost:5173>.
 2. Use the **3D / 2D** control to switch between the globe and the flat map.
 3. Use the zoom buttons or the mouse (drag to pan, scroll to zoom) to explore Mars.
-4. Toggle **Nomenclature** to show or hide Mars feature labels.
-5. Hover a feature name to enlarge it and turn it blue. Click the name to open its location card.
-6. Use the route bar to pick a source and destination, or the Olympus Mons panel to rehearse a
-   slope- and dust-aware traverse. The Olympus crew sites are hypothetical.
+4. Use the small **Satellite** and **Terrain** buttons on the lower left. The legend keeps a ground scale. Terrain also shows elevation from about −8 km to about +21 km. The legend does not state a pixel size.
+5. Toggle **Nomenclature** to show or hide Mars feature labels. Click a name to open its card. The card has one close button and does not start a route.
+6. **Start pin**, then a click on empty ground, drops the start. **End pin** does the same for the end. A pin on unnamed ground opens Viking and MOLA photos of that spot. **Remove pin**, then a click on the Start or End pin, clears it.
+7. With both ends set, the bar shows Person, Rover, and Vehicle times and marks one **Best**. Inside the Olympus laser window the path bends around steep ground. Outside that window the line stays straight and the slope is not checked.
+8. The Olympus Mons panel lists seven hypothetical crew camps. **Indications** on a camp loads that camp into the route bar.
+
 
 ## Contributing
 
@@ -156,10 +158,11 @@ For architectural decisions, read [`docs/architecture.md`](docs/architecture.md)
 
 ## Data & credits
 
-Mars imagery and nomenclature: Courtesy NASA/JPL-Caltech/USGS, via
-[NASA Mars Trek](https://trek.nasa.gov/mars/). Olympus routes also use MOLA topography and a
-published MRO dust climatology. The full list of sources and open-source
-licenses is in [`docs/source_attributions.md`](docs/source_attributions.md).
+Satellite: Courtesy NASA/JPL-Caltech/USGS (Viking color mosaic). Terrain: Courtesy
+NASA/JPL-Caltech/GSFC (MGS MOLA shaded relief). Nomenclature: IAU/USGS. The Olympus
+crew sites are hypothetical. The full list of sources and open-source licenses is in
+[`docs/source_attributions.md`](docs/source_attributions.md).
+
 
 ## Help and project resources
 

@@ -3,15 +3,17 @@
 ## Project Context
 This repository contains **Red Condors'** project for the **NASA Space Apps Hackathon in Toronto (November 14–15, 2026)**, tackling the challenge **"Interplanetary Survival Guide: Martian Map"** (see `docs/challenge.md`).
 
-> **Current Stage — Interactive Map, Olympus Rupes Outposts & Safe Routing Baseline:**
+> **Current Stage — Map legends, start and end pins, and best-direction routing:**
 > The repository is a monorepo with exactly **one frontend** (React + Vite + TypeScript +
 > CesiumJS in `apps/web`) and exactly **one backend** (**FastAPI** modular monolith in
 > `apps/api`). The frontend reaches the backend through relative `/api/*` URLs (proxied by
 > Vite in development). The app currently delivers the 3D/2D Mars Trek map with USGS
-> nomenclature place cards, **7 color-coded fictitious crew camps around Olympus Rupes /
-> Olympus Mons**, a Google Maps–style lateral route planner, dust-season and MOLA-slope
-> rehearsal routing, and a FastAPI MOLA DEM safe-routing endpoint (`POST /api/routes`) with
-> a toggleable traversable-area slope overlay. Rover "Street View" imagery, full waypoint
+> nomenclature place cards, **Satellite** and **Terrain** buttons with a legend,
+> **7 color-coded fictitious crew camps around Olympus Rupes / Olympus Mons**, a
+> lateral route planner with Start and End pins (unnamed ground opens Viking and MOLA
+> photos), Person / Rover / Vehicle times and a best-direction choice, and a FastAPI
+> MOLA DEM safe-routing endpoint (`POST /api/routes`) with a toggleable traversable-area
+> slope overlay. Rover "Street View" imagery, full waypoint
 > mission workflows, and a database remain planned/TBD.
 
 ## Vision
@@ -21,7 +23,7 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
 
 1. **3D Globe & 2D Map Views of Mars (Mars Trek Fidelity) + Interactive Nomenclature** *(Implemented)*
    - Interactive **3D Globe** (`SCENE3D`) and **2D Equirectangular Map** (`SCENE2D`) of Mars over the IAU 2000 ellipsoid (`CesiumJS` with Cesium Ion disabled), preserving camera framing across switches, paired with a Tycho-2 3D starfield skybox, a 2D `StarfieldBackdrop`, `+`/`-` zoom controls, and a live 60 FPS cursor `Lat / Lon` readout.
-   - Streams **NASA's Mars Trek (`trek.nasa.gov/mars/`)** `Mars_Viking_MDIM21_ClrMosaic_global_232m` public WMTS basemap tiles for 1:1 visual fidelity with Mars Trek (*scope note:* 3D elevation/relief mesh exaggeration on the globe remains deferred; imagery is draped over a smooth Martian ellipsoid/2D map).
+   - Streams **NASA's Mars Trek (`trek.nasa.gov/mars/`)** public WMTS imagery. Small Mars Trek–style buttons on the left switch the basemap between **Satellite** (`Mars_Viking_MDIM21_ClrMosaic_global_232m`) and **Terrain** (MOLA color shaded relief). The active map always shows a legend with a live ground scale. Terrain also shows an elevation ramp from about −8 km to about +21 km (*scope note:* 3D elevation/relief mesh exaggeration on the globe remains deferred; imagery is draped over a smooth Martian ellipsoid/2D map).
    - **Toggleable Mars Nomenclature & USGS Location Details Cards:** Renders 1,783 approved IAU/USGS Martian feature labels (`combinedNom`) with zoom-level hierarchy filtering (`level` 1–7) and 3D far-side globe occlusion. Hovering a visible label enlarges and highlights it in blue; clicking opens a **Location Details Panel** inside the left sidebar with cropped Mars Trek WMTS place photos (*Viking VIS Color Mosaic* and *MGS MOLA Color Shaded Relief*), IAU morphological descriptor definitions, spatial extent, name origin, and direct links to the official USGS Gazetteer record.
 
 2. **Martian "Street View" Mode (Rover Surface Imagery)** *(Planned)*
@@ -39,17 +41,17 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
        - **Emerald Green (`#3DDC97`) — Science Stations:** **Caldera Rim Observatory** (*Olympus Paterae*, `19.04°N, 226.81°E`), **Pangboche Station** (*Pangboche crater*, `17.28°N, 226.15°E`), and **Karzok Cache** (*Karzok crater*, `18.40°N, 228.65°E`).
      - Selecting a colored dot on the map or from the **Olympus Mons** rehearsal panel enlarges the active marker, flies the camera to frame the site (or the full volcano), shows its site brief, and provides a one-click **Indications** button to load it into the route planner (active origin/destination camps display slightly enlarged map labels without brackets).
    - **Google Maps–Style Lateral Route Planner (`RouteLateralBar` in `apps/web/src/features/route-planner/`):**
-     - Collapsible left sidebar supporting both **Astronaut Marswalk (EVA, ~1.5 km/h)** and **Rover (~10 km/h)** travel modes, origin/destination autocomplete search exclusively across crew camps/outposts (planetary nomenclature features are used only for viewing details, never route calculations), camp-dot map-click picking, origin/destination swapping, dashed traverse polylines, geodesic **distance (`km`)**, and per-mode **ETA**.
+     - Collapsible left sidebar with three rehearsal travel modes: **Person** (suited walk, ~1.5 km/h), **Rover** (~10 km/h), and **Vehicle** (a hypothetical crew car, ~25 km/h, not a NASA vehicle). Camp search still lists the crew camps. Named-feature cards do not start a route. **Start pin** and **End pin**, on the left above the map-type buttons, arm a placement tool; the next click on empty ground drops that pin. **Remove pin**, in that same stack, then a click on the Start or End pin, clears it. The map labels the pins Start and End. A pin on unnamed ground opens Viking and MOLA photos of that spot in the sidebar. A named-place card keeps a single close control on its photo.
+     - **Best direction (`bestDirection.ts`):** When both pins are inside the Olympus MOLA window, A* finds a corridor. A walk stops above 15°, the crew car above 18°, and the rover above 25°. A walk that fits in one 8-hour EVA is preferred; otherwise the shortest safe option is chosen and marked **Best**. Outside that window the line stays straight and the slope is not checked. Dust does not close the route.
 
-4. **Climate & Environmental Condition Tracking (Dynamic Rerouting)** *(Started)*
-   - Track environmental/climate conditions combining **real NASA Mars datasets** and **simulated rehearsal scenarios** so hazardous conditions trigger warnings, slow traversal speeds, or reroute/close paths.
-   - **Olympus Dust-Season Rehearsal (`dustSeason.json`, `terrain.ts`, `safeRoute.ts`):** Integrates **MRO Mars Climate Sounder (MCS)** Mars Year 36 gridded column dust optical depth ($\tau$ at 9.3 µm) to compare **present season** ($L_s \approx 21.5^\circ$, clear northern spring) against a **regional dust-storm rehearsal** ($L_s = 315^\circ$, $\tau \approx 0.5\text{–}1.1$). Dust degrades EVA/rover speeds and enforces optical-depth safety cutoffs ($\tau \le 1.0$ for Marswalk, $\tau \le 1.3$ for Rover), closing suited walks before rovers in storm conditions.
+4. **Climate & Environmental Condition Tracking (Dynamic Rerouting)** *(Not in this build)*
+   - Dust storms are not drawn on the map and are not part of the route. The hazard the crew rehearses is the shape of the ground: hills, cliffs, craters, and steep slopes. See feature 5.
 
 5. **Topography-Aware Safe Routing & Traversable Area Overlay** *(Started)*
    - Displacement routes actively account for Martian topography—such as **craters, steep slopes, scarps (*Olympus Rupes*), ridges, and mountains**—avoiding terrain hazards so the crew arrives **safely**.
    - **Backend MOLA DEM Safe-Routing Engine (`POST /api/routes` in `apps/api/app/modules/routing/` & `apps/web/src/features/routing/`):** Reads local windows of the **MGS MOLA ~463 m/pixel GeoTIFF DEM** (`rasterio` + `numpy`), builds a slope-filtered `networkx` terrain graph within a 20 km planning radius, and computes **shortest**, **fastest**, and **safest** routes via Dijkstra's algorithm with rover and EVA grade-adjusted ETAs.
    - **Traversable Area HUD Overlay & Slope Legend (`WalkableAreaToggle`, `WalkableAreaLegend`):** Classifies terrain around a destination into **Gentle**, **Moderate**, **Steep (no-go)**, and **Cut off (walled-in)** cells, rendered on the map with a toggle switch and dynamic slope-threshold legend in the HUD.
-   - **Olympus Regional Rehearsal Router (`molaOlympus.json` + `safeRoute.ts`):** Runs client-side A* pathfinding over MGS MOLA MEGDR (16 ppd) elevations across the Olympus Mons / Olympus Rupes region, rejecting hazardous straight-line cliff traverses and finding corridors under `15°` (Marswalk) and `25°` (Rover) grade limits.
+   - **Olympus Regional Rehearsal Router (`molaOlympus.json` + `safeRoute.ts`) and best-direction search (`bestDirection.ts`):** Runs client-side A* pathfinding over MGS MOLA MEGDR (16 ppd) elevations across the Olympus Mons / Olympus Rupes region (32°N–12°N, 208°E–242°E). A walk stops above 15°, a hypothetical crew car above 18°, and a rover above 25°. The search prefers a walk that finishes inside 8 hours, then the crew car, then the rover.
 
 6. **Scientific Research Missions at Waypoints** *(Started — Site Briefs; Interactive Workflows Planned)*
    - Every location of interest pairs crew displacement with objectives grounded in **real Martian scientific research** (e.g., geological sampling, mineral/spectral investigation, subsurface water-ice search, or astrobiology).
@@ -63,14 +65,14 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
 - `apps/web/` — React 19, TypeScript, Vite, Tailwind CSS, Zustand, and CesiumJS frontend.
 - `apps/web/src/core/` — Dataset-agnostic CesiumJS planetary engine (`MarsViewerController`), coordinate picking, Viking WMTS basemap, and GPU nomenclature layer manager.
 - `apps/web/src/components/` — Shared viewport (`MarsViewport`, `StarfieldBackdrop`), HUD controls (`hud/`), USGS nomenclature place cards & cropped WMTS imagery (`Locations/`), shared location info panel (`location/`), and the **Olympus Mons / Olympus Rupes** color-coded crew camps & rehearsal logic (`Outposts/`).
-- `apps/web/src/features/` — Isolated frontend product capabilities (`route-planner/` lateral bar, location search & map click picker; `routing/` safe-route API client, Cesium route/walkable-area overlay & HUD controls).
+- `apps/web/src/features/` — Isolated frontend product capabilities (`map-layers/` Satellite and Terrain; `route-planner/` lateral bar, pins, and best direction; `routing/` safe-route API client, Cesium route and walkable-area overlay).
 - `apps/api/` — FastAPI modular monolith (Python ≥ 3.12), organized by domain module under `app/modules/` (`routing/` for MOLA DEM safe pathfinding & walkable-area grids, plus scaffolded `points/`, `rover_images/`, and `weather/` modules).
 - `docs/architecture.md` — Current repository boundaries and dependency direction.
 - `docs/challenge.md` — Official NASA Space Apps challenge brief (*Interplanetary Survival Guide: Martian Map*).
 - `docs/source_attributions.md` — Central log for citing all datasets, APIs, imagery, and open-source libraries used.
 
 ## Rules & Constraints for AI Agents
-- **Track All Citations (`docs/source_attributions.md`):** Per NASA Space Apps legal rules, **every** NASA dataset, Mars Trek layer, planetary gazetteer/climatology product, API, and third-party open-source tool/library introduced into the project **must** be documented in `docs/source_attributions.md` (including share-alike attributions such as CC BY-SA 3.0 on the MRO MCS dust climatology grid).
+- **Track All Citations (`docs/source_attributions.md`):** Per NASA Space Apps legal rules, **every** NASA dataset, Mars Trek layer, planetary gazetteer, topography product, API, and third-party open-source tool/library introduced into the project **must** be documented in `docs/source_attributions.md`.
 - **NASA & JPL Media Policy Compliance:**
   - Include proper credit lines in the UI/docs (e.g., `"Courtesy NASA/JPL-Caltech"` plus specific mission/instrument/USGS credits where applicable).
   - Clearly label fictional rehearsal infrastructure (such as the **Olympus Rupes / Olympus Mons** crew camps) as **hypothetical** so they are never mistaken for real or official NASA facilities.

@@ -1,10 +1,10 @@
-export type TravelMode = 'marswalk' | 'rover';
+export type TravelMode = 'marswalk' | 'rover' | 'vehicle';
 
 export type ActiveInputSlot = 'source' | 'destination';
 
 export type RouteTab = 'mission' | 'considerations';
 
-export type RouteLocationCategory = 'outpost';
+export type RouteLocationCategory = 'outpost' | 'nomenclature' | 'pin';
 
 export interface RouteLocation {
   id: string;
@@ -31,4 +31,29 @@ export function isCampRouteLocation(
     !location.id.startsWith('nom-') &&
     !location.id.startsWith('pin-')
   );
+}
+
+/** A camp or a pin dropped on the map can be a route end. */
+export function isRouteEndpoint(
+  location: RouteLocation | null | undefined
+): location is RouteLocation {
+  if (!location) return false;
+  return Number.isFinite(location.lat) && Number.isFinite(location.lon);
+}
+
+export function formatPinName(lat: number, lon: number): string {
+  const latHemisphere = lat >= 0 ? 'N' : 'S';
+  const lonHemisphere = lon >= 0 ? 'E' : 'W';
+  return `${Math.abs(lat).toFixed(2)}°${latHemisphere}, ${Math.abs(lon).toFixed(2)}°${lonHemisphere}`;
+}
+
+export function droppedPinLocation(lat: number, lon: number): RouteLocation {
+  return {
+    id: `pin-${lat.toFixed(5)}-${lon.toFixed(5)}`,
+    name: formatPinName(lat, lon),
+    subtitle: 'Dropped pin',
+    lat,
+    lon,
+    category: 'pin',
+  };
 }

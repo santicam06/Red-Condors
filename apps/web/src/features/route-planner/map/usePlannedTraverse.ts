@@ -1,18 +1,25 @@
-import { useEffect } from 'react';
 import * as Cesium from 'cesium';
-import type { MarsViewerController } from '../../../core/MarsViewerController';
-import { formatDuration, planTraverse } from '../../../components/Outposts/navigation';
+import { useEffect, useRef } from 'react';
 import type { OlympusSite } from '../../../components/Outposts/olympusSites';
+import type { MarsViewerController } from '../../../core/MarsViewerController';
+import { chooseBestDirection, type DirectionChoice } from '../bestDirection';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
-import type { RouteLocation } from '../types';
+import type { RouteLocation, TravelMode } from '../types';
 
 const CHANNEL = 'planned-traverse';
 
-/** Straight-line distance and ETA between the side-bar start and destination. */
+const MODE_COLOR: Record<TravelMode, string> = {
+  marswalk: '#F5C542',
+  rover: '#7EB6FF',
+  vehicle: '#E07A3D',
+};
+
+/** Draws the selected rehearsal leg and keeps the Best mode in step with the ends. */
 export function usePlannedTraverse(controller: MarsViewerController | null): void {
   const source = useRoutePlannerStore((state) => state.source);
   const destination = useRoutePlannerStore((state) => state.destination);
   const travelMode = useRoutePlannerStore((state) => state.travelMode);
+  const choiceRef = useRef<{ key: string; choice: DirectionChoice } | null>(null);
 
   useEffect(() => {
     if (!controller) return;
@@ -21,29 +28,45 @@ export function usePlannedTraverse(controller: MarsViewerController | null): voi
     channel.entities.removeAll();
 
     if (!source || !destination || source.id === destination.id) {
+      choiceRef.current = null;
       apply({
         distanceKm: null,
         marswalkEta: null,
         roverEta: null,
+        vehicleEta: null,
+        bestMode: null,
+        bestReason: null,
       });
       controller.viewer.scene.requestRender();
       return;
     }
 
-    const from = toSite(source);
-    const to = toSite(destination);
-    const walk = planTraverse(from, to, 'marswalk');
-    const rover = planTraverse(from, to, 'rover');
+    const key = `${source.id}|${destination.id}`;
+    if (choiceRef.current?.key !== key) {
+      const choice = chooseBestDirection(toSite(source), toSite(destination));
+      choiceRef.current = { key, choice };
+      if (useRoutePlannerStore.getState().travelMode !== choice.mode) {
+        useRoutePlannerStore.getState().setTravelMode(choice.mode);
+      }
+    }
+
+    const choice = choiceRef.current.choice;
+    const mode = useRoutePlannerStore.getState().travelMode;
+    const positions = choice.paths[mode];
     apply({
-      distanceKm: walk.distanceMeters / 1000,
-      marswalkEta: formatDuration(walk.durationHours),
-      roverEta: formatDuration(rover.durationHours),
+      distanceKm: choice.distanceKm[mode],
+      marswalkEta: choice.eta.marswalk,
+      roverEta: choice.eta.rover,
+      vehicleEta: choice.eta.vehicle,
+      bestMode: choice.mode,
+      bestReason: choice.reason,
     });
+    addLine(channel, 'planned-outline', positions.length > 1 ? positions : choice.paths[choice.mode], '#202124', 8);
     addLine(
       channel,
       'planned-direct',
-      walk.positions,
-      travelMode === 'rover' ? '#7EB6FF' : '#F5C542',
+      positions.length > 1 ? positions : choice.paths[choice.mode],
+      MODE_COLOR[mode],
       4
     );
 
@@ -84,11 +107,15 @@ function addLine(
     polyline: {
       positions,
       width,
-      material: new Cesium.PolylineDashMaterialProperty({
-        color: Cesium.Color.fromCssColorString(color),
-        dashLength: 18,
-      }),
-      arcType: Cesium.ArcType.NONE,
+      arcType: Cesium.ArcType.GEODESIC,
+      material:
+        id === 'planned-outline'
+          ? Cesium.Color.fromCssColorString(color)
+          : new Cesium.PolylineDashMaterialProperty({
+              color: Cesium.Color.fromCssColorString(color),
+              dashLength: 18,
+            }),
+      clampToGround: false,
     },
   });
 }

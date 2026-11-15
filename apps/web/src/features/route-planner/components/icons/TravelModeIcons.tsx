@@ -172,3 +172,17 @@ export function MarsRoverIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+/** Hypothetical crew car. This is not a NASA vehicle. */
+export function CrewVehicleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" {...props}>
+      <path
+        fill="currentColor"
+        d="M5.2 16.2h3.4l2.4-4.4c.35-.64 1.02-1.04 1.74-1.04H19l3.1 3.5c.48.54.74 1.24.74 1.96v.98h2.3c.66 0 1.16.5 1.16 1.16v1.7c0 .5-.4.9-.9.9h-1.55a2.85 2.85 0 0 1-5.5 0h-6.1a2.85 2.85 0 0 1-5.5 0H6.1c-.5 0-.9-.4-.9-.9v-2.7c0-.66.5-1.16 1.16-1.16Z"
+      />
+      <circle cx="9.35" cy="21.15" r="1.55" fill="white" />
+      <circle cx="20.85" cy="21.15" r="1.55" fill="white" />
+    </svg>
+  );
+}

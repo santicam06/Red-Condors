@@ -25,6 +25,7 @@ export function NomenclatureLocations({ controller }: NomenclatureLocationsProps
     const emphasis = new NomenclatureEmphasis(controller);
     emphasisRef.current = emphasis;
     const detach = attachNomenclaturePointer(controller, emphasis, (hit) => {
+      if (useRoutePlannerStore.getState().pinTool) return;
       useNomenclatureSelection.getState().setHit(hit);
       useRoutePlannerStore.getState().setOpen(true);
       frameFeatureBesidePanel(controller, hit, SIDE_BAR_WIDTH_PX, 0);

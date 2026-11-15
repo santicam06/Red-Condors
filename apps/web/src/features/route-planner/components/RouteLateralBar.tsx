@@ -1,13 +1,14 @@
 import { ArrowUpDown, MapPin, X } from 'lucide-react';
 import { LocationDetailsPanel } from '../../../components/Locations/LocationDetailsPanel';
+import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
 import { OlympusRehearsal } from '../../../components/Outposts/OlympusRehearsal';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
-import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
 import { usePlannedTraverse } from '../map/usePlannedTraverse';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
 import type { TravelMode } from '../types';
-import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
 import { LocationInputBox } from './LocationInputBox';
+import { PinGroundCard } from './PinGroundCard';
+import { AstronautIcon, CrewVehicleIcon, MarsRoverIcon } from './icons/TravelModeIcons';
 
 interface RouteLateralBarProps {
   controller: MarsViewerController | null;
@@ -23,6 +24,9 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const distanceKm = useRoutePlannerStore((s) => s.distanceKm);
   const marswalkEta = useRoutePlannerStore((s) => s.marswalkEta);
   const roverEta = useRoutePlannerStore((s) => s.roverEta);
+  const vehicleEta = useRoutePlannerStore((s) => s.vehicleEta);
+  const bestMode = useRoutePlannerStore((s) => s.bestMode);
+  const bestReason = useRoutePlannerStore((s) => s.bestReason);
   usePlannedTraverse(controller);
 
   const setOpen = useRoutePlannerStore((s) => s.setOpen);
@@ -33,6 +37,9 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const setActiveInputSlot = useRoutePlannerStore((s) => s.setActiveInputSlot);
   const selectedPlace = useNomenclatureSelection((s) => s.hit);
   const clearSelectedPlace = useNomenclatureSelection((s) => s.setHit);
+  const unnamedPins = [source, destination].filter(
+    (place): place is NonNullable<typeof place> => place?.category === 'pin'
+  );
 
   const modes: Array<{
     id: TravelMode;
@@ -42,7 +49,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   }> = [
     {
       id: 'marswalk',
-      label: 'Marswalk',
+      label: 'Person',
       eta: marswalkEta,
       Icon: AstronautIcon,
     },
@@ -51,6 +58,12 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
       label: 'Rover',
       eta: roverEta,
       Icon: MarsRoverIcon,
+    },
+    {
+      id: 'vehicle',
+      label: 'Vehicle',
+      eta: vehicleEta,
+      Icon: CrewVehicleIcon,
     },
   ];
 
@@ -105,6 +118,11 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
                       >
                         {eta ?? '—'}
                       </span>
+                      {bestMode === id && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-red-700">
+                          Best
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -129,6 +147,11 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
               >
                 {formattedDistance}
               </span>
+              {bestReason && (
+                <p className="mx-auto mt-1 max-w-[320px] text-[12px] leading-snug text-[#5f6368]">
+                  {bestReason}
+                </p>
+              )}
             </div>
 
             {/* Source & Destination boxes + route track icons + Interchange (swap) button */}
@@ -151,7 +174,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
               <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                 <LocationInputBox
                   label="Source location"
-                  placeholder="Choose starting camp..."
+                  placeholder="Camp, or Start pin"
                   value={source}
                   isActiveSlot={activeInputSlot === 'source'}
                   onFocusSlot={() => setActiveInputSlot('source')}
@@ -159,7 +182,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
                 />
                 <LocationInputBox
                   label="Destination location"
-                  placeholder="Choose destination camp..."
+                  placeholder="Camp, or End pin"
                   value={destination}
                   isActiveSlot={activeInputSlot === 'destination'}
                   onFocusSlot={() => setActiveInputSlot('destination')}
@@ -182,7 +205,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
 
           <div className="h-[6px] w-full shrink-0 border-y border-red-700/20 bg-red-50" />
         </>
-      ) : (
+      ) : unnamedPins.length > 0 && !selectedPlace ? (
         <div className="flex items-center justify-end border-b border-red-700/20 px-3 py-2">
           <button
             type="button"
@@ -194,14 +217,21 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
             <X className="h-5 w-5" strokeWidth={2} />
           </button>
         </div>
-      )}
+      ) : null}
 
       <div className="flex-1 overflow-y-auto bg-white">
         <LocationDetailsPanel
           hit={selectedPlace}
           onClose={() => clearSelectedPlace(null)}
+          showClose={!isRouteCalculatorOpen}
         />
-        <OlympusRehearsal controller={controller} hidePanel={Boolean(selectedPlace)} />
+        {unnamedPins.map((pin) => (
+          <PinGroundCard key={pin.id} pin={pin} />
+        ))}
+        <OlympusRehearsal
+          controller={controller}
+          hidePanel={Boolean(selectedPlace) || unnamedPins.length > 0}
+        />
       </div>
     </aside>
   );

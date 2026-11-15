@@ -22,7 +22,7 @@ Per the **NASA Space Apps Hackathon** rules and **NASA/JPL Media Usage Guideline
 - **Mission / Instrument:** NASA Viking 1 & Viking 2 Orbiters — Visual Imaging Subsystem (VIS), colorized and mosaicked as Mars Digital Image Model (MDIM 2.1)
 - **Provider / Credit:** Courtesy NASA / JPL-Caltech / USGS Astrogeology Science Center
 - **License / Terms:** Public Domain (U.S. Government / NASA & USGS open planetary science data)
-- **Usage in Project:** Default global basemap draped onto the Martian ellipsoid (`IAU 2000`, `3,396,190 m × 3,376,200 m`) for 1:1 visual fidelity with NASA Mars Trek.
+- **Usage in Project:** Default **Satellite** basemap draped onto the Martian ellipsoid (`IAU 2000`, `3,396,190 m × 3,376,200 m`). The map-type control can replace it with the Terrain layer. The same mosaic is the first photo for a named place and for a pin dropped on unnamed ground.
 
 ### 1.3 Mars Planetary Nomenclature (`combinedNom`)
 - **Service Endpoint:** `https://trek.nasa.gov/mars/trekarcgis/rest/services/combinedNom/MapServer/0`
@@ -71,7 +71,17 @@ The place card opened from a nomenclature name shows a photo of that spot, cente
 - **Provider / Credit:** Courtesy NASA / JPL-Caltech / Goddard Space Flight Center (GSFC)
 - **Portal:** NASA Mars Trek (`https://trek.nasa.gov/mars/`)
 - **License / Terms:** Public Domain (U.S. Government / NASA open planetary science data)
-- **Usage in Project:** Second photo in the location card, switched with the on-image arrows. Zoom follows the feature’s diameter so a crater and a regional terra are both framed. Tile math and credits live in `apps/web/src/components/Locations/placeImagery.ts`.
+- **Usage in Project:** Second photo in a location card and in the card for a pin on unnamed ground, switched with the on-image arrows. The same layer is the **Terrain** basemap (`apps/web/src/features/map-layers/`). Its legend shows the shaded-relief colors and an elevation ramp from about −8 km to about +21 km. Zoom on the card follows the feature’s diameter, or a local window for a pin. Tile math and credits live in `apps/web/src/components/Locations/placeImagery.ts`.
+
+### 2.3 MOLA elevation mosaic (not a map type)
+- **Layer Identifier:** `Mars_MGS_MOLA_DEM_mosaic_global_463m_8`
+- **WMTS Capabilities:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_DEM_mosaic_global_463m_8/1.0.0/WMTSCapabilities.xml`
+- **Tile Template:** `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_DEM_mosaic_global_463m_8/1.0.0/default/default028mm/{TileMatrix}/{TileRow}/{TileCol}.png`
+- **Spatial Resolution:** about 463 meters/pixel, global coverage, greyscale elevation (published tiles through level 5)
+- **Mission / Instrument:** NASA Mars Global Surveyor — Mars Orbiter Laser Altimeter (MOLA)
+- **Provider / Credit:** Courtesy NASA / Goddard Space Flight Center, MOLA Science Team
+- **License / Terms:** Public Domain (U.S. Government / NASA open planetary science data)
+- **Usage in Project:** Not shown. The map types are Satellite and Terrain. This greyscale elevation mosaic is not a basemap.
 
 ### 1.6 MOLA Global Digital Elevation Model (`mola128_mola64_merge_90Nto90S_SimpleC_clon0.tif`)
 - **Product:** Mars MGS MOLA DEM, 128 pixels/degree merged with 64 ppd where 128 ppd is unavailable (~463 m/pixel), Simple Cylindrical, centre longitude 0°, Int16 metres relative to the Mars areoid
@@ -83,10 +93,10 @@ The place card opened from a nomenclature name shows a photo of that spot, cente
 
 ---
 
-### 2.3 Hypothetical Olympus Mons crew sites
+### 2.4 Hypothetical Olympus Mons crew sites
 - **Landform coordinates:** Center points for Olympus Mons, Olympus Rupes, Olympus Paterae, Lycus Sulci, Pangboche, and Karzok are taken from the USGS gazetteer snapshot in §1.4.
 - **Usage in Project:** `apps/web/src/components/Outposts/olympusSites.ts` places fictional rehearsal infrastructure (base camp, habitat, science stops, and a short-walk sample pad) on those landforms. These camps are original scenario content. They are not NASA, JPL, or mission facilities, and the app labels them as hypothetical.
-- **Navigation:** The Olympus rehearsal compares the straight ellipsoid line with a slope-and-dust path for a rover and a suited walk. Speeds are rehearsal values: 10 km/h (rover) and 1.5 km/h (Marswalk). See §4.
+- **Navigation:** **Start pin** and **End pin** place the two ends. **Remove pin**, then a click on the Start or End pin, clears that end. A pin on unnamed ground shows Viking and MOLA photos of that spot. The safe-route overlay does not add A or B markers. Rehearsal speeds are 1.5 km/h (person), 10 km/h (rover), and 25 km/h (hypothetical crew vehicle, not a NASA vehicle). `apps/web/src/features/route-planner/bestDirection.ts` chooses the best direction. Inside the Olympus MOLA window (32°N–12°N, 208°E–242°E) it uses the A* corridors in §4.1: a walk stops above 15°, the crew car above 18°, and a rover above 25°. A walk that fits in 8 hours is preferred. Outside that window the line stays straight and the slope is not checked. Dust does not change the route. See §4.
 
 ## 3. Open-Source Libraries & Tooling
 
@@ -123,9 +133,9 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 
 ---
 
-## 4. Topography and dust used to choose a route
+## 4. Topography used to choose a route
 
-These products feed the Olympus Mons rehearsal. The straight line is drawn in red when it is too steep or too dusty. A blue line is the rover path. A gold line is the walking path. There is no public live global dust-storm API, so “now” means the current Mars season on the latest complete daily maps, not a picture from today’s downlink.
+MOLA topography feeds the Olympus Mons rehearsal and the best-direction search between the Start and End pins. The straight line is the short wish. The path the crew may take bends around steep ground. Dust storms are not drawn and are not used to choose or close a route.
 
 ### 4.1 MGS MOLA topography (MEGDR)
 - **Product:** `MEGT90N000EB.IMG`, median topography, 16 pixels per degree (about 3.7 km)
@@ -137,7 +147,7 @@ These products feed the Olympus Mons rehearsal. The straight line is drawn in re
 - **What a pixel is:** Planetary radius minus the areoid, in meters, IAU 2000. Signed 16-bit integer.
 - **Provider / Credit:** Courtesy NASA / Goddard Space Flight Center. MOLA team, principal investigator David E. Smith. Archived at the NASA PDS Geosciences Node.
 - **License / Terms:** Public domain (U.S. Government / NASA)
-- **Usage in Project:** `apps/web/src/components/Outposts/molaOlympus.json` keeps the rows from 32°N to 12°N and 208°E to 242°E. The router turns neighboring elevations into a slope. A Marswalk stops above 15°. A rover stops above 25°.
+- **Usage in Project:** `apps/web/src/components/Outposts/molaOlympus.json` keeps the rows from 32°N to 12°N and 208°E to 242°E. The router turns neighboring elevations into a slope. A Marswalk stops above 15°. A hypothetical crew car stops above 18°. A rover stops above 25°. The best-direction search uses those corridors when both pins fall in this window.
 
 ### 4.2 MRO MCS column dust optical depth (gridded, Mars Year 36)
 - **Product:** Gridded column dust optical depth, version 2.5, Mars Year 36. Infrared absorption at 9.3 μm, normalized to 610 Pa. One map per sol on a 5° latitude by 6° longitude grid.
@@ -147,11 +157,8 @@ These products feed the Olympus Mons rehearsal. The straight line is drawn in re
 - **Method and citation:** Montabone, L., et al. (2015), *Icarus*, doi:10.1016/j.icarus.2014.12.034. Montabone, L., et al. (2020), *JGR Planets*, doi:10.1029/2019JE006111. Version 2.5 for Mars Year 36.
 - **Provider / Credit:** Luca Montabone and co-authors, from NASA MRO MCS observations. Contact listed on the file: Luca Montabone.
 - **License / Terms:** Creative Commons Attribution-ShareAlike 3.0 (`https://creativecommons.org/licenses/by-sa/3.0/`). This dust grid is not public-domain. Credit the authors, and keep that license on adaptations.
-- **Why this is not a live feed:** MCS profile files at the PDS Atmospheres Node (`https://pds-atmospheres.nmsu.edu/data_and_services/atmospheres_data/MARS/aerosols.html`) are the nearer-to-present archive, but they are along-track profiles, not a filled map, and the published volumes lag the current Earth date. The route uses the newest full daily maps (Mars Year 36).
-- **Usage in Project:** `apps/web/src/components/Outposts/dustSeason.json` stores two sols from that file.
-  - **Present season:** sol at Ls 21.5°, chosen because 14 November 2026 falls at about Ls 21.6° (northern spring, usually clear). Dust over Olympus is about 0.05–0.12.
-  - **Dust-storm season:** sol at Ls 315°, the dustiest stretch of Mars Year 36 in this file. A rehearsal case, not today’s weather. Dust over this region rises to about 0.5–1.1.
-- **How the route uses it:** A walking step is refused above optical depth 1.0. A rover step is refused above 1.3. Below those caps, dust slows the ETA. In the present season the dust is too light to move the path, so MOLA slope picks the corridor. In the storm rehearsal, dusty cells can close the walk before they close the rover.
+- **Why this is not a live feed:** MCS profile files at the PDS Atmospheres Node (`https://pds-atmospheres.nmsu.edu/data_and_services/atmospheres_data/MARS/aerosols.html`) are the nearer-to-present archive, but they are along-track profiles, not a filled map, and the published volumes lag the current Earth date.
+- **Usage in Project:** The grid is stored in `apps/web/src/components/Outposts/dustSeason.json` for the Olympus rehearsal. It is not drawn on the map. The best-direction search does not close a route because of dust. The crew-facing path follows MOLA topography only (§4.1 and §1.6).
 
 ---
 

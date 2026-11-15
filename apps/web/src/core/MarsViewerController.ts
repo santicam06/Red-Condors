@@ -1,20 +1,20 @@
 import * as Cesium from 'cesium';
 import {
-  CAMERA_BOUNDS,
-  MARS_CIRCUMFERENCE_METERS,
-  MARS_ELLIPSOID,
+    CAMERA_BOUNDS,
+    MARS_CIRCUMFERENCE_METERS,
+    MARS_ELLIPSOID,
 } from '../config/marsConfig';
 import type { MarsViewMode } from '../store/useMapStore';
+import {
+    NomenclatureManager,
+    type NomenclatureLabelHit,
+    type PickedMapFeature,
+} from './layers/NomenclatureManager';
 import { createVikingBasemapProvider } from './layers/createVikingBasemap';
 import {
-  NomenclatureManager,
-  type NomenclatureLabelHit,
-  type PickedMapFeature,
-} from './layers/NomenclatureManager';
-import {
-  type MarsLatLon,
-  normalizeLongitude180,
-  pickMarsCoordinates,
+    normalizeLongitude180,
+    pickMarsCoordinates,
+    type MarsLatLon,
 } from './pickMarsCoordinates';
 
 export type { PickedMapFeature };
@@ -43,6 +43,7 @@ export class MarsViewerController {
   private readonly featureClickListeners = new Set<FeatureClickListener>();
   private readonly surfaceClickListeners = new Set<SurfaceClickListener>();
 
+  private baseImageryLayer: Cesium.ImageryLayer | null = null;
   private zoomAnimationFrame: number | null = null;
   private cursorRafPending = false;
   private latestMousePosition = new Cesium.Cartesian2(-1, -1);
@@ -100,7 +101,7 @@ export class MarsViewerController {
 
     // Add verified NASA Mars Trek global Viking Color Mosaic WMTS basemap
     const vikingBasemap = createVikingBasemapProvider();
-    this.viewer.imageryLayers.addImageryProvider(vikingBasemap);
+    this.baseImageryLayer = this.viewer.imageryLayers.addImageryProvider(vikingBasemap);
 
     // Set initial Mars Trek framing
     this.viewer.camera.setView({
@@ -550,7 +551,9 @@ export class MarsViewerController {
       typeof candidate.name === 'string' &&
       typeof candidate.lat === 'number' &&
       typeof candidate.lon === 'number' &&
-      (candidate.kind === 'outpost' || candidate.kind === 'nomenclature')
+      (candidate.kind === 'outpost' ||
+        candidate.kind === 'nomenclature' ||
+        candidate.kind === 'route-pin')
     ) {
       return candidate as unknown as PickedMapFeature;
     }
@@ -566,13 +569,19 @@ export class MarsViewerController {
         typeof bag.lat === 'number' &&
         typeof bag.lon === 'number'
       ) {
+        const kind =
+          bag.kind === 'outpost' || bag.kind === 'nomenclature' || bag.kind === 'route-pin'
+            ? bag.kind
+            : null;
+        if (!kind) return null;
         return {
           id: bag.id,
           name: bag.name,
           subtitle: typeof bag.subtitle === 'string' ? bag.subtitle : undefined,
           lat: bag.lat,
           lon: bag.lon,
-          kind: bag.kind === 'outpost' ? 'outpost' : 'nomenclature',
+          kind,
+          pinRole: bag.pinRole === 'start' || bag.pinRole === 'end' ? bag.pinRole : undefined,
         };
       }
     }
@@ -602,6 +611,13 @@ export class MarsViewerController {
           feature,
           hasInteractiveEntity: true,
         };
+      }
+    }
+
+    for (const item of drilled) {
+      const feature = this.extractPickedFeature(item);
+      if (feature?.kind === 'route-pin') {
+        return { feature, hasInteractiveEntity: true };
       }
     }
 
@@ -668,6 +684,17 @@ export class MarsViewerController {
    * (rover capture dots, habitats, EVA routes, hazard zones) mount cleanly onto
    * both 3D and 2D views without touching Core Feature 1.
    */
+  /** Swaps the globe imagery (Satellite or Terrain) without removing layers stacked above it. */
+  public replaceBasemap(provider: Cesium.ImageryProvider): void {
+    if (this.viewer.isDestroyed()) return;
+    const layers = this.viewer.imageryLayers;
+    if (this.baseImageryLayer) {
+      layers.remove(this.baseImageryLayer, true);
+    }
+    this.baseImageryLayer = layers.addImageryProvider(provider, 0);
+    this.viewer.scene.requestRender();
+  }
+
   public getOrCreateOverlayChannel(channelId: string): Cesium.CustomDataSource {
     const existing = this.overlayDataSources.get(channelId);
     if (existing) return existing;

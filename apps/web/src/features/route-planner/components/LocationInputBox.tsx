@@ -1,5 +1,5 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { MapPin, X } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { getAllCampLocations } from '../data/customLocations';
 import { filterLocations } from '../data/locationSearch';
 import type { RouteLocation } from '../types';

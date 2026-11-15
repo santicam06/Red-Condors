@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import {
-  isCampRouteLocation,
-  type ActiveInputSlot,
-  type RouteLocation,
-  type RouteTab,
-  type TravelMode,
+    isRouteEndpoint,
+    type ActiveInputSlot,
+    type RouteLocation,
+    type RouteTab,
+    type TravelMode,
 } from '../types';
+
+export type PinTool = 'start' | 'end' | 'remove';
 
 interface RoutePlannerState {
   isOpen: boolean;
@@ -15,10 +17,14 @@ interface RoutePlannerState {
   destination: RouteLocation | null;
   activeInputSlot: ActiveInputSlot;
   activeTab: RouteTab;
+  pinTool: PinTool | null;
 
   distanceKm: number | null;
   marswalkEta: string | null;
   roverEta: string | null;
+  vehicleEta: string | null;
+  bestMode: TravelMode | null;
+  bestReason: string | null;
 
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
@@ -27,6 +33,9 @@ interface RoutePlannerState {
     distanceKm: number | null;
     marswalkEta: string | null;
     roverEta: string | null;
+    vehicleEta: string | null;
+    bestMode: TravelMode | null;
+    bestReason: string | null;
   }) => void;
   setSource: (location: RouteLocation | null) => void;
   setDestination: (location: RouteLocation | null) => void;
@@ -35,6 +44,8 @@ interface RoutePlannerState {
   setActiveTab: (tab: RouteTab) => void;
   openIndicationsForLocation: (location: RouteLocation) => void;
   selectLocationFromMap: (location: RouteLocation) => void;
+  setPinTool: (tool: PinTool) => void;
+  placePinnedEndpoint: (slot: ActiveInputSlot, location: RouteLocation) => void;
 }
 
 export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
@@ -45,10 +56,14 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   destination: null,
   activeInputSlot: 'source',
   activeTab: 'mission',
+  pinTool: null,
 
   distanceKm: null,
   marswalkEta: null,
   roverEta: null,
+  vehicleEta: null,
+  bestMode: null,
+  bestReason: null,
 
   setOpen: (isOpen) =>
     set((state) => ({
@@ -65,7 +80,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
 
   setSource: (source) =>
     set((state) => {
-      if (source !== null && !isCampRouteLocation(source)) {
+      if (source !== null && !isRouteEndpoint(source)) {
         return state;
       }
       const nextDestination =
@@ -80,7 +95,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
 
   setDestination: (destination) =>
     set((state) => {
-      if (destination !== null && !isCampRouteLocation(destination)) {
+      if (destination !== null && !isRouteEndpoint(destination)) {
         return state;
       }
       const nextSource =
@@ -104,7 +119,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
 
   openIndicationsForLocation: (location) =>
     set((state) => {
-      if (!isCampRouteLocation(location)) {
+      if (!isRouteEndpoint(location)) {
         return state;
       }
       return {
@@ -129,7 +144,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
       if (!state.isOpen || !state.isRouteCalculatorOpen) {
         return state;
       }
-      if (!isCampRouteLocation(location)) {
+      if (!isRouteEndpoint(location)) {
         return state;
       }
 
@@ -161,6 +176,32 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
         destination: location,
         source: nextSource,
         activeInputSlot: nextSource === null ? 'source' : 'destination',
+      };
+    }),
+
+  setPinTool: (tool) =>
+    set((state) => ({ pinTool: state.pinTool === tool ? null : tool })),
+
+  placePinnedEndpoint: (slot, location) =>
+    set((state) => {
+      if (!isRouteEndpoint(location)) return state;
+      if (slot === 'source') {
+        return {
+          isOpen: true,
+          isRouteCalculatorOpen: true,
+          pinTool: null,
+          source: location,
+          destination: state.destination?.id === location.id ? null : state.destination,
+          activeInputSlot: 'destination',
+        };
+      }
+      return {
+        isOpen: true,
+        isRouteCalculatorOpen: true,
+        pinTool: null,
+        destination: location,
+        source: state.source?.id === location.id ? null : state.source,
+        activeInputSlot: 'source',
       };
     }),
 }));

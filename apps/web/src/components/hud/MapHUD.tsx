@@ -1,5 +1,8 @@
 import type { MarsViewerController } from "../../core/MarsViewerController";
 import { PegmanControl } from "../../features/rover-streetview/components/PegmanControl";
+import { BasemapLegend } from "../../features/map-layers/BasemapLegend";
+import { MapTypeControl } from "../../features/map-layers/MapTypeControl";
+import { PinTools } from "../../features/route-planner/components/PinTools";
 import { WalkableAreaLegend } from "../../features/routing/components/WalkableAreaLegend";
 import { useRoutePlannerStore } from "../../features/route-planner/store/useRoutePlannerStore";
 import { AttributionCredit } from "./AttributionCredit";
@@ -32,6 +35,7 @@ export function MapHUD({ controller }: MapHUDProps) {
         <div />
         <div className="flex flex-col items-end gap-2.5">
           <LayersMenu />
+          <BasemapLegend controller={controller} />
           <WalkableAreaLegend />
         </div>
       </div>
@@ -39,6 +43,8 @@ export function MapHUD({ controller }: MapHUDProps) {
       {/* Bottom row: Left zoom controls & attribution credit | Right 3D/2D mode & Lat/Lon */}
       <div className="flex items-end justify-between gap-4">
         <div className="flex flex-col items-start gap-2.5">
+          <PinTools />
+          <MapTypeControl />
           <ZoomControls
             onZoomIn={() => controller?.zoomIn()}
             onZoomOut={() => controller?.zoomOut()}
@@ -47,25 +53,8 @@ export function MapHUD({ controller }: MapHUDProps) {
         </div>
 
         <div className="flex flex-col items-end gap-2.5">
-<<<<<<< HEAD
-          <ViewModeToggle />
-=======
           <PegmanControl controller={controller} />
-          {/* Layer switches share one width so their toggles line up */}
-          <div className="flex flex-col items-stretch gap-2.5">
-            <WalkableAreaToggle />
-            <NomenclatureToggle />
-          </div>
-
-          <div className="flex items-end gap-2">
-            <ViewModeToggle />
-            <ZoomControls
-              onZoomIn={() => controller?.zoomIn()}
-              onZoomOut={() => controller?.zoomOut()}
-            />
-          </div>
->>>>>>> 4135a5e5b934c9415ff55723c591b83331665bd1
-
+          <ViewModeToggle />
           <CoordinateReadout controller={controller} />
         </div>
       </div>

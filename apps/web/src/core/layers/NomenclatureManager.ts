@@ -1,12 +1,12 @@
 import * as Cesium from 'cesium';
 import {
-  MARS_CIRCUMFERENCE_METERS,
-  MARS_ELLIPSOID,
-  NOMENCLATURE_LEVEL_MAX_ALTITUDE_METERS,
+    MARS_CIRCUMFERENCE_METERS,
+    MARS_ELLIPSOID,
+    NOMENCLATURE_LEVEL_MAX_ALTITUDE_METERS,
 } from '../../config/marsConfig';
 import {
-  type NomenclatureGeoJSON,
-  loadNomenclatureGeoJSON,
+    loadNomenclatureGeoJSON,
+    type NomenclatureGeoJSON,
 } from './nomenclatureData';
 
 export interface PickedMapFeature {
@@ -15,7 +15,8 @@ export interface PickedMapFeature {
   subtitle?: string;
   lat: number;
   lon: number;
-  kind: 'nomenclature' | 'outpost';
+  kind: 'nomenclature' | 'outpost' | 'route-pin';
+  pinRole?: 'start' | 'end';
   priorityLevel?: number;
 }
 

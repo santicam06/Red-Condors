@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
 import * as Cesium from 'cesium';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, MapPin, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { MARS_ELLIPSOID } from '../../config/marsConfig';
-import { IndicationsIcon } from '../location/LocationInfoPanel';
 import type { MarsViewerController } from '../../core/MarsViewerController';
 import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
 import { signedLongitude } from '../Locations/placeImagery';
 import { useNomenclatureSelection } from '../Locations/useNomenclatureSelection';
+import { IndicationsIcon } from '../location/LocationInfoPanel';
 import {
-  findSite,
-  KIND_LABEL,
-  OLYMPUS_SITES,
-  olympusSiteToRouteLocation,
-  pickOlympusSiteAt,
-  type OutpostKind,
+    KIND_LABEL,
+    OLYMPUS_SITES,
+    findSite,
+    olympusSiteToRouteLocation,
+    pickOlympusSiteAt,
+    type OutpostKind,
 } from './olympusSites';
 
 const KIND_COLOR: Record<OutpostKind, string> = {
@@ -37,6 +37,7 @@ interface OlympusRehearsalProps {
 
 export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehearsalProps) {
   const [open, setOpen] = useState(true);
+  const directionsOpen = useRoutePlannerStore((state) => state.isRouteCalculatorOpen);
   const [selectedId, setSelectedId] = useState<string>('lycus-base');
   const [photoIndex, setPhotoIndex] = useState(0);
 
@@ -229,14 +230,16 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleClose}
-            aria-label="Close location details"
-            className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center bg-red-700 text-white hover:bg-red-900"
-          >
-            <X size={18} />
-          </button>
+          {!directionsOpen && (
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Close location details"
+              className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center bg-red-700 text-white hover:bg-red-900"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">

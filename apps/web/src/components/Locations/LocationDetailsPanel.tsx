@@ -1,22 +1,23 @@
-import { useEffect, useRef, type ReactNode } from 'react';
 import { BookOpen, ChevronDown, ExternalLink, MapPin, Ruler, X } from 'lucide-react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
-import { describeFeatureType } from './descriptorTerms';
-import { USGS_DESCRIPTOR_TERMS_PAGE, USGS_MARS_TARGET_PAGE } from './sources';
-import { PLACE_IMAGE_LAYERS, signedLongitude } from './placeImagery';
 import { PlacePhoto } from './PlacePhoto';
+import { describeFeatureType } from './descriptorTerms';
+import { PLACE_IMAGE_LAYERS, signedLongitude } from './placeImagery';
+import { USGS_DESCRIPTOR_TERMS_PAGE, USGS_MARS_TARGET_PAGE } from './sources';
 import { lookupUsgsFeature } from './usgsGazetteer';
 
 interface LocationDetailsPanelProps {
   hit: NomenclatureLabelHit | null;
   onClose: () => void;
+  showClose?: boolean;
 }
 
 /**
  * Place details for a clicked Mars nomenclature label, shown inside the
  * Marswalk / Rover side bar.
  */
-export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps) {
+export function LocationDetailsPanel({ hit, onClose, showClose = true }: LocationDetailsPanelProps) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -51,15 +52,17 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
             longitude={photoLongitude}
             diameterKm={diameter}
           />
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            aria-label="Close location details"
-            className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center bg-red-700 text-white hover:bg-red-900"
-          >
-            <X size={18} />
-          </button>
+          {showClose && (
+            <button
+              ref={closeRef}
+              type="button"
+              onClick={onClose}
+              aria-label="Close location details"
+              className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center bg-red-700 text-white hover:bg-red-900"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">

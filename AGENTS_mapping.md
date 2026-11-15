@@ -10,7 +10,7 @@
 
 ### In Scope
 1. **Interchangeable 3D Globe & 2D Map Views** using a unified Martian coordinate system and preserving camera center/zoom across mode switches.
-2. **Mars Trek Visual Fidelity** by streaming NASA Mars Trek's exact default global basemap (`Mars_Viking_MDIM21_ClrMosaic_global_232m`) with true Martian coloration (no Earth blue atmospheric tinting or solar day/night shadows).
+2. **Mars Trek Visual Fidelity** by streaming NASA Mars Trek imagery with true Martian coloration (no Earth blue atmospheric tinting or solar day/night shadows). The default basemap is the Viking color mosaic (`Mars_Viking_MDIM21_ClrMosaic_global_232m`). Small map-type buttons switch to MOLA shaded relief (Terrain). The active map keeps a legend with a live ground scale. Terrain also shows an elevation ramp.
 3. **Deep-Space Background** matching Mars Trek: Tycho-2 starfield skybox in 3D and a seeded starfield backdrop (`StarfieldBackdrop.tsx`) behind the 2D map. No sun/moon sprites or decorative UI chrome yet.
    > *Update:* this replaced the original pure-black (`#000000`) requirement. Sections 4.2 and 7 below still describe the earlier black-only baseline; `src/core/MarsViewerController.ts` is the source of truth.
 4. **Fluid Navigation Controls** matching Mars Trek:
@@ -23,8 +23,8 @@
 
 ### Explicitly Out of Scope for Now
 - 3D elevation/relief mesh (`DEM` terrain exaggeration is deferred; imagery is draped over a smooth Martian ellipsoid/2D plane).
-- Deep-zoom CTX/HiRISE auto-layer switching (Phase 1 uses only the Viking MDIM 2.1 global basemap with smooth GPU tile overzooming).
-- Extra Mars Trek sidebars, curious-site ranking bars, search drawers, scalebars, or mission overlays (deferred to subsequent feature phases).
+- Deep-zoom CTX/HiRISE auto-layer switching (the globe still uses one global Mars Trek basemap at a time, with smooth GPU tile overzooming). The map-type control chooses Satellite or Terrain.
+- Extra Mars Trek sidebars, curious-site ranking bars, search drawers, or mission overlays (deferred to subsequent feature phases). The active-map legend includes a ground scale.
 
 ---
 
@@ -245,8 +245,9 @@ Red-Condors/
 
 ### How Future Features Plug Into `MarsViewerController`
 - **Feature 2 (Martian "Street View"):** Uses `controller.registerOverlayDataSource('rover-panoramas')` for interactive surface photo dots and reuses `pickMarsCoordinates()` for dropping the pegman stickman onto Mars.
-- **Feature 3 & 5 (Outposts & Topography-Aware Safe Routing):** Uses `controller.registerOverlayDataSource('outposts-routes')` to render habitats, waypoints (`A → B → C`), and safe EVA/rover polylines across both 3D and 2D automatically.
-- **Feature 4 (Climate & Environmental Tracking):** Uses `controller.addImageryOverlay(...)` / polygon hazard layers to drape thermal/dust overlays above the Viking basemap.
+- **Feature 3 & 5 (Outposts & Topography-Aware Safe Routing):** Draws the hypothetical camps, Start and End pins, and a safe polyline on both the 3D globe and the 2D map. The route overlay does not add A or B markers.
+- **Feature 4 (Climate & Environmental Tracking):** Not in this build. Dust storms do not reroute the crew.
+- **Feature 5 (Topography):** Uses MOLA heights so routes avoid steep slopes, cliffs, craters, and ridges. The walkable-area overlay paints that ground on the map.
 - **Feature 6 (Scientific Waypoint Missions):** Hooks into entity click events exposed by `MarsViewerController` and mounts UI cards into `MapHUD` slots.
 
 ---

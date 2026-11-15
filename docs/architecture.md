@@ -10,7 +10,7 @@ apps/
 │       ├── components/        Shared presentation and HUD components
 │       ├── config/            Planetary and map configuration
 │       ├── core/              Generic Cesium map engine
-│       ├── features/          Isolated product capabilities
+│       ├── features/          Map layers, route planner, best direction, safe-route overlay
 │       └── store/             Shared map-only state
 └── api/                       FastAPI modular monolith (Python ≥ 3.12)
     ├── pyproject.toml         Dependencies, Ruff and pytest configuration
@@ -19,9 +19,10 @@ apps/
     │   ├── api/               Shared HTTP transport (router aggregation, /health)
     │   ├── core/              Shared configuration (RC_* settings) and infrastructure
     │   └── modules/           Independently owned domain modules
-    │       ├── points/        Outposts and waypoints
-    │       ├── rover_images/  Rover surface imagery ("street view")
-    │       └── weather/       Climate and environmental conditions
+    │       ├── routing/       MOLA DEM safe pathfinding and walkable-area grids
+    │       ├── points/        Outposts and waypoints (scaffolded)
+    │       ├── rover_images/  Rover surface imagery ("street view", scaffolded)
+    │       └── weather/       Scaffolded. Dust is not drawn and does not change a route.
     └── tests/
         ├── unit/
         └── integration/
@@ -59,4 +60,6 @@ import each other; shared code moves to `app/core`. New modules are registered i
   proxies `/api` to `http://127.0.0.1:8000` (override with the `API_URL` env var), so no CORS
   configuration is needed.
 
-No database, background worker, or dataset integration is selected yet.
+No database is selected yet. The web app reads a local Olympus MOLA window for the
+best-direction search. `POST /api/routes` reads a local MOLA GeoTIFF when that file
+is present and returns 503 when it is not.
