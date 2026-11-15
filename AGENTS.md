@@ -11,8 +11,9 @@ This repository contains **Red Condors'** project for the **NASA Space Apps Hack
 > nomenclature place cards, **7 color-coded fictitious crew camps around Olympus Rupes /
 > Olympus Mons**, a Google Maps–style lateral route planner, dust-season and MOLA-slope
 > rehearsal routing, and a FastAPI MOLA DEM safe-routing endpoint (`POST /api/routes`) with
-> a toggleable traversable-area slope overlay. Rover "Street View" imagery, full waypoint
-> mission workflows, and a database remain planned/TBD.
+> a toggleable traversable-area slope overlay, a curated 10-stop Perseverance (Jezero) rover
+> "Street View" with real NASA 360° panoramas, and a Google Maps–style map search bar. Full
+> waypoint mission workflows and a database remain planned/TBD.
 
 ## Vision
 We are building a **"Google Earth for Mars"** style interactive mission-planning and rehearsal application that bridges global/regional planetary maps with hyperlocalized astronaut surface operations (Marswalks / EVAs and rover traverses).
@@ -24,10 +25,11 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
    - Streams **NASA's Mars Trek (`trek.nasa.gov/mars/`)** `Mars_Viking_MDIM21_ClrMosaic_global_232m` public WMTS basemap tiles for 1:1 visual fidelity with Mars Trek (*scope note:* 3D elevation/relief mesh exaggeration on the globe remains deferred; imagery is draped over a smooth Martian ellipsoid/2D map).
    - **Toggleable Mars Nomenclature & USGS Location Details Cards:** Renders 1,783 approved IAU/USGS Martian feature labels (`combinedNom`) with zoom-level hierarchy filtering (`level` 1–7) and 3D far-side globe occlusion. Hovering a visible label enlarges and highlights it in blue; clicking opens a **Location Details Panel** inside the left sidebar with cropped Mars Trek WMTS place photos (*Viking VIS Color Mosaic* and *MGS MOLA Color Shaded Relief*), IAU morphological descriptor definitions, spatial extent, name origin, and direct links to the official USGS Gazetteer record.
 
-2. **Martian "Street View" Mode (Rover Surface Imagery)** *(Planned)*
+2. **Martian "Street View" Mode (Rover Surface Imagery)** *(Implemented — Perseverance tour)*
    - Emulate the **Google Street View** "pegman / stickman" experience adapted for Mars.
    - Because rover imagery consists of discrete capture points rather than continuous road coverage, display available rover surface photos / 360° panoramas as **interactive dots on the map** (similar to static 360° user photo spheres on Google Maps).
-   - Dropping the stickman onto (or clicking) a dot opens a ground-level view of the real imagery captured by NASA rovers at that location (`apps/api/app/modules/rover_images/` is scaffolded for this domain).
+   - Dropping the stickman onto (or clicking) a dot opens a ground-level view of the real imagery captured by NASA rovers at that location.
+   - **Implemented:** a draggable astronaut/rover avatar (HUD, bottom-right) drops onto **10 curated Perseverance stops in Jezero Crater** (numbered yellow badges, visible below ~120 km) and opens a full-screen 360° Photo Sphere Viewer of the real **NASA PDS Mars 2020 Navcam cylindrical mosaics**, with milestone/sample info, tour Previous/Next and an in-app provenance section. Frontend: `apps/web/src/features/rover-streetview/`; API: `apps/api/app/modules/rover_images/` (`/api/rover-images/stops`, `/nearest`, `/stops/{id}/panorama.jpg`). Every stop is declared in `showcase_stops.json` and re-checkable with `python -m app.modules.rover_images.verify_showcase` (see `docs/streetview_data_sources.md`). No rover has visited Olympus Mons, so no ground imagery exists there.
 
 3. **Outpost Locations & Displacement Rehearsals (Olympus Rupes Crew Camps & Route Planner)** *(Started)*
    - **Fictitious Crew Camps near Olympus Rupes / Olympus Mons (`apps/web/src/components/Outposts/`):**
@@ -55,6 +57,9 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
    - Every location of interest pairs crew displacement with objectives grounded in **real Martian scientific research** (e.g., geological sampling, mineral/spectral investigation, subsurface water-ice search, or astrobiology).
    - Each of the 7 hypothetical **Olympus Rupes / Olympus Mons** camps already includes a geology-grounded field brief (`olympusSites.ts` — aureole giant-landslide block sampling in *Lycus Sulci*, exposed lava-flow stratigraphy at the *Olympus Rupes* basal scarp, nested pit collapse history at *Olympus Paterae*, and impact-exposed flank lava cross-sections/ejecta at *Pangboche* and *Karzok*). Full interactive mission checklists/workflows remain planned.
 
+7. **Map Search Bar** *(Implemented)*
+   - Google Maps–style search (`apps/web/src/features/map-search/`) floating top-left and docking on top of the lateral bar: finds IAU place names (opens the place card), Olympus crew camps (opens the camp card via `components/Outposts/useOutpostSelection.ts`), the Perseverance 360° stops (opens the panorama) and typed `lat, lon` coordinates (flies there with a pin). Accent-insensitive; `/` focuses it.
+
 ## Repository Structure (Current)
 - `README.md` — Team-facing overview, feature status table, and how to run the app.
 - `AGENTS.md` — Project context, current feature inventory, and guidelines for AI coding agents.
@@ -64,7 +69,7 @@ We are building a **"Google Earth for Mars"** style interactive mission-planning
 - `apps/web/src/core/` — Dataset-agnostic CesiumJS planetary engine (`MarsViewerController`), coordinate picking, Viking WMTS basemap, and GPU nomenclature layer manager.
 - `apps/web/src/components/` — Shared viewport (`MarsViewport`, `StarfieldBackdrop`), HUD controls (`hud/`), USGS nomenclature place cards & cropped WMTS imagery (`Locations/`), shared location info panel (`location/`), and the **Olympus Mons / Olympus Rupes** color-coded crew camps & rehearsal logic (`Outposts/`).
 - `apps/web/src/features/` — Isolated frontend product capabilities (`route-planner/` lateral bar, location search & map click picker; `routing/` safe-route API client, Cesium route/walkable-area overlay & HUD controls).
-- `apps/api/` — FastAPI modular monolith (Python ≥ 3.12), organized by domain module under `app/modules/` (`routing/` for MOLA DEM safe pathfinding & walkable-area grids, plus scaffolded `points/`, `rover_images/`, and `weather/` modules).
+- `apps/api/` — FastAPI modular monolith (Python ≥ 3.12), organized by domain module under `app/modules/` (`routing/` for MOLA DEM safe pathfinding & walkable-area grids, `rover_images/` for the curated rover Street View panoramas, plus scaffolded `points/` and `weather/` modules).
 - `docs/architecture.md` — Current repository boundaries and dependency direction.
 - `docs/challenge.md` — Official NASA Space Apps challenge brief (*Interplanetary Survival Guide: Martian Map*).
 - `docs/source_attributions.md` — Central log for citing all datasets, APIs, imagery, and open-source libraries used.

@@ -65,6 +65,8 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
         isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
       }`}
     >
+      {/* Room for the map search bar, which sits on top of this bar (Google Maps style) */}
+      <div className="h-14 shrink-0" aria-hidden="true" />
       {isRouteCalculatorOpen ? (
         <>
           {/* Top section: Travel modes (Marswalk & Rover) + ETA below each icon + Close button */}

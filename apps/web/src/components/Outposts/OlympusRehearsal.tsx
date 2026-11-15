@@ -7,6 +7,7 @@ import type { MarsViewerController } from '../../core/MarsViewerController';
 import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
 import { signedLongitude } from '../Locations/placeImagery';
 import { useNomenclatureSelection } from '../Locations/useNomenclatureSelection';
+import { useOutpostSelection } from './useOutpostSelection';
 import {
   findSite,
   KIND_LABEL,
@@ -36,9 +37,14 @@ interface OlympusRehearsalProps {
 }
 
 export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehearsalProps) {
-  const [open, setOpen] = useState(true);
-  const [selectedId, setSelectedId] = useState<string>('lycus-base');
+  const open = useOutpostSelection((s) => s.open);
+  const selectedId = useOutpostSelection((s) => s.selectedId);
   const [photoIndex, setPhotoIndex] = useState(0);
+
+  // Start at the first photo whenever another camp is selected (map click or search).
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [selectedId]);
 
   const selected = findSite(selectedId) ?? OLYMPUS_SITES[0];
 
@@ -110,9 +116,8 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
     handler.setInputAction((click: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
       const site = pickOlympusSiteAt(viewer, click.position);
       if (!site) return;
-      setSelectedId(site.id);
+      useOutpostSelection.getState().select(site.id);
       setPhotoIndex(0);
-      setOpen(true);
       useNomenclatureSelection.getState().setHit(null);
       useRoutePlannerStore.getState().setOpen(true);
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -137,7 +142,7 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
   };
 
   const handleClose = () => {
-    setOpen(false);
+    useOutpostSelection.getState().setOpen(false);
     if (!useRoutePlannerStore.getState().isRouteCalculatorOpen) {
       useRoutePlannerStore.getState().setOpen(false);
     }
