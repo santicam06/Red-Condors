@@ -9,7 +9,7 @@ FastAPI modular monolith for the Martian Map. Product capabilities live under
 The easiest way, from the repo root:
 
 ```bash
-./scripts/dev.sh api      # sets up the venv if needed, then runs on http://localhost:8000
+./scripts/dev.sh api      # creates/updates the venv to the pinned versions, then runs on http://localhost:8000
 ```
 
 Manually, from `apps/api/`:
@@ -18,7 +18,7 @@ Manually, from `apps/api/`:
 # bash / Git Bash / macOS / Linux
 python -m venv .venv
 source .venv/bin/activate          # Git Bash on Windows: source .venv/Scripts/activate
-pip install -e ".[dev]"
+pip install -e ".[dev]" -c requirements.lock   # exact versions shared by the team
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -26,7 +26,7 @@ uvicorn app.main:app --reload --port 8000
 # PowerShell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
+pip install -e ".[dev]" -c requirements.lock   # exact versions shared by the team
 uvicorn app.main:app --reload --port 8000
 ```
 

@@ -41,6 +41,7 @@ export class RoverStopsManager {
   private roverMarker: Cesium.Entity | null = null;
   private highlightedId: string | null = null;
   private tourCenter: { lat: number; lon: number } | null = null;
+  private pinText = '';
   private lastDropSeq = 0;
   private pausedRenderLoop: boolean | null = null;
   private visible = false;
@@ -93,7 +94,8 @@ export class RoverStopsManager {
     this.channel.entities.removeAll();
     this.entities.clear();
     this.stopCoords.clear();
-    this.clusterLabel = null;
+    this.roverMarker = null;
+    this.pinText = '';
     if (stops.length === 0) return;
 
     this.channel.entities.suspendEvents();
@@ -167,10 +169,17 @@ export class RoverStopsManager {
       for (const entity of this.entities.values()) entity.show = visible;
       changed = true;
     }
-    if (this.clusterLabel) {
-      const showCluster = dragging && altitude >= OPEN_DIRECTLY_BELOW_M;
-      if (this.clusterLabel.show !== showCluster) {
-        this.clusterLabel.show = showCluster;
+    // The rover pin marks the tour whenever the numbered stops are hidden (zoomed out).
+    if (this.roverMarker) {
+      const showPin = !activeStop && !visible;
+      if (this.roverMarker.show !== showPin) {
+        this.roverMarker.show = showPin;
+        changed = true;
+      }
+      const pinText = dragging ? 'Drop here to zoom in' : 'Perseverance rover · 360° tour';
+      if (this.roverMarker.label && this.pinText !== pinText) {
+        this.pinText = pinText;
+        this.roverMarker.label.text = new Cesium.ConstantProperty(pinText);
         changed = true;
       }
     }
