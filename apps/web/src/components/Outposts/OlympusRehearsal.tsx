@@ -103,13 +103,13 @@ const CAMP_PHOTOS_BY_SITE: Record<string, readonly CampPhotoSlide[]> = {
     {
       id: 'lycus-base-exterior',
       title: 'Lycus Base Camp · Exterior',
-      subtitle: 'Hypothetical base camp · Lycus Sulci',
+      subtitle: 'Lycus Sulci',
       src: lycusBaseExteriorImg,
     },
     {
       id: 'lycus-base-interior',
       title: 'Lycus Base Camp · Operations Hub',
-      subtitle: 'Hypothetical base camp · Interior',
+      subtitle: 'Interior',
       src: lycusBaseInteriorImg,
     },
   ],
@@ -117,13 +117,13 @@ const CAMP_PHOTOS_BY_SITE: Record<string, readonly CampPhotoSlide[]> = {
     {
       id: 'aureole-pad-exterior',
       title: 'Aureole Sample Pad · Exterior',
-      subtitle: 'Hypothetical waypoint · Lycus Sulci',
+      subtitle: 'Lycus Sulci',
       src: aureolePadExteriorImg,
     },
     {
       id: 'aureole-pad-interior',
       title: 'Aureole Sample Pad · Sample Lab',
-      subtitle: 'Hypothetical waypoint · Interior',
+      subtitle: 'Interior',
       src: aureolePadInteriorImg,
     },
   ],
@@ -131,13 +131,13 @@ const CAMP_PHOTOS_BY_SITE: Record<string, readonly CampPhotoSlide[]> = {
     {
       id: 'scarp-habitat-exterior',
       title: 'Scarp Habitat · Exterior',
-      subtitle: 'Hypothetical habitat · Olympus Rupes',
+      subtitle: 'Olympus Rupes',
       src: scarpHabitatExteriorImg,
     },
     {
       id: 'scarp-habitat-interior',
       title: 'Scarp Habitat · Observation Deck',
-      subtitle: 'Hypothetical habitat · Interior',
+      subtitle: 'Interior',
       src: scarpHabitatInteriorImg,
     },
   ],
@@ -145,13 +145,13 @@ const CAMP_PHOTOS_BY_SITE: Record<string, readonly CampPhotoSlide[]> = {
     {
       id: 'flank-relay-exterior',
       title: 'Flank Relay · Exterior',
-      subtitle: 'Hypothetical waypoint · Olympus Mons shield',
+      subtitle: 'Olympus Mons shield',
       src: flankRelayExteriorImg,
     },
     {
       id: 'flank-relay-interior',
       title: 'Flank Relay · Comms Bay',
-      subtitle: 'Hypothetical waypoint · Interior',
+      subtitle: 'Interior',
       src: flankRelayInteriorImg,
     },
   ],
@@ -159,13 +159,13 @@ const CAMP_PHOTOS_BY_SITE: Record<string, readonly CampPhotoSlide[]> = {
     {
       id: 'caldera-rim-exterior',
       title: 'Caldera Rim Observatory · Exterior',
-      subtitle: 'Hypothetical science station · Olympus Paterae',
+      subtitle: 'Olympus Paterae',
       src: calderaRimExteriorImg,
     },
     {
       id: 'caldera-rim-interior',
       title: 'Caldera Rim Observatory · Dome',
-      subtitle: 'Hypothetical science station · Interior',
+      subtitle: 'Interior',
       src: calderaRimInteriorImg,
     },
   ],
@@ -173,13 +173,13 @@ const CAMP_PHOTOS_BY_SITE: Record<string, readonly CampPhotoSlide[]> = {
     {
       id: 'pangboche-exterior',
       title: 'Pangboche Station · Exterior',
-      subtitle: 'Hypothetical science station · Pangboche crater',
+      subtitle: 'Pangboche crater',
       src: pangbocheExteriorImg,
     },
     {
       id: 'pangboche-interior',
       title: 'Pangboche Station · Crater Lab',
-      subtitle: 'Hypothetical science station · Interior',
+      subtitle: 'Interior',
       src: pangbocheInteriorImg,
     },
   ],
@@ -187,13 +187,13 @@ const CAMP_PHOTOS_BY_SITE: Record<string, readonly CampPhotoSlide[]> = {
     {
       id: 'karzok-exterior',
       title: 'Karzok Cache · Exterior',
-      subtitle: 'Hypothetical science cache · Karzok crater',
+      subtitle: 'Karzok crater',
       src: karzokExteriorImg,
     },
     {
       id: 'karzok-interior',
       title: 'Karzok Cache · Sample Vault',
-      subtitle: 'Hypothetical science cache · Interior',
+      subtitle: 'Interior',
       src: karzokInteriorImg,
     },
   ],
@@ -336,13 +336,6 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
     useNomenclatureSelection.getState().setHit(null);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    if (!useRoutePlannerStore.getState().isRouteCalculatorOpen) {
-      useRoutePlannerStore.getState().setOpen(false);
-    }
-  };
-
   const showPreviousPhoto = () => {
     setPhotoIndex((current) =>
       current === 0 ? slides.length - 1 : current - 1
@@ -367,7 +360,7 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="relative shrink-0">
-          <div className="relative aspect-[384/230] w-full overflow-hidden bg-[#1c110c]">
+          <div className="relative aspect-384/230 w-full overflow-hidden bg-[#1c110c]">
             <div
               className="flex h-full w-full transition-transform duration-500 ease-in-out motion-reduce:transition-none"
               style={{ transform: `translateX(-${photoIndex * 100}%)` }}
@@ -413,7 +406,7 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
               <ChevronRight size={18} />
             </button>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-3 pt-10 pb-2.5">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-linear-to-t from-black/75 via-black/35 to-transparent px-3 pt-10 pb-2.5">
               <div className="min-w-0">
                 <p className="truncate text-[12px] font-medium text-white">
                   {activeSlide.title}

@@ -38,9 +38,12 @@ export function AttributionCredit() {
         <div
           role="dialog"
           aria-label="Map credits and attribution"
-          className="absolute bottom-0 left-11 z-20 w-max max-w-[calc(100vw-5rem)] border border-red-700 bg-white px-3 py-2 text-[12px] font-normal text-neutral-800 shadow-md"
+          className="absolute bottom-0 left-11 z-20 flex w-max max-w-[calc(100vw-5rem)] items-center gap-3 border border-red-700 bg-white px-3 py-1.5 text-[12px] font-normal text-neutral-800 shadow-md"
         >
-          Imagery: Courtesy NASA/JPL-Caltech/USGS • Nomenclature: IAU/USGS • Elevation: MGS MOLA, NASA/GSFC/USGS
+          <img src="/favicon.png" alt="RoaMars" className="h-12 w-12 shrink-0 object-contain" />
+          <span>
+            Imagery: Courtesy NASA/JPL-Caltech/USGS • Nomenclature: IAU/USGS • Elevation: MGS MOLA, NASA/GSFC/USGS
+          </span>
         </div>
       )}
 

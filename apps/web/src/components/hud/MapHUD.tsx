@@ -24,7 +24,7 @@ export function MapHUD({ controller }: MapHUDProps) {
   return (
     <div
       className={`font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4 transition-[padding] duration-250 ease-out ${
-        isRouteBarOpen ? "sm:pl-[491px]" : ""
+        isRouteBarOpen ? "sm:pl-122.75" : ""
       }`}
     >
       {/* Top row: left reserved for future mission rehearsal / environmental status overlays; right layers menu & legend */}
