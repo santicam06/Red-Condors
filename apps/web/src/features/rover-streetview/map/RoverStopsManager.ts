@@ -3,8 +3,10 @@ import { MARS_ELLIPSOID } from '../../../config/marsConfig';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { type ScreenPoint, useStreetViewStore } from '../store/useStreetViewStore';
 import type { RoverStop } from '../types/roverStop';
+import { ROVER_PIN_HEIGHT_PX, ROVER_PIN_IMAGE } from './roverMarkerImage';
 
 const OVERLAY_CHANNEL_ID = 'rover-streetview';
+const ROVER_MARKER_ID = 'streetview:rover-marker';
 
 /** Release within this many CSS pixels of a dot to snap onto it. */
 const SNAP_RADIUS_PX = 40;
@@ -13,7 +15,7 @@ const DOTS_VISIBLE_BELOW_M = 120_000;
 /** Above this altitude stops overlap; dropping on them zooms in instead of opening one. */
 const OPEN_DIRECTLY_BELOW_M = 400_000;
 /** Altitude of the "zoom in on the rover area" camera flight. */
-const CLUSTER_VIEW_ALTITUDE_M = 25_000;
+const CLUSTER_VIEW_ALTITUDE_M = 12_000;
 /** Altitude of the map camera after opening a stop (so closing returns there). */
 const STOP_VIEW_ALTITUDE_M = 4_000;
 
@@ -34,8 +36,10 @@ export class RoverStopsManager {
   private readonly clickHandler: Cesium.ScreenSpaceEventHandler;
   private readonly unsubscribers: Array<() => void> = [];
   private readonly scratchWindow = new Cesium.Cartesian2();
-  private clusterLabel: Cesium.Entity | null = null;
+  /** Rover pin shown whenever the numbered stops are too small to see. */
+  private roverMarker: Cesium.Entity | null = null;
   private highlightedId: string | null = null;
+  private tourCenter: { lat: number; lon: number } | null = null;
   private lastDropSeq = 0;
   private pausedRenderLoop: boolean | null = null;
   private visible = false;
@@ -88,7 +92,7 @@ export class RoverStopsManager {
     this.channel.entities.removeAll();
     this.entities.clear();
     this.positions.clear();
-    this.clusterLabel = null;
+    this.roverMarker = null;
     if (stops.length === 0) return;
 
     this.channel.entities.suspendEvents();
@@ -117,22 +121,30 @@ export class RoverStopsManager {
       this.entities.set(stop.id, entity);
     }
 
-    // A single label at the centre of the rover area guides users when zoomed out.
+    // A rover pin at the centre of the tour marks where the rover is from any zoom
+    // level; it swaps for the numbered stops once the camera is close enough.
     const lat = stops.reduce((sum, s) => sum + s.lat, 0) / stops.length;
     const lon = stops.reduce((sum, s) => sum + s.lon, 0) / stops.length;
-    this.clusterLabel = this.channel.entities.add({
-      id: 'streetview:cluster-label',
+    this.tourCenter = { lat, lon };
+    this.roverMarker = this.channel.entities.add({
+      id: ROVER_MARKER_ID,
+      name: 'Perseverance rover: 360° tour',
       position: Cesium.Cartesian3.fromDegrees(lon, lat, 10, MARS_ELLIPSOID),
       show: false,
+      billboard: {
+        image: ROVER_PIN_IMAGE,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
       label: {
-        text: 'Perseverance 360° tour — drop here',
-        font: '500 13px "JetBrains Mono", monospace',
+        text: 'Perseverance rover · 360° tour',
+        font: '600 12px "JetBrains Mono", monospace',
         fillColor: Cesium.Color.WHITE,
-        outlineColor: OUTLINE,
+        outlineColor: Cesium.Color.BLACK,
         outlineWidth: 3,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        pixelOffset: new Cesium.Cartesian2(0, -16),
+        pixelOffset: new Cesium.Cartesian2(0, -(ROVER_PIN_HEIGHT_PX + 4)),
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
     });
@@ -152,8 +164,13 @@ export class RoverStopsManager {
       this.visible = visible;
       for (const entity of this.entities.values()) entity.show = visible;
     }
-    if (this.clusterLabel) {
-      this.clusterLabel.show = dragging && altitude >= OPEN_DIRECTLY_BELOW_M;
+    if (this.roverMarker) {
+      this.roverMarker.show = !activeStop && !visible;
+      if (this.roverMarker.label) {
+        this.roverMarker.label.text = new Cesium.ConstantProperty(
+          dragging ? 'Drop here to zoom in' : 'Perseverance rover · 360° tour'
+        );
+      }
     }
     this.viewer.scene.requestRender();
   }
@@ -229,10 +246,15 @@ export class RoverStopsManager {
   }
 
   private handleClick(event: Cesium.ScreenSpaceEventHandler.PositionedEvent): void {
-    if (!this.visible) return;
     const picked: unknown = this.viewer.scene.pick(event.position);
     const entity = (picked as { id?: unknown } | undefined)?.id;
     if (!(entity instanceof Cesium.Entity) || !entity.id.startsWith('streetview:')) return;
+
+    if (entity.id === ROVER_MARKER_ID) {
+      this.flyToTour();
+      return;
+    }
+    if (!this.visible) return;
 
     const stopId = entity.id.slice('streetview:'.length);
     const stop = useStreetViewStore.getState().stops.find((s) => s.id === stopId);
@@ -254,6 +276,12 @@ export class RoverStopsManager {
     }
     this.highlightedId = stopId;
     this.viewer.scene.requestRender();
+  }
+
+  /** Zooms into the rover area so the numbered stops become visible. */
+  private flyToTour(): void {
+    if (!this.tourCenter) return;
+    this.controller.flyToLatLon(this.tourCenter.lon, this.tourCenter.lat, CLUSTER_VIEW_ALTITUDE_M);
   }
 
   private flyToStop(stop: RoverStop): void {

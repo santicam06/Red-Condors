@@ -8,7 +8,7 @@ import type { NomenclatureLabelHit } from '../../../core/layers/NomenclatureMana
 import { loadNomenclatureGeoJSON } from '../../../core/layers/nomenclatureData';
 import type { RoverStop } from '../../rover-streetview/types/roverStop';
 
-export type SearchKind = 'place' | 'camp' | 'streetview' | 'coordinates';
+export type SearchKind = 'place' | 'camp' | 'streetview' | 'area' | 'coordinates';
 
 interface BaseEntry {
   id: string;
@@ -23,6 +23,7 @@ export type SearchEntry =
   | (BaseEntry & { kind: 'place'; hit: NomenclatureLabelHit })
   | (BaseEntry & { kind: 'camp'; siteId: string; campKind: OutpostKind })
   | (BaseEntry & { kind: 'streetview'; stop: RoverStop })
+  | (BaseEntry & { kind: 'area'; altitudeM: number })
   | (BaseEntry & { kind: 'coordinates' });
 
 let placesPromise: Promise<SearchEntry[]> | null = null;
@@ -90,4 +91,21 @@ export function streetViewEntries(stops: RoverStop[]): SearchEntry[] {
     lat: stop.lat,
     lon: stop.lon,
   }));
+}
+
+/**
+ * "Where is the rover?": flies to the Perseverance 360° tour in Jezero Crater
+ * (the centre of its stops), close enough for the numbered stops to appear.
+ */
+export function roverTourEntry(stops: RoverStop[]): SearchEntry | null {
+  if (stops.length === 0) return null;
+  return {
+    kind: 'area',
+    id: 'area-perseverance-tour',
+    title: 'Perseverance rover · 360° tour',
+    subtitle: `Jezero Crater · ${stops.length} ground-level stops`,
+    lat: stops.reduce((sum, s) => sum + s.lat, 0) / stops.length,
+    lon: stops.reduce((sum, s) => sum + s.lon, 0) / stops.length,
+    altitudeM: 12_000,
+  };
 }

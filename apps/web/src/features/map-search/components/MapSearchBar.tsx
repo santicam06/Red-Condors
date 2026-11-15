@@ -3,12 +3,15 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { OutpostKind } from '../../../components/Outposts/olympusSites';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { AstronautIcon } from '../../rover-streetview/components/avatars/AstronautIcon';
+import { RoverIcon } from '../../rover-streetview/components/avatars/RoverIcon';
 import { useStreetViewStore } from '../../rover-streetview/store/useStreetViewStore';
 import { clearSearchPin, selectSearchResult } from '../actions/selectSearchResult';
 import { rankResults } from '../data/rankResults';
+import { buildSuggestions } from '../data/suggestions';
 import {
   campEntries,
   loadPlaceEntries,
+  roverTourEntry,
   type SearchEntry,
   type SearchKind,
   streetViewEntries,
@@ -20,6 +23,7 @@ interface MapSearchBarProps {
 
 const GROUP_LABEL: Record<SearchKind, string> = {
   coordinates: 'Coordinates',
+  area: 'Rover',
   streetview: 'Rover 360° views',
   camp: 'Crew camps',
   place: 'Mars places',
@@ -37,6 +41,8 @@ function ResultIcon({ entry }: { entry: SearchEntry }) {
   switch (entry.kind) {
     case 'streetview':
       return <AstronautIcon className="h-5 w-5 shrink-0" />;
+    case 'area':
+      return <RoverIcon className="h-5 w-5 shrink-0" />;
     case 'camp':
       return (
         <span
@@ -89,11 +95,16 @@ export function MapSearchBar({ controller }: MapSearchBarProps) {
       .catch(() => setPlacesStatus('error'));
   };
 
-  const allEntries = useMemo(
-    () => [...streetViewEntries(stops), ...campEntries(), ...places],
-    [stops, places]
+  const allEntries = useMemo(() => {
+    const tour = roverTourEntry(stops);
+    return [...(tour ? [tour] : []), ...streetViewEntries(stops), ...campEntries(), ...places];
+  }, [stops, places]);
+  const isSuggesting = query.trim().length === 0;
+  // An empty box shows suggestions (things to look for); typing shows ranked results.
+  const results = useMemo(
+    () => (isSuggesting ? buildSuggestions(allEntries) : rankResults(allEntries, query)),
+    [allEntries, query, isSuggesting]
   );
-  const results = useMemo(() => rankResults(allEntries, query), [allEntries, query]);
 
   // "/" focuses the search (like Google Maps), unless the user is typing elsewhere.
   useEffect(() => {
@@ -151,7 +162,7 @@ export function MapSearchBar({ controller }: MapSearchBarProps) {
 
   if (panoramaOpen) return null;
 
-  const showDropdown = isOpen && query.trim().length > 0;
+  const showDropdown = isOpen && (!isSuggesting || results.length > 0);
   let lastKind: SearchKind | null = null;
 
   return (
@@ -211,7 +222,12 @@ export function MapSearchBar({ controller }: MapSearchBarProps) {
             </li>
           ) : (
             results.map((entry, index) => {
-              const header = entry.kind !== lastKind ? GROUP_LABEL[entry.kind] : null;
+              let header: string | null = null;
+              if (isSuggesting) {
+                header = index === 0 ? 'Try searching for' : null;
+              } else if (entry.kind !== lastKind) {
+                header = GROUP_LABEL[entry.kind];
+              }
               lastKind = entry.kind;
               return (
                 <li key={entry.id} role="presentation">

@@ -58,6 +58,7 @@ function dropSearchPin(controller: MarsViewerController, entry: SearchEntry): vo
  * - place → place card in the side bar (as a label click does) + fly there
  * - camp → camp card in the side bar (as a camp-dot click does) + fly there
  * - Street View stop → full-screen 360° panorama (the map moves to the stop)
+ * - area (e.g. the rover tour) → fly there
  * - coordinates → fly there and drop a temporary pin
  */
 export function selectSearchResult(
@@ -81,6 +82,9 @@ export function selectSearchResult(
       break;
     case 'streetview':
       useStreetViewStore.getState().open(entry.stop);
+      break;
+    case 'area':
+      controller.flyToLatLon(entry.lon, entry.lat, entry.altitudeM);
       break;
     case 'coordinates':
       dropSearchPin(controller, entry);

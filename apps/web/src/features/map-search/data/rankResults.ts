@@ -5,7 +5,7 @@ const PER_KIND_LIMIT = 5;
 const TOTAL_LIMIT = 15;
 
 /** Display order of result groups (Street View first: it is the most "visual" result). */
-export const KIND_ORDER: SearchKind[] = ['coordinates', 'streetview', 'camp', 'place'];
+export const KIND_ORDER: SearchKind[] = ['coordinates', 'area', 'streetview', 'camp', 'place'];
 
 /** Lower-case and strip accents so "seitah" matches "Séítah". */
 export function normalize(text: string): string {
