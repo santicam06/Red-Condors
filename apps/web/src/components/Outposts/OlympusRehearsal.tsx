@@ -333,13 +333,6 @@ export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehea
       .openIndicationsForLocation(olympusSiteToRouteLocation(selected));
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    if (!useRoutePlannerStore.getState().isRouteCalculatorOpen) {
-      useRoutePlannerStore.getState().setOpen(false);
-    }
-  };
-
   const showPreviousPhoto = () => {
     setPhotoIndex((current) =>
       current === 0 ? slides.length - 1 : current - 1
