@@ -25,6 +25,8 @@ interface LabelEntry {
   feature: PickedMapFeature;
   position3D: Cesium.Cartesian3;
   occludeePoint: Cesium.Cartesian3;
+  projectedX: number;
+  projectedY: number;
   longitude: number;
   latitude: number;
   name: string;
@@ -58,7 +60,7 @@ export interface NomenclatureLabelHit {
 
 interface HitBoxEntry {
   box: ScreenBox;
-  feature: PickedMapFeature;
+  entry: LabelEntry;
 }
 
 interface InternalRenderStateApi {
@@ -113,13 +115,12 @@ export class NomenclatureManager {
   private readonly restFill = Cesium.Color.WHITE.clone();
   private readonly activeFill = Cesium.Color.fromCssColorString('#B91C1C');
   private readonly scratchFill = new Cesium.Color();
-  private readonly scratchPickWindow = new Cesium.Cartesian2();
   private visibleHitBoxes: HitBoxEntry[] = [];
   private readonly routeFids = new Set<number>();
   private readonly routeNameScale = 1.18;
   private visible: boolean;
   private destroyed = false;
-  private removePostRenderListener: (() => void) | null = null;
+  private removePreRenderListener: (() => void) | null = null;
 
   // Dirty-tracking state so idle frames cost 0.00ms
   private lastCameraPos = new Cesium.Cartesian3(Number.NaN, Number.NaN, Number.NaN);
@@ -203,7 +204,7 @@ export class NomenclatureManager {
       primitive
     ) as NomenclatureOverlayPrimitive;
 
-    this.removePostRenderListener = viewer.scene.postRender.addEventListener(() => {
+    this.removePreRenderListener = viewer.scene.preRender.addEventListener(() => {
       this.updateLabelVisibilityIfNeeded();
     });
   }
@@ -237,11 +238,11 @@ export class NomenclatureManager {
   }
 
   /**
-   * Hit-tests currently visible labels. Used by the Locations panel for hover and click.
+   * Hit-tests currently visible labels in O(K_visible) using cached screen boxes.
    * Screen coordinates match Cesium's canvas-relative pointer events.
    */
   public pickAt(screenX: number, screenY: number): NomenclatureLabelHit | null {
-    if (this.destroyed || this.entries.length === 0) {
+    if (this.destroyed || this.visibleHitBoxes.length === 0) {
       return null;
     }
     if (!this.visible && this.routeFids.size === 0) {
@@ -249,18 +250,17 @@ export class NomenclatureManager {
     }
 
     let best: { entry: LabelEntry; dist2: number } | null = null;
-    for (let i = 0; i < this.entries.length; i++) {
-      const entry = this.entries[i];
+    for (let i = 0; i < this.visibleHitBoxes.length; i++) {
+      const { box, entry } = this.visibleHitBoxes[i];
       if (!entry.label.show) continue;
 
-      const projected = this.projectLabelToScreen(entry, this.scratchPickWindow);
-      if (!projected) continue;
-
+      const centerX = (box.minX + box.maxX) * 0.5;
+      const centerY = (box.minY + box.maxY) * 0.5;
       const scale = entry.label.scale || 1;
-      const halfW = entry.halfWidthPx * scale + 8;
-      const halfH = entry.halfHeightPx * scale + 8;
-      const dx = screenX - projected.x;
-      const dy = screenY - projected.y;
+      const halfW = Math.max(8, entry.halfWidthPx - 5) * scale;
+      const halfH = (entry.level <= 2 ? 10 : 9) * scale;
+      const dx = screenX - centerX;
+      const dy = screenY - centerY;
       if (Math.abs(dx) > halfW || Math.abs(dy) > halfH) continue;
 
       const dist2 = dx * dx + dy * dy;
@@ -331,16 +331,15 @@ export class NomenclatureManager {
       return null;
     }
 
-    const pad = 4;
     for (let i = 0; i < this.visibleHitBoxes.length; i++) {
-      const { box, feature } = this.visibleHitBoxes[i];
+      const { box, entry } = this.visibleHitBoxes[i];
       if (
-        x >= box.minX - pad &&
-        x <= box.maxX + pad &&
-        y >= box.minY - pad &&
-        y <= box.maxY + pad
+        x >= box.minX + 4 &&
+        x <= box.maxX - 4 &&
+        y >= box.minY + 3 &&
+        y <= box.maxY - 3
       ) {
-        return feature;
+        return entry.feature;
       }
     }
     return null;
@@ -368,6 +367,8 @@ export class NomenclatureManager {
 
       const position3D = Cesium.Cartesian3.fromDegrees(lon, lat, 0, MARS_ELLIPSOID);
       const occludeePoint = Cesium.Cartesian3.fromDegrees(lon, lat, 250, MARS_ELLIPSOID);
+      const projectedX = Cesium.Math.toRadians(lon) * MARS_ELLIPSOID.maximumRadius;
+      const projectedY = Cesium.Math.toRadians(lat) * MARS_ELLIPSOID.maximumRadius;
 
       const isMajorRegion = clampedLevel <= 2;
       const font = isMajorRegion
@@ -386,7 +387,7 @@ export class NomenclatureManager {
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         fillColor: fillWhite,
         outlineColor: outlineDark,
-        outlineWidth: 1,
+        outlineWidth: 3,
         scale: 1,
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
@@ -400,6 +401,8 @@ export class NomenclatureManager {
         feature,
         position3D,
         occludeePoint,
+        projectedX,
+        projectedY,
         longitude: lon,
         latitude: lat,
         name,
@@ -431,57 +434,6 @@ export class NomenclatureManager {
     };
   }
 
-  /**
-   * Projects a label into canvas pixels, wrapping X across the 2D antimeridian
-   * the same way visibility decluttering does.
-   */
-  private projectLabelToScreen(
-    entry: LabelEntry,
-    scratch: Cesium.Cartesian2
-  ): { x: number; y: number } | null {
-    const { scene } = this.viewer;
-    const winPos = Cesium.SceneTransforms.worldToWindowCoordinates(
-      scene,
-      entry.position3D,
-      scratch
-    );
-    if (!winPos || !Number.isFinite(winPos.x) || !Number.isFinite(winPos.y)) {
-      return null;
-    }
-
-    let screenX = winPos.x;
-    const is3D = scene.mode === Cesium.SceneMode.SCENE3D;
-    if (!is3D) {
-      const circumferenceWidthPx = this.getCircumferenceWidthPx();
-      const canvasWidth = scene.canvas.clientWidth;
-      if (circumferenceWidthPx > 0) {
-        while (screenX < -entry.halfWidthPx) {
-          screenX += circumferenceWidthPx;
-        }
-        while (screenX > canvasWidth + entry.halfWidthPx) {
-          screenX -= circumferenceWidthPx;
-        }
-      }
-    }
-
-    return { x: screenX, y: winPos.y };
-  }
-
-  private getCircumferenceWidthPx(): number {
-    const { scene, camera } = this.viewer;
-    if (
-      scene.mode === Cesium.SceneMode.SCENE3D ||
-      !(camera.frustum instanceof Cesium.OrthographicOffCenterFrustum) ||
-      typeof camera.frustum.right !== 'number' ||
-      typeof camera.frustum.left !== 'number'
-    ) {
-      return 0;
-    }
-    const frustumWidthMeters = Math.abs(camera.frustum.right - camera.frustum.left);
-    if (frustumWidthMeters <= 0) return 0;
-    return (MARS_CIRCUMFERENCE_METERS / frustumWidthMeters) * scene.canvas.clientWidth;
-  }
-
   private updateLabelVisibilityIfNeeded(): void {
     if (this.destroyed || this.entries.length === 0) {
       return;
@@ -494,11 +446,17 @@ export class NomenclatureManager {
     const altitude = this.getEffectiveAltitude();
     const mode = scene.mode;
 
+    const posEpsilonMeters = Math.max(50, altitude * 0.0015);
     const cameraMoved =
       this.forceRefresh ||
       mode !== this.lastMode ||
-      Math.abs(altitude - this.lastAltitude) > altitude * 0.005 ||
-      !Cesium.Cartesian3.equalsEpsilon(camera.positionWC, this.lastCameraPos, 0, 50) ||
+      Math.abs(altitude - this.lastAltitude) > altitude * 0.004 ||
+      !Cesium.Cartesian3.equalsEpsilon(
+        camera.positionWC,
+        this.lastCameraPos,
+        0,
+        posEpsilonMeters
+      ) ||
       !Cesium.Cartesian3.equalsEpsilon(camera.directionWC, this.lastCameraDir, 0.0002);
 
     if (!cameraMoved) {
@@ -518,22 +476,43 @@ export class NomenclatureManager {
 
     const canvasWidth = scene.canvas.clientWidth;
     const canvasHeight = scene.canvas.clientHeight;
+    if (canvasWidth <= 0 || canvasHeight <= 0) {
+      return;
+    }
+
     const placedBoxes: ScreenBox[] = [];
     const nextHitBoxes: HitBoxEntry[] = [];
 
-    // In 2D INFINITE_SCROLL, compute pixel width of one full 360° Mars circumference
-    // so wrapped coordinates across the ±180° antimeridian are also collision-checked cleanly
+    // Precompute 2D orthographic transform constants once per frame so projecting
+    // all 1,783 labels in 2D avoids `SceneTransforms.worldToWindowCoordinates`
+    // (zero frustum clones, zero matrix allocations, zero trig).
+    let frustumLeft = 0;
+    let frustumTop = 0;
+    let invFrustumW = 0;
+    let invFrustumH = 0;
     let circumferenceWidthPx = 0;
+    const camProjX = camera.positionWC.y;
+    const camProjY = camera.positionWC.z;
+    const circMeters = MARS_CIRCUMFERENCE_METERS;
+    const halfCircMeters = circMeters * 0.5;
+    const infiniteScroll2D = scene.mapMode2D === Cesium.MapMode2D.INFINITE_SCROLL;
+
     if (
       !is3D &&
       camera.frustum instanceof Cesium.OrthographicOffCenterFrustum &&
       typeof camera.frustum.right === 'number' &&
-      typeof camera.frustum.left === 'number'
+      typeof camera.frustum.left === 'number' &&
+      typeof camera.frustum.top === 'number' &&
+      typeof camera.frustum.bottom === 'number'
     ) {
-      const frustumWidthMeters = Math.abs(camera.frustum.right - camera.frustum.left);
-      if (frustumWidthMeters > 0) {
-        circumferenceWidthPx =
-          (MARS_CIRCUMFERENCE_METERS / frustumWidthMeters) * canvasWidth;
+      frustumLeft = camera.frustum.left;
+      frustumTop = camera.frustum.top;
+      const frustumWidthMeters = camera.frustum.right - frustumLeft;
+      const frustumHeightMeters = frustumTop - camera.frustum.bottom;
+      if (frustumWidthMeters > 0 && frustumHeightMeters > 0) {
+        invFrustumW = canvasWidth / frustumWidthMeters;
+        invFrustumH = canvasHeight / frustumHeightMeters;
+        circumferenceWidthPx = circMeters * invFrustumW;
       }
     }
 
@@ -546,33 +525,70 @@ export class NomenclatureManager {
         NOMENCLATURE_LEVEL_MAX_ALTITUDE_METERS[7];
 
       if (!pinned && (!this.visible || altitude > maxAllowedAlt)) {
-        entry.label.show = false;
+        if (entry.label.show) entry.label.show = false;
         continue;
       }
 
-      if (is3D && !this.occluder.isPointVisible(entry.occludeePoint)) {
-        entry.label.show = false;
-        continue;
-      }
+      let screenX: number;
+      let screenY: number;
 
-      const projected = this.projectLabelToScreen(entry, this.scratchWindowPos);
-      if (!projected) {
-        entry.label.show = false;
-        continue;
-      }
+      if (is3D) {
+        if (!this.occluder.isPointVisible(entry.occludeePoint)) {
+          if (entry.label.show) entry.label.show = false;
+          continue;
+        }
 
-      const screenX = projected.x;
-      const screenY = projected.y;
+        const winPos = Cesium.SceneTransforms.worldToWindowCoordinates(
+          scene,
+          entry.position3D,
+          this.scratchWindowPos
+        );
+        if (!winPos || !Number.isFinite(winPos.x) || !Number.isFinite(winPos.y)) {
+          if (entry.label.show) entry.label.show = false;
+          continue;
+        }
+        screenX = winPos.x;
+        screenY = winPos.y;
 
-      const inViewport =
-        screenX >= -entry.halfWidthPx &&
-        screenX <= canvasWidth + entry.halfWidthPx &&
-        screenY >= -entry.halfHeightPx &&
-        screenY <= canvasHeight + entry.halfHeightPx;
+        if (
+          screenX < -entry.halfWidthPx ||
+          screenX > canvasWidth + entry.halfWidthPx ||
+          screenY < -entry.halfHeightPx ||
+          screenY > canvasHeight + entry.halfHeightPx
+        ) {
+          if (entry.label.show) entry.label.show = false;
+          continue;
+        }
+      } else {
+        if (invFrustumW <= 0 || invFrustumH <= 0) {
+          if (entry.label.show) entry.label.show = false;
+          continue;
+        }
 
-      if (!inViewport) {
-        entry.label.show = false;
-        continue;
+        const dy = entry.projectedY - camProjY;
+        screenY = (frustumTop - dy) * invFrustumH;
+        if (
+          screenY < -entry.halfHeightPx ||
+          screenY > canvasHeight + entry.halfHeightPx
+        ) {
+          if (entry.label.show) entry.label.show = false;
+          continue;
+        }
+
+        let dx = entry.projectedX - camProjX;
+        if (infiniteScroll2D) {
+          dx =
+            ((((dx + halfCircMeters) % circMeters) + circMeters) % circMeters) -
+            halfCircMeters;
+        }
+        screenX = (dx - frustumLeft) * invFrustumW;
+        if (
+          screenX < -entry.halfWidthPx ||
+          screenX > canvasWidth + entry.halfWidthPx
+        ) {
+          if (entry.label.show) entry.label.show = false;
+          continue;
+        }
       }
 
       const candidate: ScreenBox = {
@@ -597,10 +613,10 @@ export class NomenclatureManager {
       }
 
       if (collides && !pinned) {
-        entry.label.show = false;
+        if (entry.label.show) entry.label.show = false;
       } else {
         placedBoxes.push(candidate);
-        nextHitBoxes.push({ box: candidate, feature: entry.feature });
+        nextHitBoxes.push({ box: candidate, entry });
         // Also reserve ±360° wrapped positions in 2D INFINITE_SCROLL so edge-spanning labels never overlap across the seam
         if (!is3D && circumferenceWidthPx > 0) {
           const leftWrap: ScreenBox = {
@@ -617,11 +633,11 @@ export class NomenclatureManager {
           };
           placedBoxes.push(leftWrap, rightWrap);
           nextHitBoxes.push(
-            { box: leftWrap, feature: entry.feature },
-            { box: rightWrap, feature: entry.feature }
+            { box: leftWrap, entry },
+            { box: rightWrap, entry }
           );
         }
-        entry.label.show = true;
+        if (!entry.label.show) entry.label.show = true;
       }
     }
 
@@ -637,9 +653,9 @@ export class NomenclatureManager {
 
   public destroy(): void {
     this.destroyed = true;
-    if (this.removePostRenderListener) {
-      this.removePostRenderListener();
-      this.removePostRenderListener = null;
+    if (this.removePreRenderListener) {
+      this.removePreRenderListener();
+      this.removePreRenderListener = null;
     }
     if (!this.viewer.isDestroyed()) {
       this.viewer.scene.primitives.remove(this.overlayPrimitive);

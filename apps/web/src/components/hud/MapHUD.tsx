@@ -24,7 +24,7 @@ export function MapHUD({ controller }: MapHUDProps) {
   return (
     <div
       className={`font-jetbrains pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4 transition-[padding] duration-250 ease-out ${
-        isRouteBarOpen ? "sm:pl-[400px]" : ""
+        isRouteBarOpen ? "sm:pl-[491px]" : ""
       }`}
     >
       {/* Top row: left reserved for future mission rehearsal / environmental status overlays; right layers menu & legend */}
@@ -36,7 +36,7 @@ export function MapHUD({ controller }: MapHUDProps) {
         </div>
       </div>
 
-      {/* Bottom row: Left zoom controls & attribution credit | Right 3D/2D mode & Lat/Lon */}
+      {/* Bottom row: Left zoom controls & attribution credit | Right Street View pegman, 3D/2D mode & Lat/Lon */}
       <div className="flex items-end justify-between gap-4">
         <div className="flex flex-col items-start gap-2.5">
           <ZoomControls
@@ -49,7 +49,6 @@ export function MapHUD({ controller }: MapHUDProps) {
         <div className="flex flex-col items-end gap-2.5">
           <PegmanControl controller={controller} />
           <ViewModeToggle />
-
           <CoordinateReadout controller={controller} />
         </div>
       </div>

@@ -34,6 +34,11 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const selectedPlace = useNomenclatureSelection((s) => s.hit);
   const clearSelectedPlace = useNomenclatureSelection((s) => s.setHit);
 
+  const handleCloseLateralBar = () => {
+    setOpen(false);
+    clearSelectedPlace(null);
+  };
+
   const modes: Array<{
     id: TravelMode;
     label: string;
@@ -61,7 +66,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
     <aside
       aria-label="Martian traversal route planner"
       aria-hidden={!isOpen}
-      className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[384px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
+      className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[475px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
         isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
       }`}
     >
@@ -114,7 +119,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
 
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={handleCloseLateralBar}
                 title="Close lateral bar"
                 aria-label="Close lateral bar"
                 className="absolute top-0.5 right-0 flex h-9 w-9 items-center justify-center rounded-full text-[#3C4043] transition-colors duration-150 hover:bg-[#FCE8E6] hover:text-[#B3261E] cursor-pointer"
@@ -188,7 +193,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
         <div className="flex items-center justify-end border-b border-red-700/20 px-3 py-2">
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={handleCloseLateralBar}
             title="Close lateral bar"
             aria-label="Close lateral bar"
             className="flex h-8 w-8 items-center justify-center rounded-full text-[#3C4043] transition-colors duration-150 hover:bg-[#FCE8E6] hover:text-[#B3261E] cursor-pointer"

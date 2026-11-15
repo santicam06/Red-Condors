@@ -128,7 +128,7 @@ export function PlacePhoto({ latitude, longitude, diameterKm }: PlacePhotoProps)
   };
 
   return (
-    <div className="relative h-[210px] w-full overflow-hidden bg-[#1c110c]">
+    <div className="relative aspect-[384/230] w-full overflow-hidden bg-[#1c110c]">
       <div
         className="flex h-full w-full transition-transform duration-500 ease-in-out motion-reduce:transition-none"
         style={{ transform: `translateX(-${index * 100}%)` }}

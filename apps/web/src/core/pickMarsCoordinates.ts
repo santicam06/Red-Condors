@@ -1,5 +1,8 @@
 import * as Cesium from 'cesium';
-import { MARS_ELLIPSOID } from '../config/marsConfig';
+import {
+  MARS_CIRCUMFERENCE_METERS,
+  MARS_ELLIPSOID,
+} from '../config/marsConfig';
 
 export interface MarsLatLon {
   lat: number;
@@ -10,6 +13,17 @@ const scratchCartesian = new Cesium.Cartesian3();
 const scratchCartographic = new Cesium.Cartographic();
 const scratchRay = new Cesium.Ray();
 const scratchProjected = new Cesium.Cartesian3();
+const scratchWorldPos = new Cesium.Cartesian3();
+const scratchOccludeePos = new Cesium.Cartesian3();
+const defaultOccluderEllipsoid = new Cesium.Ellipsoid(
+  MARS_ELLIPSOID.radii.x - 1500,
+  MARS_ELLIPSOID.radii.y - 1500,
+  MARS_ELLIPSOID.radii.z - 1500
+);
+const defaultOccluder = new Cesium.EllipsoidalOccluder(
+  defaultOccluderEllipsoid,
+  Cesium.Cartesian3.ZERO
+);
 
 /**
  * Normalizes any longitude in degrees into East-positive [-180, 180],
@@ -101,4 +115,100 @@ export function pickMarsCoordinates(
   }
 
   return { lat: latDeg, lon: lonDeg };
+}
+
+/**
+ * Projects a Martian `(lonDeg, latDeg)` surface point into canvas CSS pixels
+ * across both `SCENE3D` and `SCENE2D`.
+ *
+ * In `SCENE2D`, this bypasses `Cesium.SceneTransforms.worldToWindowCoordinates`
+ * (which clones frustums and mutates camera matrices whenever ±180° is visible)
+ * and computes exact equirectangular orthographic window coordinates in O(1)
+ * with zero heap allocations.
+ */
+export function projectMarsLatLonToWindow(
+  viewer: Cesium.Viewer,
+  lonDeg: number,
+  latDeg: number,
+  result: Cesium.Cartesian2,
+  referenceScreenX?: number,
+  occluder?: Cesium.EllipsoidalOccluder | null
+): Cesium.Cartesian2 | null {
+  const { scene, camera } = viewer;
+  if (scene.isDestroyed()) return null;
+
+  const canvas = scene.canvas;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (width <= 0 || height <= 0) return null;
+
+  if (scene.mode === Cesium.SceneMode.SCENE2D) {
+    const frustum = camera.frustum;
+    if (
+      !(frustum instanceof Cesium.OrthographicOffCenterFrustum) ||
+      typeof frustum.right !== 'number' ||
+      typeof frustum.left !== 'number' ||
+      typeof frustum.top !== 'number' ||
+      typeof frustum.bottom !== 'number'
+    ) {
+      return null;
+    }
+
+    const frustumW = frustum.right - frustum.left;
+    const frustumH = frustum.top - frustum.bottom;
+    if (frustumW <= 0 || frustumH <= 0) return null;
+
+    const radius = MARS_ELLIPSOID.maximumRadius;
+    const projX = Cesium.Math.toRadians(lonDeg) * radius;
+    const projY = Cesium.Math.toRadians(latDeg) * radius;
+
+    let dx = projX - camera.positionWC.y;
+    const dy = projY - camera.positionWC.z;
+
+    const infiniteScroll = scene.mapMode2D === Cesium.MapMode2D.INFINITE_SCROLL;
+    if (infiniteScroll) {
+      const circ = MARS_CIRCUMFERENCE_METERS;
+      const halfCirc = circ * 0.5;
+      dx = ((((dx + halfCirc) % circ) + circ) % circ) - halfCirc;
+    }
+
+    let winX = ((dx - frustum.left) / frustumW) * width;
+    const winY = ((frustum.top - dy) / frustumH) * height;
+
+    if (infiniteScroll && referenceScreenX !== undefined) {
+      const circPx = (MARS_CIRCUMFERENCE_METERS / frustumW) * width;
+      if (circPx > 0) {
+        const deltaPx = winX - referenceScreenX;
+        if (deltaPx > circPx * 0.5) {
+          winX -= circPx;
+        } else if (deltaPx < -circPx * 0.5) {
+          winX += circPx;
+        }
+      }
+    }
+
+    if (!Number.isFinite(winX) || !Number.isFinite(winY)) return null;
+    return Cesium.Cartesian2.fromElements(winX, winY, result);
+  }
+
+  Cesium.Cartesian3.fromDegrees(lonDeg, latDeg, 0, MARS_ELLIPSOID, scratchWorldPos);
+  Cesium.Cartesian3.fromDegrees(lonDeg, latDeg, 250, MARS_ELLIPSOID, scratchOccludeePos);
+
+  const activeOccluder = occluder ?? defaultOccluder;
+  if (!occluder) {
+    defaultOccluder.cameraPosition = camera.positionWC;
+  }
+  if (!activeOccluder.isPointVisible(scratchOccludeePos)) {
+    return null;
+  }
+
+  const win = Cesium.SceneTransforms.worldToWindowCoordinates(
+    scene,
+    scratchWorldPos,
+    result
+  );
+  if (!win || !Number.isFinite(win.x) || !Number.isFinite(win.y)) {
+    return null;
+  }
+  return win;
 }

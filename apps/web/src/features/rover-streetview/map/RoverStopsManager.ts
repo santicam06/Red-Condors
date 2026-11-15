@@ -1,6 +1,7 @@
 import * as Cesium from 'cesium';
 import { MARS_ELLIPSOID } from '../../../config/marsConfig';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
+import { projectMarsLatLonToWindow } from '../../../core/pickMarsCoordinates';
 import { type ScreenPoint, useStreetViewStore } from '../store/useStreetViewStore';
 import type { RoverStop } from '../types/roverStop';
 import { ROVER_PIN_HEIGHT_PX, ROVER_PIN_IMAGE } from './roverMarkerImage';
@@ -32,7 +33,7 @@ const HOVER_SCALE = 1.4;
 export class RoverStopsManager {
   private readonly channel: Cesium.CustomDataSource;
   private readonly entities = new Map<string, Cesium.Entity>();
-  private readonly positions = new Map<string, Cesium.Cartesian3>();
+  private readonly stopCoords = new Map<string, { lon: number; lat: number }>();
   private readonly clickHandler: Cesium.ScreenSpaceEventHandler;
   private readonly unsubscribers: Array<() => void> = [];
   private readonly scratchWindow = new Cesium.Cartesian2();
@@ -91,14 +92,14 @@ export class RoverStopsManager {
   private setStops(stops: RoverStop[]): void {
     this.channel.entities.removeAll();
     this.entities.clear();
-    this.positions.clear();
-    this.roverMarker = null;
+    this.stopCoords.clear();
+    this.clusterLabel = null;
     if (stops.length === 0) return;
 
     this.channel.entities.suspendEvents();
     for (const stop of stops) {
       const position = Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, 10, MARS_ELLIPSOID);
-      this.positions.set(stop.id, position);
+      this.stopCoords.set(stop.id, { lon: stop.lon, lat: stop.lat });
       const entity = this.channel.entities.add({
         id: `streetview:${stop.id}`,
         name: `${stop.order}. ${stop.title}`,
@@ -160,19 +161,22 @@ export class RoverStopsManager {
     const visible =
       !activeStop && (dragging || altitude < DOTS_VISIBLE_BELOW_M);
 
+    let changed = false;
     if (visible !== this.visible) {
       this.visible = visible;
       for (const entity of this.entities.values()) entity.show = visible;
+      changed = true;
     }
-    if (this.roverMarker) {
-      this.roverMarker.show = !activeStop && !visible;
-      if (this.roverMarker.label) {
-        this.roverMarker.label.text = new Cesium.ConstantProperty(
-          dragging ? 'Drop here to zoom in' : 'Perseverance rover · 360° tour'
-        );
+    if (this.clusterLabel) {
+      const showCluster = dragging && altitude >= OPEN_DIRECTLY_BELOW_M;
+      if (this.clusterLabel.show !== showCluster) {
+        this.clusterLabel.show = showCluster;
+        changed = true;
       }
     }
-    this.viewer.scene.requestRender();
+    if (changed) {
+      this.viewer.scene.requestRender();
+    }
   }
 
   /** Converts a viewport (client) point to canvas-relative CSS pixels. */
@@ -186,20 +190,15 @@ export class RoverStopsManager {
 
   /** Nearest stop on screen within the snap radius, ignoring stops behind the globe. */
   private findStopNear(canvasPoint: Cesium.Cartesian2): string | null {
-    const { scene, camera } = this.viewer;
-    const occluder =
-      scene.mode === Cesium.SceneMode.SCENE3D
-        ? new Cesium.EllipsoidalOccluder(MARS_ELLIPSOID, camera.positionWC)
-        : null;
-
     let bestId: string | null = null;
     let bestDistance = SNAP_RADIUS_PX;
-    for (const [id, position] of this.positions) {
-      if (occluder && !occluder.isPointVisible(position)) continue;
-      const win = Cesium.SceneTransforms.worldToWindowCoordinates(
-        scene,
-        position,
-        this.scratchWindow
+    for (const [id, coords] of this.stopCoords) {
+      const win = projectMarsLatLonToWindow(
+        this.viewer,
+        coords.lon,
+        coords.lat,
+        this.scratchWindow,
+        canvasPoint.x
       );
       if (!win) continue;
       const distance = Cesium.Cartesian2.distance(win, canvasPoint);

@@ -1,5 +1,5 @@
 import * as Cesium from 'cesium';
-import { MARS_ELLIPSOID } from '../../config/marsConfig';
+import { projectMarsLatLonToWindow } from '../../core/pickMarsCoordinates';
 import type { RouteLocation } from '../../features/route-planner/types';
 import { signedLongitude } from '../Locations/placeImagery';
 
@@ -152,51 +152,77 @@ function readPickedSiteId(picked: unknown): string | null {
   return null;
 }
 
+const scratchSiteWin = new Cesium.Cartesian2();
+const TAN_HALF_30_DEG = Math.tan(Cesium.Math.toRadians(30));
+
+function isWithinCampLabelRange(viewer: Cesium.Viewer): boolean {
+  const { scene, camera } = viewer;
+  if (scene.mode === Cesium.SceneMode.SCENE2D) {
+    const frustum = camera.frustum;
+    if (
+      frustum instanceof Cesium.OrthographicOffCenterFrustum &&
+      typeof frustum.right === 'number' &&
+      typeof frustum.left === 'number'
+    ) {
+      const alt = Math.abs(frustum.right - frustum.left) / (2 * TAN_HALF_30_DEG);
+      return alt <= 3_800_000;
+    }
+  }
+  return camera.positionCartographic.height <= 3_800_000;
+}
+
 /**
- * Resolves an Olympus Mons crew camp at a canvas pixel coordinate, checking both
- * drilled Cesium entities and screen-space proximity to visible camp dots so
- * overlapping nomenclature labels never block camp selection.
+ * Resolves an Olympus Mons crew camp at a canvas pixel coordinate using fast
+ * CPU screen-space projection first (supporting both 3D horizon culling and
+ * 2D ±180° infinite-scroll wrapping without WebGL `drillPick` stalls), with an
+ * optional GPU `drillPick` fallback reserved strictly for discrete clicks.
  */
 export function pickOlympusSiteAt(
   viewer: Cesium.Viewer,
-  windowPosition: Cesium.Cartesian2
+  windowPosition: Cesium.Cartesian2,
+  options?: { useGpuDrillPick?: boolean }
 ): OlympusSite | null {
   if (viewer.isDestroyed()) return null;
 
-  const drilled = viewer.scene.drillPick(windowPosition, 10, 8, 8);
-  for (const item of drilled) {
-    const siteId = readPickedSiteId(item);
-    if (siteId) {
-      const site = findSite(siteId);
-      if (site) return site;
-    }
-  }
-
-  const { scene, camera } = viewer;
-  const is3D = scene.mode === Cesium.SceneMode.SCENE3D;
-  const occluder = is3D
-    ? new Cesium.EllipsoidalOccluder(MARS_ELLIPSOID, camera.positionWC)
-    : null;
-
-  const maxRadiusPx = 10;
+  const maxRadiusPx = 12;
+  const checkLabels = isWithinCampLabelRange(viewer);
   let closest: { site: OlympusSite; dist2: number } | null = null;
 
   for (const site of OLYMPUS_SITES) {
-    const worldPos = Cesium.Cartesian3.fromDegrees(site.lonEast, site.lat, 0, MARS_ELLIPSOID);
-    if (occluder) {
-      const occludee = Cesium.Cartesian3.fromDegrees(site.lonEast, site.lat, 250, MARS_ELLIPSOID);
-      if (!occluder.isPointVisible(occludee)) continue;
-    }
-    const winPos = Cesium.SceneTransforms.worldToWindowCoordinates(scene, worldPos);
-    if (!winPos || !Number.isFinite(winPos.x) || !Number.isFinite(winPos.y)) continue;
+    const winPos = projectMarsLatLonToWindow(
+      viewer,
+      signedLongitude(site.lonEast),
+      site.lat,
+      scratchSiteWin,
+      windowPosition.x
+    );
+    if (!winPos) continue;
 
     const dx = windowPosition.x - winPos.x;
     const dy = windowPosition.y - winPos.y;
     const dist2 = dx * dx + dy * dy;
-    if (dist2 <= maxRadiusPx * maxRadiusPx && (!closest || dist2 < closest.dist2)) {
+    const hitDot = dist2 <= maxRadiusPx * maxRadiusPx;
+    const halfLabelW = Math.ceil(site.name.length * 4.3) + 8;
+    const hitLabel =
+      checkLabels && Math.abs(dx) <= halfLabelW && dy >= -30 && dy <= -6;
+
+    if ((hitDot || hitLabel) && (!closest || dist2 < closest.dist2)) {
       closest = { site, dist2 };
     }
   }
 
-  return closest ? closest.site : null;
+  if (closest) return closest.site;
+
+  if (options?.useGpuDrillPick) {
+    const drilled = viewer.scene.drillPick(windowPosition, 10, 8, 8);
+    for (const item of drilled) {
+      const siteId = readPickedSiteId(item);
+      if (siteId) {
+        const site = findSite(siteId);
+        if (site) return site;
+      }
+    }
+  }
+
+  return null;
 }

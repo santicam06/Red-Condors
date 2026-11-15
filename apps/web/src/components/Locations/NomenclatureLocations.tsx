@@ -10,7 +10,7 @@ interface NomenclatureLocationsProps {
   controller: MarsViewerController | null;
 }
 
-const SIDE_BAR_WIDTH_PX = 384;
+const SIDE_BAR_WIDTH_PX = 475;
 
 /**
  * Hover and click for nomenclature labels. The place card itself renders

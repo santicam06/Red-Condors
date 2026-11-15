@@ -51,15 +51,35 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   roverEta: null,
 
   setOpen: (isOpen) =>
-    set((state) => ({
-      isOpen,
-      isRouteCalculatorOpen: isOpen ? state.isRouteCalculatorOpen : false,
-    })),
+    set(() =>
+      isOpen
+        ? { isOpen: true }
+        : {
+            isOpen: false,
+            isRouteCalculatorOpen: false,
+            source: null,
+            destination: null,
+            activeInputSlot: 'source',
+            distanceKm: null,
+            marswalkEta: null,
+            roverEta: null,
+          }
+    ),
   toggleOpen: () =>
-    set((state) => ({
-      isOpen: !state.isOpen,
-      isRouteCalculatorOpen: !state.isOpen ? state.isRouteCalculatorOpen : false,
-    })),
+    set((state) =>
+      !state.isOpen
+        ? { isOpen: true }
+        : {
+            isOpen: false,
+            isRouteCalculatorOpen: false,
+            source: null,
+            destination: null,
+            activeInputSlot: 'source',
+            distanceKm: null,
+            marswalkEta: null,
+            roverEta: null,
+          }
+    ),
   setTravelMode: (travelMode) => set({ travelMode }),
   setTraverseSummary: (summary) => set(summary),
 

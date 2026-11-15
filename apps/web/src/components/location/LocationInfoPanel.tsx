@@ -84,7 +84,7 @@ export function LocationInfoPanel({
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
       className={`font-jetbrains pointer-events-auto fixed left-3 top-3 z-30 max-h-[calc(100vh-1.5rem)] w-[min(360px,calc(100vw-1.5rem))] overflow-y-auto border-2 border-red-700 bg-white text-black shadow-2xl transition-[left] duration-250 ease-out sm:top-4 ${
-        isRouteBarOpen ? 'sm:left-[400px]' : 'sm:left-4'
+        isRouteBarOpen ? 'sm:left-[491px]' : 'sm:left-4'
       }`}
     >
       <header className="flex items-start justify-between gap-4 border-b border-red-700/25 px-4 py-3.5">

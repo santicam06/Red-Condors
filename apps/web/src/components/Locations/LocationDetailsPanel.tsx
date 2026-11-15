@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { BookOpen, ChevronDown, ExternalLink, MapPin, Ruler, X } from 'lucide-react';
+import { useEffect, type ReactNode } from 'react';
+import { BookOpen, ChevronDown, ExternalLink, MapPin, Ruler } from 'lucide-react';
 import type { NomenclatureLabelHit } from '../../core/layers/NomenclatureManager';
 import { describeFeatureType } from './descriptorTerms';
 import { USGS_DESCRIPTOR_TERMS_PAGE, USGS_MARS_TARGET_PAGE } from './sources';
@@ -17,11 +17,8 @@ interface LocationDetailsPanelProps {
  * Marswalk / Rover side bar.
  */
 export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps) {
-  const closeRef = useRef<HTMLButtonElement | null>(null);
-
   useEffect(() => {
     if (!hit) return;
-    closeRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
@@ -51,15 +48,6 @@ export function LocationDetailsPanel({ hit, onClose }: LocationDetailsPanelProps
             longitude={photoLongitude}
             diameterKm={diameter}
           />
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            aria-label="Close location details"
-            className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center bg-red-700 text-white hover:bg-red-900"
-          >
-            <X size={18} />
-          </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
