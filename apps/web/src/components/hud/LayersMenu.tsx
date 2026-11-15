@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
-import { WalkableAreaToggle } from '../../features/routing/components/WalkableAreaToggle';
 import { NomenclatureToggle } from './NomenclatureToggle';
 
 /**
  * Top-right hamburger menu button styled with the Mars Trek white & red HUD theme,
- * housing the Nomenclature and Traversable area layer switches.
+ * housing the Nomenclature switch.
  */
 export function LayersMenu() {
   const [open, setOpen] = useState(false);
@@ -61,7 +60,6 @@ export function LayersMenu() {
             : 'pointer-events-none invisible -translate-y-2 scale-95 opacity-0 [&_*]:pointer-events-none'
         }`}
       >
-        <WalkableAreaToggle />
         <NomenclatureToggle />
       </div>
     </div>

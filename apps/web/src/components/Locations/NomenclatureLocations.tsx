@@ -25,9 +25,23 @@ export function NomenclatureLocations({ controller }: NomenclatureLocationsProps
     const emphasis = new NomenclatureEmphasis(controller);
     emphasisRef.current = emphasis;
     const detach = attachNomenclaturePointer(controller, emphasis, (hit) => {
-      if (useRoutePlannerStore.getState().pinTool) return;
+      const planner = useRoutePlannerStore.getState();
+      if (planner.pinTool === 'start' || planner.pinTool === 'end') {
+        const role = planner.pinTool === 'start' ? 'Start' : 'End';
+        planner.placePinnedEndpoint(planner.pinTool === 'start' ? 'source' : 'destination', {
+          id: `nom-${hit.fid}`,
+          name: `${role} · ${hit.name}`,
+          subtitle: hit.type || 'Named feature',
+          lat: hit.latitude,
+          lon: hit.longitude,
+          category: 'nomenclature',
+        });
+        useNomenclatureSelection.getState().setHit(hit);
+        return;
+      }
+      if (planner.pinTool === 'remove') return;
       useNomenclatureSelection.getState().setHit(hit);
-      useRoutePlannerStore.getState().setOpen(true);
+      planner.setOpen(true);
       frameFeatureBesidePanel(controller, hit, SIDE_BAR_WIDTH_PX, 0);
     });
 

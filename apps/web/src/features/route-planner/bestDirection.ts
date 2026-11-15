@@ -1,21 +1,22 @@
 import * as Cesium from 'cesium';
 import { formatDuration, planTraverse } from '../../components/Outposts/navigation';
 import type { OlympusSite } from '../../components/Outposts/olympusSites';
-import { assessTraverse, type TraverseReport } from '../../components/Outposts/safeRoute';
 import { cellOf } from '../../components/Outposts/terrain';
+import {
+  cruiseEnergy,
+  energySentence,
+  ENERGY_PROFILE,
+  minimumEnergyPath,
+  type MechanicalEnergy,
+} from './energyPath';
 import type { TravelMode } from './types';
 
-/** Suited walk, rover, and a hypothetical crew car. The car is not a NASA vehicle. */
-export const PERSON_KMH = 1.5;
-export const ROVER_CRUISE_KMH = 10;
-export const VEHICLE_KMH = 25;
 const EVA_HOURS = 8;
-const VEHICLE_SLOPE_DEG = 18;
 
 const SPEEDS: Record<TravelMode, number> = {
-  marswalk: PERSON_KMH,
-  rover: ROVER_CRUISE_KMH,
-  vehicle: VEHICLE_KMH,
+  marswalk: ENERGY_PROFILE.marswalk.speedKmh,
+  rover: ENERGY_PROFILE.rover.speedKmh,
+  vehicle: ENERGY_PROFILE.vehicle.speedKmh,
 };
 
 export interface DirectionChoice {
@@ -23,26 +24,30 @@ export interface DirectionChoice {
   reason: string;
   distanceKm: Record<TravelMode, number | null>;
   eta: Record<TravelMode, string | null>;
+  energyNote: Record<TravelMode, string | null>;
   paths: Record<TravelMode, Cesium.Cartesian3[]>;
 }
 
 /**
  * Picks a rehearsal direction.
- * Inside the Olympus MOLA window, A* keeps a walk under 15°, the crew car under 18°,
- * and a rover under 25°. A walk that finishes inside 8 hours is preferred.
- * Outside that window the line stays straight and the slope is not checked.
- * Hours use cruise speed, so dust does not change the choice.
+ * Inside the Olympus MOLA window each mode follows the corridor with the least
+ * mechanical energy: potential from the climb, kinetic energy to reach cruise speed,
+ * and the rolling work that holds that speed. A walk stops above 15°, the crew car
+ * above 18°, and a rover above 25°. A walk that finishes inside 8 hours is preferred.
+ * Otherwise the lower-energy of the car and the rover is marked Best.
+ * Outside that window the line stays straight and the climb is not checked.
+ * Dust does not change the choice.
  */
 export function chooseBestDirection(from: OlympusSite, to: OlympusSite): DirectionChoice {
   const inside = cellOf(from.lat, from.lonEast) !== null && cellOf(to.lat, to.lonEast) !== null;
   if (!inside) return straightChoice(from, to);
-  return windowChoice(from, to, assessTraverse(from, to, 'current'));
+  return windowChoice(from, to);
 }
 
 function straightChoice(from: OlympusSite, to: OlympusSite): DirectionChoice {
   const line = planTraverse(from, to, 'marswalk');
   const meters = line.distanceMeters;
-  const personHours = meters / 1000 / PERSON_KMH;
+  const personHours = meters / 1000 / SPEEDS.marswalk;
   const mode: TravelMode = personHours <= EVA_HOURS ? 'marswalk' : 'vehicle';
   const outside =
     'Outside the Olympus laser window the line stays straight, and the slope is not checked.';
@@ -50,74 +55,83 @@ function straightChoice(from: OlympusSite, to: OlympusSite): DirectionChoice {
     mode === 'marswalk'
       ? `Best is a walk. It finishes inside 8 hours. ${outside}`
       : `Best is the vehicle. A walk would pass 8 hours. ${outside}`;
-  return pack(mode, reason, line.positions, meters, meters, meters);
+  const energies = {
+    marswalk: cruiseEnergy(meters, 'marswalk', line.positions),
+    rover: cruiseEnergy(meters, 'rover', line.positions),
+    vehicle: cruiseEnergy(meters, 'vehicle', line.positions),
+  };
+  return pack(mode, reason, line.positions, meters, meters, meters, energies, false);
 }
 
-function windowChoice(from: OlympusSite, to: OlympusSite, report: TraverseReport): DirectionChoice {
-  const line = planTraverse(from, to, 'marswalk').positions;
-  const walkMeters = report.marswalk.reachable ? report.marswalk.distanceMeters : null;
-  const roverMeters = report.rover.reachable ? report.rover.distanceMeters : null;
-  const vehicle = vehicleCorridor(report);
+function windowChoice(from: OlympusSite, to: OlympusSite): DirectionChoice {
+  const line = planTraverse(from, to, 'marswalk');
+  const walk = minimumEnergyPath(from, to, 'marswalk');
+  const rover = minimumEnergyPath(from, to, 'rover');
+  const vehicle = minimumEnergyPath(from, to, 'vehicle');
+  const energies: Record<TravelMode, MechanicalEnergy | null> = {
+    marswalk: walk,
+    rover,
+    vehicle,
+  };
 
-  const walkHours = walkMeters === null ? null : walkMeters / 1000 / PERSON_KMH;
+  const walkHours = walk ? walk.distanceM / 1000 / SPEEDS.marswalk : null;
   let mode: TravelMode;
   let reason: string;
 
-  if (walkHours !== null && walkHours <= EVA_HOURS) {
+  if (walk && walkHours !== null && walkHours <= EVA_HOURS) {
     mode = 'marswalk';
-    reason = 'Best is a walk. It finishes inside 8 hours.';
+    reason = 'Best is a walk. It finishes inside 8 hours on the lowest-energy corridor.';
+  } else if (vehicle && rover) {
+    mode = vehicle.totalJ <= rover.totalJ ? 'vehicle' : 'rover';
+    reason =
+      mode === 'vehicle'
+        ? 'Best is the vehicle. A walk would pass 8 hours, and the car uses less energy than the rover.'
+        : 'Best is the rover. A walk would pass 8 hours, and the rover uses less energy than the car.';
   } else if (vehicle) {
     mode = 'vehicle';
-    reason = 'Best is the vehicle. A walk would pass 8 hours.';
-  } else if (roverMeters !== null) {
+    reason = 'Best is the vehicle. A walk would pass 8 hours, and it is the only corridor still under 18°.';
+  } else if (rover) {
     mode = 'rover';
     reason = 'Best is the rover. A walk would pass 8 hours, and the vehicle has no corridor under 18°.';
-  } else if (walkMeters !== null) {
+  } else if (walk) {
     mode = 'marswalk';
     reason = 'Best is a walk. It is the only corridor under the slope limits, and it passes 8 hours.';
   } else {
-    const straightHours = report.directDistanceMeters / 1000 / PERSON_KMH;
+    const straightHours = line.distanceMeters / 1000 / SPEEDS.marswalk;
     mode = straightHours <= EVA_HOURS ? 'marswalk' : 'vehicle';
     reason =
       'No corridor stays under the slope limits. The line stays straight so the crew can still see the leg.';
     return pack(
       mode,
       reason,
-      line,
-      report.directDistanceMeters,
-      report.directDistanceMeters,
-      report.directDistanceMeters
+      line.positions,
+      line.distanceMeters,
+      line.distanceMeters,
+      line.distanceMeters,
+      {
+        marswalk: cruiseEnergy(line.distanceMeters, 'marswalk', line.positions),
+        rover: cruiseEnergy(line.distanceMeters, 'rover', line.positions),
+        vehicle: cruiseEnergy(line.distanceMeters, 'vehicle', line.positions),
+      },
+      false
     );
   }
 
   return pack(
     mode,
     reason,
-    line,
-    walkMeters,
-    roverMeters,
-    vehicle?.meters ?? null,
+    line.positions,
+    walk?.distanceM ?? null,
+    rover?.distanceM ?? null,
+    vehicle?.distanceM ?? null,
+    energies,
+    true,
     {
-      marswalk: report.marswalk.reachable ? report.marswalk.positions : [],
-      rover: report.rover.reachable ? report.rover.positions : [],
+      marswalk: walk?.positions ?? [],
+      rover: rover?.positions ?? [],
       vehicle: vehicle?.positions ?? [],
     }
   );
-}
-
-function vehicleCorridor(
-  report: TraverseReport
-): { meters: number; positions: Cesium.Cartesian3[] } | null {
-  if (report.directMaxSlopeDeg <= VEHICLE_SLOPE_DEG && report.directPositions.length > 1) {
-    return { meters: report.directDistanceMeters, positions: report.directPositions };
-  }
-  if (report.rover.reachable && report.rover.maxSlopeDeg <= VEHICLE_SLOPE_DEG) {
-    return { meters: report.rover.distanceMeters, positions: report.rover.positions };
-  }
-  if (report.marswalk.reachable && report.marswalk.maxSlopeDeg <= VEHICLE_SLOPE_DEG) {
-    return { meters: report.marswalk.distanceMeters, positions: report.marswalk.positions };
-  }
-  return null;
 }
 
 function pack(
@@ -127,6 +141,8 @@ function pack(
   walkMeters: number | null,
   roverMeters: number | null,
   vehicleMeters: number | null,
+  energies: Record<TravelMode, MechanicalEnergy | null>,
+  checkedClimb: boolean,
   paths?: Record<TravelMode, Cesium.Cartesian3[]>
 ): DirectionChoice {
   const distanceKm = {
@@ -139,11 +155,17 @@ function pack(
     rover: etaFor(roverMeters, 'rover'),
     vehicle: etaFor(vehicleMeters, 'vehicle'),
   };
+  const energyNote = {
+    marswalk: energies.marswalk ? energySentence(energies.marswalk, checkedClimb) : null,
+    rover: energies.rover ? energySentence(energies.rover, checkedClimb) : null,
+    vehicle: energies.vehicle ? energySentence(energies.vehicle, checkedClimb) : null,
+  };
   return {
     mode,
     reason,
     distanceKm,
     eta,
+    energyNote,
     paths: paths ?? { marswalk: straight, rover: straight, vehicle: straight },
   };
 }

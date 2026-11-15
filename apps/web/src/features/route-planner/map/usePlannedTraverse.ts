@@ -36,6 +36,7 @@ export function usePlannedTraverse(controller: MarsViewerController | null): voi
         vehicleEta: null,
         bestMode: null,
         bestReason: null,
+        energyNote: null,
       });
       controller.viewer.scene.requestRender();
       return;
@@ -60,6 +61,7 @@ export function usePlannedTraverse(controller: MarsViewerController | null): voi
       vehicleEta: choice.eta.vehicle,
       bestMode: choice.mode,
       bestReason: choice.reason,
+      energyNote: choice.energyNote[mode],
     });
     addLine(channel, 'planned-outline', positions.length > 1 ? positions : choice.paths[choice.mode], '#202124', 8);
     addLine(

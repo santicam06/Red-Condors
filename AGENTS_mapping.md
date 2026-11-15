@@ -247,7 +247,7 @@ Red-Condors/
 - **Feature 2 (Martian "Street View"):** Uses `controller.registerOverlayDataSource('rover-panoramas')` for interactive surface photo dots and reuses `pickMarsCoordinates()` for dropping the pegman stickman onto Mars.
 - **Feature 3 & 5 (Outposts & Topography-Aware Safe Routing):** Draws the hypothetical camps, Start and End pins, and a safe polyline on both the 3D globe and the 2D map. The route overlay does not add A or B markers.
 - **Feature 4 (Climate & Environmental Tracking):** Not in this build. Dust storms do not reroute the crew.
-- **Feature 5 (Topography):** Uses MOLA heights so routes avoid steep slopes, cliffs, craters, and ridges. The walkable-area overlay paints that ground on the map.
+- **Feature 5 (Topography):** Uses MOLA heights so routes avoid steep slopes, cliffs, craters, and ridges. Inside the Olympus window the corridor is the one with the least mechanical energy (potential from the climb, kinetic energy to reach cruise speed, and rolling work). The traversable-area overlay is not shown. A Start or End pin can be placed on a nomenclature name.
 - **Feature 6 (Scientific Waypoint Missions):** Hooks into entity click events exposed by `MarsViewerController` and mounts UI cards into `MapHUD` slots.
 
 ---

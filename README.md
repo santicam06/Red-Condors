@@ -24,7 +24,7 @@ Olympus camps, and a route bar with start and end pins are in the app now. Stree
 | 2 | Martian "Street View": rover surface imagery as clickable dots | 🛠 Planned |
 | 3 | Hypothetical Olympus camps, Start and End pins, Person / Rover / Vehicle, best direction | 🟡 Started |
 | 4 | Climate tracking and dust rerouting | Not in this build. Dust is not drawn and does not change a route |
-| 5 | Topography-aware safe routing (craters, slopes, ridges) | 🟡 Started: Olympus routes avoid steep MOLA slopes |
+| 5 | Topography-aware safe routing (craters, slopes, ridges) | 🟡 Started: Olympus routes follow the lowest-energy MOLA corridor |
 | 6 | Scientific research missions at waypoints | 🟡 Started: camp field briefs. Checklists are still planned |
 
 The full product vision is in [`AGENTS.md`](AGENTS.md).
@@ -136,8 +136,8 @@ port 8000, so no CORS setup is needed.
 3. Use the zoom buttons or the mouse (drag to pan, scroll to zoom) to explore Mars.
 4. Use the small **Satellite** and **Terrain** buttons on the lower left. The legend keeps a ground scale. Terrain also shows elevation from about −8 km to about +21 km. The legend does not state a pixel size.
 5. Toggle **Nomenclature** to show or hide Mars feature labels. Click a name to open its card. The card has one close button and does not start a route.
-6. **Start pin**, then a click on empty ground, drops the start. **End pin** does the same for the end. A pin on unnamed ground opens Viking and MOLA photos of that spot. **Remove pin**, then a click on the Start or End pin, clears it.
-7. With both ends set, the bar shows Person, Rover, and Vehicle times and marks one **Best**. Inside the Olympus laser window the path bends around steep ground. Outside that window the line stays straight and the slope is not checked.
+6. **Start pin**, then a click, drops the start. The click can be empty ground or a nomenclature name. A name becomes that end and opens its card. **End pin** works the same way. A pin on unnamed ground opens Viking and MOLA photos of that spot. **Remove pin**, then a click on the Start or End pin, clears it. The layers menu has Nomenclature only.
+7. With both ends set, the bar shows Person, Rover, and Vehicle times and marks one **Best**. Inside the Olympus laser window the path is the lowest-energy corridor: potential energy from the climb, kinetic energy to reach cruise speed, and the work to hold that speed. Outside that window the line stays straight and the climb is not checked.
 8. The Olympus Mons panel lists seven hypothetical crew camps. **Indications** on a camp loads that camp into the route bar.
 
 

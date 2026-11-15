@@ -27,6 +27,7 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const vehicleEta = useRoutePlannerStore((s) => s.vehicleEta);
   const bestMode = useRoutePlannerStore((s) => s.bestMode);
   const bestReason = useRoutePlannerStore((s) => s.bestReason);
+  const energyNote = useRoutePlannerStore((s) => s.energyNote);
   usePlannedTraverse(controller);
 
   const setOpen = useRoutePlannerStore((s) => s.setOpen);
@@ -150,6 +151,11 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
               {bestReason && (
                 <p className="mx-auto mt-1 max-w-[320px] text-[12px] leading-snug text-[#5f6368]">
                   {bestReason}
+                </p>
+              )}
+              {energyNote && (
+                <p className="mx-auto mt-1 max-w-[320px] text-[12px] leading-snug text-[#5f6368]">
+                  {energyNote}
                 </p>
               )}
             </div>

@@ -25,6 +25,7 @@ interface RoutePlannerState {
   vehicleEta: string | null;
   bestMode: TravelMode | null;
   bestReason: string | null;
+  energyNote: string | null;
 
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
@@ -36,6 +37,7 @@ interface RoutePlannerState {
     vehicleEta: string | null;
     bestMode: TravelMode | null;
     bestReason: string | null;
+    energyNote: string | null;
   }) => void;
   setSource: (location: RouteLocation | null) => void;
   setDestination: (location: RouteLocation | null) => void;
@@ -64,6 +66,7 @@ export const useRoutePlannerStore = create<RoutePlannerState>((set) => ({
   vehicleEta: null,
   bestMode: null,
   bestReason: null,
+  energyNote: null,
 
   setOpen: (isOpen) =>
     set((state) => ({

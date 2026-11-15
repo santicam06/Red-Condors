@@ -10,7 +10,7 @@ apps/
 │       ├── components/        Shared presentation and HUD components
 │       ├── config/            Planetary and map configuration
 │       ├── core/              Generic Cesium map engine
-│       ├── features/          Map layers, route planner, best direction, safe-route overlay
+│       ├── features/          Map layers, route planner, energy path, safe-route overlay
 │       └── store/             Shared map-only state
 └── api/                       FastAPI modular monolith (Python ≥ 3.12)
     ├── pyproject.toml         Dependencies, Ruff and pytest configuration
@@ -19,7 +19,7 @@ apps/
     │   ├── api/               Shared HTTP transport (router aggregation, /health)
     │   ├── core/              Shared configuration (RC_* settings) and infrastructure
     │   └── modules/           Independently owned domain modules
-    │       ├── routing/       MOLA DEM safe pathfinding and walkable-area grids
+    │       ├── routing/       MOLA DEM safe pathfinding. The traversable-area overlay is not shown.
     │       ├── points/        Outposts and waypoints (scaffolded)
     │       ├── rover_images/  Rover surface imagery ("street view", scaffolded)
     │       └── weather/       Scaffolded. Dust is not drawn and does not change a route.

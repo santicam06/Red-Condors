@@ -22,8 +22,6 @@ export function RouteLayer({ controller }: RouteLayerProps) {
         request: state.request,
         routes: state.routes,
         highlighted: state.highlightedKind,
-        walkableArea: state.walkableArea,
-        walkableAreaVisible: state.walkableAreaVisible,
       });
       // TODO(routing-ui): surface `status`, `error` and `warnings` in the route-planner UI.
       if (state.status === 'error') {

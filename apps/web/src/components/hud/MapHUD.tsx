@@ -3,7 +3,6 @@ import { PegmanControl } from "../../features/rover-streetview/components/Pegman
 import { BasemapLegend } from "../../features/map-layers/BasemapLegend";
 import { MapTypeControl } from "../../features/map-layers/MapTypeControl";
 import { PinTools } from "../../features/route-planner/components/PinTools";
-import { WalkableAreaLegend } from "../../features/routing/components/WalkableAreaLegend";
 import { useRoutePlannerStore } from "../../features/route-planner/store/useRoutePlannerStore";
 import { AttributionCredit } from "./AttributionCredit";
 import { CoordinateReadout } from "./CoordinateReadout";
@@ -36,7 +35,6 @@ export function MapHUD({ controller }: MapHUDProps) {
         <div className="flex flex-col items-end gap-2.5">
           <LayersMenu />
           <BasemapLegend controller={controller} />
-          <WalkableAreaLegend />
         </div>
       </div>
 
