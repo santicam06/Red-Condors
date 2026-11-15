@@ -69,23 +69,53 @@ scripts/dev.sh               One command to set up, run, and check everything
 ### Option A: everything with one command (recommended)
 
 ```bash
-./scripts/dev.sh          # installs what's missing, then runs web + API. Ctrl+C stops both.
+git pull
+./scripts/dev.sh          # updates dependencies if needed, then runs web + API. Ctrl+C stops both.
 ```
+
+**No manual install step, ever.** Every command first checks the committed dependency files
+and installs or updates whatever changed since your last run, then starts:
+
+- **Frontend:** exact versions from `package-lock.json`.
+- **Backend:** exact versions from `apps/api/requirements.lock`.
+
+So everyone runs the same package versions, and a pull that adds a library (e.g. Pillow)
+just works. When nothing changed, the check takes a moment and the servers start right away.
 
 | Command | What it does |
 | :--- | :--- |
-| `./scripts/dev.sh` | Set up if needed, then run frontend and backend together |
-| `./scripts/dev.sh setup` | (Re)install all dependencies: `npm ci` plus the Python venv. Run this after pulling. |
-| `./scripts/dev.sh web` | Run only the frontend |
-| `./scripts/dev.sh api` | Run only the backend |
-| `./scripts/dev.sh check` | Run every check CI runs (web lint and build, Ruff, pytest) |
+| `./scripts/dev.sh` | Update dependencies if needed, then run frontend and backend together |
+| `./scripts/dev.sh web` / `api` | Same, but only the frontend / only the backend |
+| `./scripts/dev.sh check` | Run every check CI runs (web lint and build, Ruff, pytest). Run before pushing. |
+| `./scripts/dev.sh setup` | Force a clean reinstall of everything (if something looks broken locally) |
+| `./scripts/dev.sh lock` | Re-pin exact backend versions after editing `apps/api/pyproject.toml` |
 
 `npm run dev:all` is an alias for `./scripts/dev.sh`.
+
+**Adding a library:**
+
+- Frontend: `npm install <pkg> --workspace red-condors-martian-map`, then commit
+  `apps/web/package.json` and `package-lock.json`.
+- Backend: add it to `apps/api/pyproject.toml`, run `./scripts/dev.sh lock`, then commit both
+  files.
+
+Teammates get it automatically on their next `./scripts/dev.sh`.
+
+**Not automatic:**
+
+- Installing Node ≥ 22 / Python ≥ 3.12 (the script says so if they're missing).
+- `git pull` itself.
+- Large datasets such as the MOLA DEM that route calculation needs (see
+  `apps/api/README.md`).
+- Fixing local Git problems (unfinished merges or conflicts).
+
+If `npm` reports files in use on Windows, stop running dev servers or editors using
+`node_modules` and run the command again.
 
 ### Option B: frontend only
 
 ```bash
-npm ci        # from the repo root; re-run after pulling if package-lock.json changed
+npm ci        # from the repo root (./scripts/dev.sh web does this for you when needed)
 npm run dev   # http://localhost:5173
 ```
 
