@@ -70,6 +70,7 @@ export class MarsViewerController {
       sceneMode:
         initialMode === '2d' ? Cesium.SceneMode.SCENE2D : Cesium.SceneMode.SCENE3D,
       mapMode2D: Cesium.MapMode2D.INFINITE_SCROLL,
+      orderIndependentTranslucency: false,
       baseLayer: false,
       skyBox: Cesium.SkyBox.createEarthSkyBox(),
       skyAtmosphere: false,
@@ -493,7 +494,7 @@ export class MarsViewerController {
     this.nomenclatureManager.setLabelVisual(fid, scale, blueMix);
   }
 
-  /** Puts square brackets on named start and end labels and enlarges them slightly. */
+  /** Enlarges named route labels slightly when pinned. */
   public setNamedRouteLabels(fids: number[]): void {
     this.nomenclatureManager.setRouteNames(fids);
   }
@@ -533,10 +534,50 @@ export class MarsViewerController {
 
   /**
    * Resolves any clickable map feature at `(x, y)` CSS canvas pixels, prioritizing
-   * custom overlay entities before falling back to visible nomenclature labels.
+   * camp / outpost overlay entities (drilled through route lines and overlapping
+   * labels) before falling back to visible nomenclature labels.
    */
   public pickFeatureAt(x: number, y: number): PickedMapFeature | null {
     return this.inspectPointerTarget(x, y).feature;
+  }
+
+  private extractPickedFeature(picked: { id?: unknown } | undefined): PickedMapFeature | null {
+    if (!picked?.id || typeof picked.id !== 'object') return null;
+
+    const candidate = picked.id as Record<string, unknown>;
+    if (
+      typeof candidate.id === 'string' &&
+      typeof candidate.name === 'string' &&
+      typeof candidate.lat === 'number' &&
+      typeof candidate.lon === 'number' &&
+      (candidate.kind === 'outpost' || candidate.kind === 'nomenclature')
+    ) {
+      return candidate as unknown as PickedMapFeature;
+    }
+
+    if (picked.id instanceof Cesium.Entity && picked.id.properties) {
+      const bag = picked.id.properties.getValue(Cesium.JulianDate.now()) as
+        | Record<string, unknown>
+        | undefined;
+      if (
+        bag &&
+        typeof bag.id === 'string' &&
+        typeof bag.name === 'string' &&
+        typeof bag.lat === 'number' &&
+        typeof bag.lon === 'number'
+      ) {
+        return {
+          id: bag.id,
+          name: bag.name,
+          subtitle: typeof bag.subtitle === 'string' ? bag.subtitle : undefined,
+          lat: bag.lat,
+          lon: bag.lon,
+          kind: bag.kind === 'outpost' ? 'outpost' : 'nomenclature',
+        };
+      }
+    }
+
+    return null;
   }
 
   private inspectPointerTarget(
@@ -547,56 +588,44 @@ export class MarsViewerController {
       return { feature: null, hasInteractiveEntity: false };
     }
 
-    const picked = this.viewer.scene.pick(new Cesium.Cartesian2(x, y)) as
-      | { id?: unknown }
-      | undefined;
+    const drilled = this.viewer.scene.drillPick(
+      new Cesium.Cartesian2(x, y),
+      10,
+      16,
+      16
+    ) as Array<{ id?: unknown }>;
 
-    const hasInteractiveEntity = Boolean(picked?.id);
-
-    if (picked?.id && typeof picked.id === 'object') {
-      const candidate = picked.id as Record<string, unknown>;
-      if (
-        typeof candidate.name === 'string' &&
-        typeof candidate.lat === 'number' &&
-        typeof candidate.lon === 'number' &&
-        (candidate.kind === 'outpost' || candidate.kind === 'nomenclature')
-      ) {
+    for (const item of drilled) {
+      const feature = this.extractPickedFeature(item);
+      if (feature?.kind === 'outpost') {
         return {
-          feature: candidate as unknown as PickedMapFeature,
+          feature,
           hasInteractiveEntity: true,
         };
-      }
-
-      if (picked.id instanceof Cesium.Entity && picked.id.properties) {
-        const bag = picked.id.properties.getValue(Cesium.JulianDate.now()) as
-          | Record<string, unknown>
-          | undefined;
-        if (
-          bag &&
-          typeof bag.id === 'string' &&
-          typeof bag.name === 'string' &&
-          typeof bag.lat === 'number' &&
-          typeof bag.lon === 'number'
-        ) {
-          return {
-            feature: {
-              id: bag.id,
-              name: bag.name,
-              subtitle: typeof bag.subtitle === 'string' ? bag.subtitle : undefined,
-              lat: bag.lat,
-              lon: bag.lon,
-              kind: bag.kind === 'outpost' ? 'outpost' : 'nomenclature',
-            },
-            hasInteractiveEntity: true,
-          };
-        }
       }
     }
 
     const nomFeature = this.nomenclatureManager.pickAtWindowPosition(x, y);
+    if (nomFeature) {
+      return {
+        feature: nomFeature,
+        hasInteractiveEntity: true,
+      };
+    }
+
+    for (const item of drilled) {
+      const feature = this.extractPickedFeature(item);
+      if (feature) {
+        return {
+          feature,
+          hasInteractiveEntity: true,
+        };
+      }
+    }
+
     return {
-      feature: nomFeature,
-      hasInteractiveEntity: hasInteractiveEntity || nomFeature !== null,
+      feature: null,
+      hasInteractiveEntity: false,
     };
   }
 
@@ -644,7 +673,13 @@ export class MarsViewerController {
     if (existing) return existing;
 
     const ds = new Cesium.CustomDataSource(channelId);
-    void this.viewer.dataSources.add(ds);
+    void this.viewer.dataSources.add(ds).then(() => {
+      this.nomenclatureManager.raiseToTop();
+      if (!this.viewer.isDestroyed()) {
+        this.viewer.scene.requestRender();
+      }
+    });
+    this.nomenclatureManager.raiseToTop();
     this.overlayDataSources.set(channelId, ds);
     return ds;
   }

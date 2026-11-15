@@ -1,10 +1,10 @@
 import type { MarsViewerController } from "../../core/MarsViewerController";
+import { PegmanControl } from "../../features/rover-streetview/components/PegmanControl";
 import { WalkableAreaLegend } from "../../features/routing/components/WalkableAreaLegend";
-import { WalkableAreaToggle } from "../../features/routing/components/WalkableAreaToggle";
 import { useRoutePlannerStore } from "../../features/route-planner/store/useRoutePlannerStore";
 import { AttributionCredit } from "./AttributionCredit";
 import { CoordinateReadout } from "./CoordinateReadout";
-import { NomenclatureToggle } from "./NomenclatureToggle";
+import { LayersMenu } from "./LayersMenu";
 import { ViewModeToggle } from "./ViewModeToggle";
 import { ZoomControls } from "./ZoomControls";
 
@@ -27,30 +27,28 @@ export function MapHUD({ controller }: MapHUDProps) {
         isRouteBarOpen ? "sm:pl-[400px]" : ""
       }`}
     >
-      {/* Top row: left reserved for future mission rehearsal / environmental status overlays */}
-      <div className="flex items-start justify-between">
+      {/* Top row: left reserved for future mission rehearsal / environmental status overlays; right layers menu & legend */}
+      <div className="flex items-start justify-between gap-4">
         <div />
-        <WalkableAreaLegend />
+        <div className="flex flex-col items-end gap-2.5">
+          <LayersMenu />
+          <WalkableAreaLegend />
+        </div>
       </div>
 
-      {/* Bottom row: Left attribution credit | Right Mars Trek navigation, Nomenclature & Lat/Lon */}
+      {/* Bottom row: Left zoom controls & attribution credit | Right 3D/2D mode & Lat/Lon */}
       <div className="flex items-end justify-between gap-4">
-        <AttributionCredit />
+        <div className="flex flex-col items-start gap-2.5">
+          <ZoomControls
+            onZoomIn={() => controller?.zoomIn()}
+            onZoomOut={() => controller?.zoomOut()}
+          />
+          <AttributionCredit />
+        </div>
 
         <div className="flex flex-col items-end gap-2.5">
-          {/* Layer switches share one width so their toggles line up */}
-          <div className="flex flex-col items-stretch gap-2.5">
-            <WalkableAreaToggle />
-            <NomenclatureToggle />
-          </div>
-
-          <div className="flex items-end gap-2">
-            <ViewModeToggle />
-            <ZoomControls
-              onZoomIn={() => controller?.zoomIn()}
-              onZoomOut={() => controller?.zoomOut()}
-            />
-          </div>
+          <PegmanControl controller={controller} />
+          <ViewModeToggle />
 
           <CoordinateReadout controller={controller} />
         </div>

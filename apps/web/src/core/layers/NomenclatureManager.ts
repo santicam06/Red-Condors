@@ -61,6 +61,35 @@ interface HitBoxEntry {
   feature: PickedMapFeature;
 }
 
+interface InternalRenderStateApi {
+  fromCache: (renderState: {
+    depthTest: { enabled: boolean };
+    depthMask: boolean;
+    blending: typeof Cesium.BlendingState.ALPHA_BLEND;
+  }) => unknown;
+}
+
+interface InternalDrawCommand {
+  renderState: unknown;
+  boundingVolume?: Cesium.BoundingSphere;
+}
+
+interface InternalFrameState {
+  commandList: InternalDrawCommand[];
+}
+
+interface NomenclatureOverlayPrimitive {
+  update: (frameState: InternalFrameState) => void;
+  isDestroyed: () => boolean;
+  destroy: () => void;
+}
+
+/**
+ * Forces nomenclature draw commands to sort after all other translucent map
+ * primitives (such as camp marker outlines) in Cesium's back-to-front pass.
+ */
+const NOMENCLATURE_TOP_SORT_DISTANCE = (): number => -1;
+
 /**
  * Manages NASA Mars Trek's curated 1,783 IAU Nomenclature labels across both
  * 3D Globe and 2D Equirectangular Map modes, including:
@@ -73,6 +102,8 @@ export class NomenclatureManager {
   private readonly viewer: Cesium.Viewer;
   private readonly getEffectiveAltitude: () => number;
   private readonly labelCollection: Cesium.LabelCollection;
+  private readonly overlayPrimitive: NomenclatureOverlayPrimitive;
+  private overlayRenderState: unknown = null;
   private readonly occluderEllipsoid: Cesium.Ellipsoid;
   private readonly occluder: Cesium.EllipsoidalOccluder;
   private readonly scratchWindowPos = new Cesium.Cartesian2();
@@ -117,13 +148,60 @@ export class NomenclatureManager {
       viewer.camera.positionWC
     );
 
-    // Passing `scene` is required so Cesium projects labels in SCENE2D + INFINITE_SCROLL
-    this.labelCollection = viewer.scene.primitives.add(
-      new Cesium.LabelCollection({
-        scene: viewer.scene,
-        show: initialVisible,
-      })
-    );
+    // Passing `scene` is required so Cesium projects labels in SCENE2D + INFINITE_SCROLL.
+    // Wrap `LabelCollection` in a thin scene primitive that disables GPU depth-testing
+    // (horizon culling and decluttering are already computed via `EllipsoidalOccluder`
+    // and `placedBoxes`) and sorts last in the translucent pass so planetary
+    // nomenclature (e.g., "Olympus Rupes") always renders on top of camp dots.
+    this.labelCollection = new Cesium.LabelCollection({
+      scene: viewer.scene,
+      blendOption: Cesium.BlendOption.TRANSLUCENT,
+      show: initialVisible,
+    });
+
+    const renderStateApi = (
+      Cesium as unknown as { RenderState: InternalRenderStateApi }
+    ).RenderState;
+
+    const primitive: NomenclatureOverlayPrimitive = {
+      update: (frameState: InternalFrameState) => {
+        if (!this.overlayRenderState) {
+          this.overlayRenderState = renderStateApi.fromCache({
+            depthTest: { enabled: false },
+            depthMask: false,
+            blending: Cesium.BlendingState.ALPHA_BLEND,
+          });
+        }
+
+        const startIndex = frameState.commandList.length;
+        (
+          this.labelCollection as unknown as {
+            update: (fs: InternalFrameState) => void;
+          }
+        ).update(frameState);
+
+        for (let i = startIndex; i < frameState.commandList.length; i++) {
+          const command = frameState.commandList[i];
+          command.renderState = this.overlayRenderState;
+          if (
+            command.boundingVolume &&
+            command.boundingVolume.distanceSquaredTo !== NOMENCLATURE_TOP_SORT_DISTANCE
+          ) {
+            command.boundingVolume.distanceSquaredTo = NOMENCLATURE_TOP_SORT_DISTANCE;
+          }
+        }
+      },
+      isDestroyed: () => this.destroyed,
+      destroy: () => {
+        if (!this.labelCollection.isDestroyed()) {
+          this.labelCollection.destroy();
+        }
+      },
+    };
+
+    this.overlayPrimitive = viewer.scene.primitives.add(
+      primitive
+    ) as NomenclatureOverlayPrimitive;
 
     this.removePostRenderListener = viewer.scene.postRender.addEventListener(() => {
       this.updateLabelVisibilityIfNeeded();
@@ -195,8 +273,7 @@ export class NomenclatureManager {
   }
 
   /**
-   * Named start and end places keep square brackets and a slightly larger label.
-   * Dropped pins are drawn separately and are not passed here.
+   * Keeps named route labels visible and slightly enlarged without adding brackets.
    */
   public setRouteNames(fids: number[]): void {
     const next = new Set(fids.filter((fid) => Number.isFinite(fid)));
@@ -219,7 +296,7 @@ export class NomenclatureManager {
   private applyRouteName(fid: number, marked: boolean): void {
     const entry = this.entriesByFid.get(fid);
     if (!entry) return;
-    entry.label.text = marked ? `[${entry.name}]` : entry.name;
+    entry.label.text = entry.name;
     const current = entry.label.scale || 1;
     entry.label.scale = marked ? Math.max(current, this.routeNameScale) : 1;
   }
@@ -551,6 +628,13 @@ export class NomenclatureManager {
     this.visibleHitBoxes = nextHitBoxes;
   }
 
+  public raiseToTop(): void {
+    if (this.destroyed || this.viewer.isDestroyed()) return;
+    if (this.viewer.scene.primitives.contains(this.overlayPrimitive)) {
+      this.viewer.scene.primitives.raiseToTop(this.overlayPrimitive);
+    }
+  }
+
   public destroy(): void {
     this.destroyed = true;
     if (this.removePostRenderListener) {
@@ -558,7 +642,7 @@ export class NomenclatureManager {
       this.removePostRenderListener = null;
     }
     if (!this.viewer.isDestroyed()) {
-      this.viewer.scene.primitives.remove(this.labelCollection);
+      this.viewer.scene.primitives.remove(this.overlayPrimitive);
     }
     this.entries = [];
     this.entriesByFid.clear();

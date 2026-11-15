@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import * as Cesium from 'cesium';
-import { Flag, Mountain, Tent } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Image as ImageIcon, MapPin, X } from 'lucide-react';
 import { MARS_ELLIPSOID } from '../../config/marsConfig';
 import { IndicationsIcon } from '../location/LocationInfoPanel';
 import type { MarsViewerController } from '../../core/MarsViewerController';
 import { useRoutePlannerStore } from '../../features/route-planner/store/useRoutePlannerStore';
-import type { RouteLocation } from '../../features/route-planner/types';
+import { signedLongitude } from '../Locations/placeImagery';
+import { useNomenclatureSelection } from '../Locations/useNomenclatureSelection';
+import { useOutpostSelection } from './useOutpostSelection';
 import {
   findSite,
   KIND_LABEL,
-  OLYMPUS_FRAME,
   OLYMPUS_SITES,
-  type OlympusSite,
+  olympusSiteToRouteLocation,
+  pickOlympusSiteAt,
   type OutpostKind,
 } from './olympusSites';
 
@@ -22,13 +24,27 @@ const KIND_COLOR: Record<OutpostKind, string> = {
   waypoint: '#7EB6FF',
 };
 
+const CAMP_PHOTO_PLACEHOLDERS = [
+  { id: 'photo-1', title: 'Picture 1 placeholder', subtitle: 'Camp imagery pending' },
+  { id: 'photo-2', title: 'Picture 2 placeholder', subtitle: 'Camp imagery pending' },
+] as const;
+
+const AUTO_SWIPE_INTERVAL_MS = 7000;
+
 interface OlympusRehearsalProps {
   controller: MarsViewerController | null;
+  hidePanel?: boolean;
 }
 
-export function OlympusRehearsal({ controller }: OlympusRehearsalProps) {
-  const [open, setOpen] = useState(true);
-  const [selectedId, setSelectedId] = useState<string>('lycus-base');
+export function OlympusRehearsal({ controller, hidePanel = false }: OlympusRehearsalProps) {
+  const open = useOutpostSelection((s) => s.open);
+  const selectedId = useOutpostSelection((s) => s.selectedId);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  // Start at the first photo whenever another camp is selected (map click or search).
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [selectedId]);
 
   const selected = findSite(selectedId) ?? OLYMPUS_SITES[0];
 
@@ -38,39 +54,47 @@ export function OlympusRehearsal({ controller }: OlympusRehearsalProps) {
     const channel = controller.getOrCreateOverlayChannel('olympus-outposts');
 
     const drawSites = () => {
-    channel.entities.removeAll();
+      channel.entities.removeAll();
 
-    const { source, destination } = useRoutePlannerStore.getState();
-    for (const site of OLYMPUS_SITES) {
-      const active = site.id === selectedId;
-      const marked = site.id === source?.id || site.id === destination?.id;
-      channel.entities.add({
-        id: site.id,
-        position: Cesium.Cartesian3.fromDegrees(site.lonEast, site.lat, 0, MARS_ELLIPSOID),
-        point: {
-          pixelSize: active ? 16 : 11,
-          color: Cesium.Color.fromCssColorString(KIND_COLOR[site.kind]),
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: active ? 3 : 2,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        },
-        label: {
-          text: marked ? `[${site.name}]` : site.name,
-          scale: marked ? 1.18 : 1,
-          font: marked ? '600 15px Roboto, sans-serif' : '600 13px Roboto, sans-serif',
-          fillColor: Cesium.Color.WHITE,
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 3,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          pixelOffset: new Cesium.Cartesian2(0, -18),
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 3_800_000),
-        },
-        properties: new Cesium.PropertyBag({ siteId: site.id }),
-      });
-    }
+      const { source, destination } = useRoutePlannerStore.getState();
+      for (const site of OLYMPUS_SITES) {
+        const active = site.id === selectedId;
+        const marked = site.id === source?.id || site.id === destination?.id;
+        channel.entities.add({
+          id: site.id,
+          position: Cesium.Cartesian3.fromDegrees(site.lonEast, site.lat, 0, MARS_ELLIPSOID),
+          point: {
+            pixelSize: active ? 16 : 11,
+            color: Cesium.Color.fromCssColorString(KIND_COLOR[site.kind]),
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: active ? 3 : 2,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          },
+          label: {
+            text: site.name,
+            scale: marked ? 1.18 : 1,
+            font: marked ? '600 15px Roboto, sans-serif' : '600 13px Roboto, sans-serif',
+            fillColor: Cesium.Color.WHITE,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 3,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cesium.Cartesian2(0, -18),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 3_800_000),
+          },
+          properties: new Cesium.PropertyBag({
+            siteId: site.id,
+            id: site.id,
+            name: site.name,
+            subtitle: `${KIND_LABEL[site.kind]} · hypothetical`,
+            lat: site.lat,
+            lon: signedLongitude(site.lonEast),
+            kind: 'outpost',
+          }),
+        });
+      }
 
-    viewer.scene.requestRender();
+      viewer.scene.requestRender();
     };
 
     drawSites();
@@ -90,11 +114,11 @@ export function OlympusRehearsal({ controller }: OlympusRehearsalProps) {
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
     handler.setInputAction((click: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
-      const picked = viewer.scene.pick(click.position);
-      const siteId = readSiteId(picked);
-      if (!siteId) return;
-      setSelectedId(siteId);
-      setOpen(true);
+      const site = pickOlympusSiteAt(viewer, click.position);
+      if (!site) return;
+      useOutpostSelection.getState().select(site.id);
+      setPhotoIndex(0);
+      useNomenclatureSelection.getState().setHit(null);
       useRoutePlannerStore.getState().setOpen(true);
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -103,128 +127,162 @@ export function OlympusRehearsal({ controller }: OlympusRehearsalProps) {
     };
   }, [controller]);
 
-  const flyToSite = (site: OlympusSite, altitudeMeters: number) => {
-    controller?.flyToLatLon(site.lonEast, site.lat, altitudeMeters);
+  useEffect(() => {
+    if (hidePanel || !open || CAMP_PHOTO_PLACEHOLDERS.length < 2) return;
+    const timer = window.setTimeout(() => {
+      setPhotoIndex((current) => (current + 1) % CAMP_PHOTO_PLACEHOLDERS.length);
+    }, AUTO_SWIPE_INTERVAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [hidePanel, open, photoIndex, selectedId]);
+
+  const openIndications = () => {
+    useRoutePlannerStore
+      .getState()
+      .openIndicationsForLocation(olympusSiteToRouteLocation(selected));
   };
 
-  const goToOlympus = () => {
-    controller?.flyToLatLon(
-      OLYMPUS_FRAME.lonEast,
-      OLYMPUS_FRAME.lat,
-      OLYMPUS_FRAME.altitudeMeters
+  const handleClose = () => {
+    useOutpostSelection.getState().setOpen(false);
+    if (!useRoutePlannerStore.getState().isRouteCalculatorOpen) {
+      useRoutePlannerStore.getState().setOpen(false);
+    }
+  };
+
+  const showPreviousPhoto = () => {
+    setPhotoIndex((current) =>
+      current === 0 ? CAMP_PHOTO_PLACEHOLDERS.length - 1 : current - 1
     );
   };
 
-  const openIndications = () => {
-    const location: RouteLocation = {
-      id: selected.id,
-      name: selected.name,
-      subtitle: `${KIND_LABEL[selected.kind]} · hypothetical`,
-      lat: selected.lat,
-      lon: selected.lonEast,
-      category: 'outpost',
-    };
-    useRoutePlannerStore.getState().openIndicationsForLocation(location);
+  const showNextPhoto = () => {
+    setPhotoIndex((current) => (current + 1) % CAMP_PHOTO_PLACEHOLDERS.length);
   };
+
+  if (hidePanel || !open) return null;
+
+  const siteLatitude = selected.lat;
+  const siteLongitude = signedLongitude(selected.lonEast);
+  const centerText = `Lat: ${siteLatitude.toFixed(5)}°, Lon: ${siteLongitude.toFixed(5)}°`;
+  const activeSlide =
+    CAMP_PHOTO_PLACEHOLDERS[photoIndex] ?? CAMP_PHOTO_PLACEHOLDERS[0];
 
   return (
     <section
+      aria-labelledby="olympus-site-details-title"
       className="border-t-2 border-red-700 bg-white text-[#202124]"
-      aria-label="Olympus Mons rehearsal"
     >
-      <header className="flex items-center gap-2 border-b border-red-700/20 px-3 py-2.5">
-        <Mountain className="h-4 w-4 shrink-0 text-red-700" strokeWidth={2.25} />
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[14px] font-semibold leading-tight">Olympus Mons</h2>
-          <p className="text-[11px] text-[#666]">Hypothetical crew sites</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          className="cursor-pointer border border-red-700 px-2 py-1 text-[12px] font-medium text-red-700 hover:bg-red-700 hover:text-white"
-        >
-          {open ? 'Hide' : 'Show'}
-        </button>
-      </header>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="relative shrink-0">
+          <div className="relative h-[210px] w-full overflow-hidden bg-[#1c110c]">
+            <div
+              className="flex h-full w-full transition-transform duration-500 ease-in-out motion-reduce:transition-none"
+              style={{ transform: `translateX(-${photoIndex * 100}%)` }}
+            >
+              {CAMP_PHOTO_PLACEHOLDERS.map((slide, idx) => (
+                <div
+                  key={slide.id}
+                  aria-label={`${selected.name} ${slide.title}`}
+                  className="relative flex h-full w-full shrink-0 flex-col items-center justify-center gap-2 bg-[#1c110c] text-white/65"
+                >
+                  <ImageIcon className="h-9 w-9 stroke-[1.5]" />
+                  <span className="text-[12px] font-medium tracking-wide">
+                    Picture {idx + 1} placeholder
+                  </span>
+                </div>
+              ))}
+            </div>
 
-      {open && (
-        <div>
-          <div className="flex gap-2 px-3 pt-3">
             <button
               type="button"
-              onClick={goToOlympus}
-              className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 bg-red-700 px-2 py-2 text-[12px] font-semibold text-white hover:bg-red-900"
+              aria-label="Previous image"
+              onClick={showPreviousPhoto}
+              className="absolute top-1/2 left-2 z-10 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white text-[#222] shadow-md hover:bg-[#f7f7f7]"
             >
-              <Flag className="h-3.5 w-3.5" />
-              Frame the volcano
+              <ChevronLeft size={18} />
             </button>
+            <button
+              type="button"
+              aria-label="Next image"
+              onClick={showNextPhoto}
+              className="absolute top-1/2 right-2 z-10 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white text-[#222] shadow-md hover:bg-[#f7f7f7]"
+            >
+              <ChevronRight size={18} />
+            </button>
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-3 pt-10 pb-2.5">
+              <div className="min-w-0">
+                <p className="truncate text-[12px] font-medium text-white">
+                  {activeSlide.title}
+                </p>
+                <p className="truncate text-[11px] text-white/85">
+                  {activeSlide.subtitle}
+                </p>
+              </div>
+              <div className="pointer-events-auto flex shrink-0 items-center gap-1 pb-1">
+                {CAMP_PHOTO_PLACEHOLDERS.map((slide, itemIndex) => (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    aria-label={slide.title}
+                    onClick={() => setPhotoIndex(itemIndex)}
+                    className={`h-1.5 w-1.5 cursor-pointer rounded-full ${
+                      itemIndex === photoIndex ? 'bg-white' : 'bg-white/45'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
 
-          <ul className="mt-2 px-2 pb-1">
-            {OLYMPUS_SITES.map((site) => {
-              const active = site.id === selectedId;
-              return (
-                <li key={site.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedId(site.id);
-                      flyToSite(site, 140_000);
-                    }}
-                    className={`flex w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left hover:bg-[#F4F7FB] ${
-                      active ? 'bg-[#EAF3FB]' : ''
-                    }`}
-                  >
-                    <span
-                      className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: KIND_COLOR[site.kind] }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-[13px] font-medium leading-tight">{site.name}</span>
-                      <span className="block text-[11px] text-[#777]">
-                        {KIND_LABEL[site.kind]} · {site.lat.toFixed(2)}°N, {site.lonEast.toFixed(2)}°E
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close location details"
+            className="absolute top-3 right-3 z-20 flex h-8 w-8 cursor-pointer items-center justify-center bg-red-700 text-white hover:bg-red-900"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-          <div className="mx-3 mb-3 rounded-md bg-[#F7F5F2] px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#444]">
-              <Tent className="h-3.5 w-3.5" />
-              {selected.name}
-            </div>
-            <p className="mt-1 text-[12px] leading-snug text-[#444]">{selected.mission}</p>
-            <p className="mt-1 text-[11px] text-[#777]">Pinned to {selected.landform}. Not a real habitat.</p>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex items-center justify-center border-b border-red-700/25 px-4 py-3">
             <button
               type="button"
               onClick={openIndications}
               aria-label={`Get indications to ${selected.name}`}
-              className="group mt-3 flex w-full cursor-pointer flex-col items-center gap-1 border border-red-700/25 py-2 focus-visible:outline-none"
+              className="group flex cursor-pointer flex-col items-center gap-1.5 focus-visible:outline-none"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-red-700 bg-white text-red-700 transition-colors group-hover:bg-red-700 group-hover:text-white">
-                <IndicationsIcon className="h-5 w-5" />
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-red-700 bg-white text-red-700 shadow-sm transition-colors duration-150 group-hover:bg-red-700 group-hover:text-white group-active:bg-red-900">
+                <IndicationsIcon className="h-6 w-6" />
               </span>
-              <span className="text-[11px] font-medium tracking-wide text-red-700">Indications</span>
+              <span className="text-[11px] font-medium tracking-wide text-red-700 group-hover:text-red-900">
+                Indications
+              </span>
             </button>
           </div>
+
+          <header className="px-4 pt-4 pb-3">
+            <h2
+              id="olympus-site-details-title"
+              className="text-[22px] leading-tight font-medium text-[#202124]"
+            >
+              {selected.name}
+            </h2>
+            <p className="mt-1 text-[13.5px] text-[#5f6368]">
+              {KIND_LABEL[selected.kind]} · Mars
+            </p>
+          </header>
+
+          <section className="mx-4 mb-3 border border-red-700/30 bg-red-50 p-3">
+            <div className="flex items-start gap-2.5">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+              <div className="min-w-0 text-[14px] font-medium leading-snug text-[#202124] tabular-nums">
+                {centerText}
+              </div>
+            </div>
+          </section>
         </div>
-      )}
+      </div>
     </section>
   );
-}
-
-function readSiteId(picked: unknown): string | null {
-  if (!picked || typeof picked !== 'object' || !('id' in picked)) return null;
-  const entity = (picked as { id?: { properties?: { siteId?: unknown } } }).id;
-  const raw = entity?.properties?.siteId;
-  if (!raw) return null;
-  if (typeof raw === 'string') return raw;
-  if (typeof raw === 'object' && raw && 'getValue' in raw && typeof raw.getValue === 'function') {
-    const value = raw.getValue(Cesium.JulianDate.now());
-    return typeof value === 'string' ? value : null;
-  }
-  return null;
 }
