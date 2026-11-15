@@ -1,10 +1,10 @@
 import type { RouteKind, RouteRequest } from '../types/routing';
 
 /**
- * Challenging-terrain test requests. Each pair is under the 20 km source limit and was checked
- * against the MOLA DEM at the default 15° limit to give three distinct routes.
- *
- * TODO(routing-ui): remove once the custom route-planner UI supplies source/destination.
+ * Challenging-terrain test coordinates (not loaded automatically; requests now come from the
+ * route planner). Each pair is under the source limit and was checked against the MOLA
+ * DEM at the default 15° limit. Useful for manual testing, e.g. by pasting the coordinates
+ * into the planner or calling `useRoutingStore.getState().setRequest(DEMO_ROUTES.argyreRim)`.
  */
 export const DEMO_ROUTES = {
   /**
@@ -66,11 +66,8 @@ export const DEMO_ROUTES = {
   },
 } satisfies Record<string, RouteRequest>;
 
-/** The demo request sent on load. Switch the key to test another location. */
-export const DEMO_ROUTE_REQUEST: RouteRequest = DEMO_ROUTES.noSafeRoute;
-
 /** Maximum source-to-destination distance accepted by the API (km). */
-export const ROUTE_SOURCE_MAX_DISTANCE_KM = 20;
+export const ROUTE_SOURCE_MAX_DISTANCE_KM = 30;
 
 export const ROUTE_STYLE: Record<RouteKind, { label: string; color: string }> = {
   shortest: { label: 'Shortest', color: '#38BDF8' },

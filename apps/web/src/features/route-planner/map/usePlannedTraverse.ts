@@ -1,94 +1,36 @@
 import { useEffect } from 'react';
-import * as Cesium from 'cesium';
-import type { MarsViewerController } from '../../../core/MarsViewerController';
-import { formatDuration, planTraverse } from '../../../components/Outposts/navigation';
-import type { OlympusSite } from '../../../components/Outposts/olympusSites';
+import { formatDuration } from '../../../components/Outposts/navigation';
+import { useRoutingStore } from '../../routing/store/useRoutingStore';
+import type { Route } from '../../routing/types/routing';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
-import type { RouteLocation } from '../types';
 
-const CHANNEL = 'planned-traverse';
-
-/** Straight-line distance and ETA between the side-bar start and destination. */
-export function usePlannedTraverse(controller: MarsViewerController | null): void {
-  const source = useRoutePlannerStore((state) => state.source);
-  const destination = useRoutePlannerStore((state) => state.destination);
-  const travelMode = useRoutePlannerStore((state) => state.travelMode);
+/**
+ * Fills the side bar's distance and Marswalk / Rover ETAs from the safe-routing API results
+ * (`POST /api/routes`, requested by `useSafeRouteRequest`), so the numbers match the
+ * terrain-aware routes drawn on the map:
+ *
+ * - distance: length of the shortest safe route
+ * - Rover ETA: quickest rover time across the routes (the "fastest" route)
+ * - Marswalk ETA: quickest walking (EVA) time across the routes
+ *
+ * All three are empty while a request is loading, has failed, or no route exists.
+ */
+export function usePlannedTraverse(): void {
+  const routes = useRoutingStore((state) => state.routes);
 
   useEffect(() => {
-    if (!controller) return;
-    const channel = controller.getOrCreateOverlayChannel(CHANNEL);
-    const apply = useRoutePlannerStore.getState().setTraverseSummary;
-    channel.entities.removeAll();
-
-    if (!source || !destination || source.id === destination.id) {
-      apply({
-        distanceKm: null,
-        marswalkEta: null,
-        roverEta: null,
-      });
-      controller.viewer.scene.requestRender();
-      return;
-    }
-
-    const from = toSite(source);
-    const to = toSite(destination);
-    const walk = planTraverse(from, to, 'marswalk');
-    const rover = planTraverse(from, to, 'rover');
-    apply({
-      distanceKm: walk.distanceMeters / 1000,
-      marswalkEta: formatDuration(walk.durationHours),
-      roverEta: formatDuration(rover.durationHours),
-    });
-    addLine(
-      channel,
-      'planned-direct',
-      walk.positions,
-      travelMode === 'rover' ? '#7EB6FF' : '#F5C542',
-      4
-    );
-
-    controller.viewer.scene.requestRender();
-
-    return () => {
-      if (!controller.viewer.isDestroyed()) {
-        channel.entities.removeAll();
-        controller.viewer.scene.requestRender();
-      }
-    };
-  }, [controller, source, destination, travelMode]);
+    useRoutePlannerStore.getState().setTraverseSummary(summarize(routes));
+  }, [routes]);
 }
 
-function toSite(location: RouteLocation): OlympusSite {
-  const lonEast = ((location.lon % 360) + 360) % 360;
+function summarize(routes: Route[]) {
+  if (routes.length === 0) {
+    return { distanceKm: null, marswalkEta: null, roverEta: null };
+  }
+  const minOf = (pick: (route: Route) => number) => Math.min(...routes.map(pick));
   return {
-    id: location.id,
-    name: location.name,
-    kind: 'waypoint',
-    lat: location.lat,
-    lonEast,
-    landform: location.subtitle ?? '',
-    mission: '',
+    distanceKm: minOf((r) => r.distance_m) / 1000,
+    marswalkEta: formatDuration(minOf((r) => r.eta_eva_s) / 3600),
+    roverEta: formatDuration(minOf((r) => r.eta_rover_s) / 3600),
   };
-}
-
-function addLine(
-  channel: Cesium.CustomDataSource,
-  id: string,
-  positions: Cesium.Cartesian3[],
-  color: string,
-  width: number
-): void {
-  if (positions.length < 2) return;
-  channel.entities.add({
-    id,
-    polyline: {
-      positions,
-      width,
-      material: new Cesium.PolylineDashMaterialProperty({
-        color: Cesium.Color.fromCssColorString(color),
-        dashLength: 18,
-      }),
-      arcType: Cesium.ArcType.NONE,
-    },
-  });
 }

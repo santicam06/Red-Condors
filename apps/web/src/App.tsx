@@ -21,7 +21,7 @@ export function App() {
       <MarsViewport onControllerReady={handleControllerReady} />
       <NomenclatureLocations controller={controller} />
       <RouteLayer controller={controller} />
-      <RouteLateralBar controller={controller} />
+      <RouteLateralBar />
       <MapHUD controller={controller} />
     </main>
   );

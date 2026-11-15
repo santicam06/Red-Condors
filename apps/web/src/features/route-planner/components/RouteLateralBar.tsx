@@ -1,18 +1,14 @@
 import { ArrowUpDown, MapPin, Navigation, X } from 'lucide-react';
 import { LocationDetailsPanel } from '../../../components/Locations/LocationDetailsPanel';
-import type { MarsViewerController } from '../../../core/MarsViewerController';
 import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
 import { usePlannedTraverse } from '../map/usePlannedTraverse';
+import { useSafeRouteRequest } from '../map/useSafeRouteRequest';
 import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
 import type { TravelMode } from '../types';
 import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
 import { LocationInputBox } from './LocationInputBox';
 
-interface RouteLateralBarProps {
-  controller: MarsViewerController | null;
-}
-
-export function RouteLateralBar({ controller }: RouteLateralBarProps) {
+export function RouteLateralBar() {
   const isOpen = useRoutePlannerStore((s) => s.isOpen);
   const travelMode = useRoutePlannerStore((s) => s.travelMode);
   const source = useRoutePlannerStore((s) => s.source);
@@ -21,7 +17,8 @@ export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const distanceKm = useRoutePlannerStore((s) => s.distanceKm);
   const marswalkEta = useRoutePlannerStore((s) => s.marswalkEta);
   const roverEta = useRoutePlannerStore((s) => s.roverEta);
-  usePlannedTraverse(controller);
+  useSafeRouteRequest();
+  usePlannedTraverse();
 
   const setOpen = useRoutePlannerStore((s) => s.setOpen);
   const setTravelMode = useRoutePlannerStore((s) => s.setTravelMode);
