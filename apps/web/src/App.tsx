@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { MapHUD } from './components/hud/MapHUD';
 import { NomenclatureLocations } from './components/Locations/NomenclatureLocations';
 import { MarsViewport } from './components/MarsViewport';
+import { WelcomeDialog } from './components/WelcomeDialog';
 import type { MarsViewerController } from './core/MarsViewerController';
 import { MapLayers } from './features/map-layers/MapLayers';
 import { StreetViewPanel } from './features/rover-streetview/components/StreetViewPanel';
@@ -31,6 +32,7 @@ export function App() {
       <MapHUD controller={controller} />
       <MapSearchBar controller={controller} />
       <StreetViewPanel />
+      <WelcomeDialog />
     </main>
   );
 }

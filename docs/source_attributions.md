@@ -116,6 +116,8 @@ All third-party libraries used in this repository are distributed under **OSI-ap
 | **Ruff (`ruff`)** | MIT | `https://github.com/astral-sh/ruff` | Python linter for the backend, locally and in GitHub Actions. |
 | **Roboto Font** | Apache-2.0 | `https://fonts.google.com/specimen/Roboto` | Typography matching NASA Mars Trek's HUD and map nomenclature labels. |
 | **JetBrains Mono** | SIL Open Font License 1.1 | `https://github.com/JetBrains/JetBrainsMono` | Monospaced typography for the map HUD and route bar. |
+| **Orbitron Font** | SIL Open Font License 1.1 | `https://fonts.google.com/specimen/Orbitron` | Space-style display typeface for the welcome screen title. |
+| **Press Start 2P Font** | SIL Open Font License 1.1 | `https://fonts.google.com/specimen/Press+Start+2P` | Retro pixel typeface for the welcome screen Start button. |
 | **HTTPX (`httpx`), runtime use** | BSD-3-Clause | `https://github.com/encode/httpx` | Downloads PDS mosaics and verifies the curated rover Street View stops against NASA sources. |
 | **Pillow (`pillow`)** | MIT-CMU (HPND) | `https://github.com/python-pillow/Pillow` | Resizes ~60 MB PDS Navcam mosaics into cached, browser-sized JPEG panoramas. |
 | **Photo Sphere Viewer (`@photo-sphere-viewer/core`)** | MIT | `https://github.com/mistic100/Photo-Sphere-Viewer` | Interactive 360° panorama viewer for the Rover Street View (partial/cropped equirectangular panoramas). |

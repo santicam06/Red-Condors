@@ -36,3 +36,105 @@ body,
 .mars-cesium-container .cesium-credit-expand-link {
   display: none !important;
 }
+
+.font-orbitron {
+  font-family: 'Orbitron', 'Roboto', system-ui, sans-serif;
+}
+
+/* Welcome screen: the title rises from behind a clipping mask, then the rest fades in. */
+@keyframes welcome-rise {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes welcome-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-rise {
+  animation: welcome-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.welcome-fade-up {
+  animation: welcome-fade-up 600ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-rise,
+  .welcome-fade-up {
+    animation: none;
+  }
+}
+
+.font-pixel {
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+}
+
+/* Retro pixel Start button: stepped "pixel" border and bevel built from box-shadows. */
+.pixel-button {
+  box-shadow:
+    0 -4px 0 0 #fff,
+    0 4px 0 0 #fff,
+    -4px 0 0 0 #fff,
+    4px 0 0 0 #fff,
+    inset -4px -4px 0 0 #7f1d1d,
+    inset 4px 4px 0 0 #ef4444;
+  image-rendering: pixelated;
+}
+
+.pixel-button:active {
+  box-shadow:
+    0 -4px 0 0 #fff,
+    0 4px 0 0 #fff,
+    -4px 0 0 0 #fff,
+    4px 0 0 0 #fff,
+    inset 4px 4px 0 0 #7f1d1d;
+}
+
+/* Pixel rover parked on the button: drives right while the button is hovered or focused. */
+.pixel-rover {
+  transform: translateX(0);
+  transition: transform 1.1s steps(22);
+}
+
+.pixel-start:hover .pixel-rover,
+.pixel-start:focus-visible .pixel-rover {
+  transform: translateX(var(--rover-travel));
+}
+
+@keyframes pixel-wheel-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+.pixel-start:hover .pixel-rover-body,
+.pixel-start:focus-visible .pixel-rover-body {
+  animation: pixel-wheel-bob 0.2s steps(2) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixel-rover {
+    transition: none;
+  }
+
+  .pixel-start:hover .pixel-rover-body,
+  .pixel-start:focus-visible .pixel-rover-body {
+    animation: none;
+  }
+}
