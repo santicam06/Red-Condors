@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { MarsViewerController } from '../../../core/MarsViewerController';
+import { DEMO_ROUTE_REQUEST } from '../config/demoRoute';
 import { useRoutingStore } from '../store/useRoutingStore';
 import { RouteOverlayManager } from './RouteOverlayManager';
 
@@ -41,6 +42,15 @@ export function RouteLayer({ controller }: RouteLayerProps) {
     };
   }, [controller]);
 
-  // Requests come from the route planner (see `features/route-planner/map/useSafeRouteRequest`).
+  // TODO(routing-ui): replace this static demo request with input from the custom
+  // route-planner UI, which should call:
+  //   useRoutingStore.getState().setRequest({ source, destination })
+  // with `source` within 20 km of `destination`. Delete this effect once that UI exists.
+  useEffect(() => {
+    if (!controller) return;
+    if (useRoutingStore.getState().request) return;
+    void useRoutingStore.getState().setRequest(DEMO_ROUTE_REQUEST);
+  }, [controller]);
+
   return null;
 }

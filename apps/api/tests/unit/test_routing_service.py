@@ -83,8 +83,8 @@ def test_closed_wall_has_no_safe_route(synthetic_dem):
     assert (grid[(lon_grid > WALL_EAST + 0.02) & (grid != "0")] == "1").all()
 
 
-def test_source_beyond_the_distance_limit_is_rejected(synthetic_dem):
-    far_source = {"lat": 0.0, "lon": -0.4}  # ~35.7 km from the destination (limit: 30 km)
+def test_source_beyond_twenty_km_is_rejected(synthetic_dem):
+    far_source = {"lat": 0.0, "lon": -0.2}  # ~23.7 km from the destination
     with pytest.raises(SourceTooFarError):
         compute_routes(request(source=far_source), synthetic_dem(flat), SETTINGS)
 
@@ -141,8 +141,8 @@ def test_walkable_area_on_flat_terrain_is_all_gentle(synthetic_dem):
     assert area.south < 0.0 < area.north
     assert area.max_slope_deg == 15
     assert area.gentle_max_slope_deg == 5
-    # The planning disc covers ~pi * radius^2 of ~0.463 km pixels
-    expected_cells = np.pi * SETTINGS.route_graph_radius_m**2 / response.dem_resolution_m**2
+    # The 25 km planning disc covers ~pi * 25^2 km^2 of ~0.463 km pixels
+    expected_cells = np.pi * 25_000**2 / response.dem_resolution_m**2
     assert (grid == "1").sum() == pytest.approx(expected_cells, rel=0.05)
 
 

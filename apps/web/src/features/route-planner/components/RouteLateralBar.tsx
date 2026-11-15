@@ -1,19 +1,21 @@
-import { ArrowUpDown, MapPin, X } from "lucide-react";
-import { LocationDetailsPanel } from "../../../components/Locations/LocationDetailsPanel";
-import { OlympusRehearsal } from "../../../components/Outposts/OlympusRehearsal";
-import { useNomenclatureSelection } from "../../../components/Locations/useNomenclatureSelection";
-import { usePlannedTraverse } from "../map/usePlannedTraverse";
-import { useSafeRouteRequest } from "../map/useSafeRouteRequest";
-import { useRoutePlannerStore } from "../store/useRoutePlannerStore";
-import type { TravelMode } from "../types";
-import { AstronautIcon, MarsRoverIcon } from "./icons/TravelModeIcons";
-import { LocationInputBox } from "./LocationInputBox";
+import { ArrowUpDown, MapPin, X } from 'lucide-react';
+import { LocationDetailsPanel } from '../../../components/Locations/LocationDetailsPanel';
+import { OlympusRehearsal } from '../../../components/Outposts/OlympusRehearsal';
+import type { MarsViewerController } from '../../../core/MarsViewerController';
+import { useNomenclatureSelection } from '../../../components/Locations/useNomenclatureSelection';
+import { usePlannedTraverse } from '../map/usePlannedTraverse';
+import { useRoutePlannerStore } from '../store/useRoutePlannerStore';
+import type { TravelMode } from '../types';
+import { AstronautIcon, MarsRoverIcon } from './icons/TravelModeIcons';
+import { LocationInputBox } from './LocationInputBox';
 
-export function RouteLateralBar() {
+interface RouteLateralBarProps {
+  controller: MarsViewerController | null;
+}
+
+export function RouteLateralBar({ controller }: RouteLateralBarProps) {
   const isOpen = useRoutePlannerStore((s) => s.isOpen);
-  const isRouteCalculatorOpen = useRoutePlannerStore(
-    (s) => s.isRouteCalculatorOpen,
-  );
+  const isRouteCalculatorOpen = useRoutePlannerStore((s) => s.isRouteCalculatorOpen);
   const travelMode = useRoutePlannerStore((s) => s.travelMode);
   const source = useRoutePlannerStore((s) => s.source);
   const destination = useRoutePlannerStore((s) => s.destination);
@@ -21,8 +23,7 @@ export function RouteLateralBar() {
   const distanceKm = useRoutePlannerStore((s) => s.distanceKm);
   const marswalkEta = useRoutePlannerStore((s) => s.marswalkEta);
   const roverEta = useRoutePlannerStore((s) => s.roverEta);
-  useSafeRouteRequest();
-  usePlannedTraverse();
+  usePlannedTraverse(controller);
 
   const setOpen = useRoutePlannerStore((s) => s.setOpen);
   const setTravelMode = useRoutePlannerStore((s) => s.setTravelMode);
@@ -40,28 +41,28 @@ export function RouteLateralBar() {
     Icon: typeof AstronautIcon;
   }> = [
     {
-      id: "marswalk",
-      label: "Marswalk",
+      id: 'marswalk',
+      label: 'Marswalk',
       eta: marswalkEta,
       Icon: AstronautIcon,
     },
     {
-      id: "rover",
-      label: "Rover",
+      id: 'rover',
+      label: 'Rover',
       eta: roverEta,
       Icon: MarsRoverIcon,
     },
   ];
 
   const formattedDistance =
-    distanceKm !== null ? `${distanceKm.toFixed(1)} km` : "-- km";
+    distanceKm !== null ? `${distanceKm.toFixed(1)} km` : '-- km';
 
   return (
     <aside
       aria-label="Martian traversal route planner"
       aria-hidden={!isOpen}
       className={`pointer-events-auto fixed top-0 left-0 z-20 flex h-full w-[384px] max-w-[calc(100vw-3rem)] flex-col bg-white text-[#202124] shadow-[2px_0_12px_rgba(0,0,0,0.25)] transition-transform duration-250 ease-out ${
-        isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+        isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
       }`}
     >
       {/* Room for the map search bar, which sits on top of this bar (Google Maps style) */}
@@ -91,8 +92,8 @@ export function RouteLateralBar() {
                       <span
                         className={`flex h-9 w-13 items-center justify-center rounded-full transition-colors duration-150 ${
                           active
-                            ? "bg-[#FAD2CF] text-[#A50E0E]"
-                            : "bg-transparent text-[#3C4043] group-hover:bg-[#FCE8E6] group-hover:text-[#B3261E]"
+                            ? 'bg-[#FAD2CF] text-[#A50E0E]'
+                            : 'bg-transparent text-[#3C4043] group-hover:bg-[#FCE8E6] group-hover:text-[#B3261E]'
                         }`}
                       >
                         <Icon className="h-[25px] w-[25px]" />
@@ -100,11 +101,11 @@ export function RouteLateralBar() {
                       <span
                         className={`text-[12px] leading-tight tabular-nums transition-colors duration-150 ${
                           active
-                            ? "font-semibold text-[#A50E0E]"
-                            : "font-normal text-[#5F6368] group-hover:text-[#B3261E]"
+                            ? 'font-semibold text-[#A50E0E]'
+                            : 'font-normal text-[#5F6368] group-hover:text-[#B3261E]'
                         }`}
                       >
-                        {eta ?? "—"}
+                        {eta ?? '—'}
                       </span>
                     </button>
                   );
@@ -145,10 +146,7 @@ export function RouteLateralBar() {
                   <span className="h-[3px] w-[3px] rounded-full bg-[#70757A]" />
                   <span className="h-[3px] w-[3px] rounded-full bg-[#70757A]" />
                 </div>
-                <MapPin
-                  className="h-[18px] w-[18px] text-[#D93025]"
-                  strokeWidth={2.2}
-                />
+                <MapPin className="h-[18px] w-[18px] text-[#D93025]" strokeWidth={2.2} />
               </div>
 
               {/* Center Source & Destination inputs */}
@@ -157,16 +155,16 @@ export function RouteLateralBar() {
                   label="Source location"
                   placeholder="Choose starting camp..."
                   value={source}
-                  isActiveSlot={activeInputSlot === "source"}
-                  onFocusSlot={() => setActiveInputSlot("source")}
+                  isActiveSlot={activeInputSlot === 'source'}
+                  onFocusSlot={() => setActiveInputSlot('source')}
                   onSelect={setSource}
                 />
                 <LocationInputBox
                   label="Destination location"
                   placeholder="Choose destination camp..."
                   value={destination}
-                  isActiveSlot={activeInputSlot === "destination"}
-                  onFocusSlot={() => setActiveInputSlot("destination")}
+                  isActiveSlot={activeInputSlot === 'destination'}
+                  onFocusSlot={() => setActiveInputSlot('destination')}
                   onSelect={setDestination}
                 />
               </div>
@@ -205,10 +203,7 @@ export function RouteLateralBar() {
           hit={selectedPlace}
           onClose={() => clearSelectedPlace(null)}
         />
-        <OlympusRehearsal
-          controller={controller}
-          hidePanel={Boolean(selectedPlace)}
-        />
+        <OlympusRehearsal controller={controller} hidePanel={Boolean(selectedPlace)} />
       </div>
     </aside>
   );

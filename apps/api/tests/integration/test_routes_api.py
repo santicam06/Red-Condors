@@ -42,7 +42,7 @@ def test_post_routes_returns_three_routes(client_with_dem) -> None:
 
 
 def test_source_too_far_is_400(client_with_dem) -> None:
-    body = {**BODY, "source": {"lat": 0.0, "lon": -0.4}}  # ~35.6 km away (limit: 30 km)
+    body = {**BODY, "source": {"lat": 0.0, "lon": -0.2}}
     response = client_with_dem(flat).post("/api/routes", json=body)
 
     assert response.status_code == 400
