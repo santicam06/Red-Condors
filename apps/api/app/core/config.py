@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,6 +12,12 @@ class Settings(BaseSettings):
     app_name: str = "Red Condors API"
     env: str = "development"
     api_prefix: str = "/api"
+
+    # Rover Street View: resized NASA panoramas cached on first use (gitignored).
+    rover_images_cache_dir: Path = (
+        Path(__file__).resolve().parents[2] / "data" / "rover_images" / "panoramas"
+    )
+    rover_images_panorama_max_px: int = 8192
 
     # --- Safe routing (app/modules/routing) ---
     # MOLA MEGDR 128/64 ppd merged DEM. Relative paths resolve against apps/api/.

@@ -12,6 +12,7 @@
     "fetch:nomenclature": "node scripts/fetch-nomenclature.mjs"
   },
   "dependencies": {
+    "@photo-sphere-viewer/core": "^5.15.1",
     "cesium": "^1.126.0",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
