@@ -1,0 +1,9 @@
+# Runtime dependencies for Vercel Python Functions (`api/index.py` -> `apps/api`).
+# Keep aligned with `[project.dependencies]` in `apps/api/pyproject.toml`.
+fastapi>=0.115
+pydantic-settings>=2.6
+httpx>=0.28
+pillow>=11.0
+numpy>=2.1
+networkx>=3.4
+rasterio>=1.4

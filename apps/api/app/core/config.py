@@ -1,7 +1,16 @@
+import os
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_rover_cache_dir() -> Path:
+    if os.getenv("VERCEL"):
+        return Path(tempfile.gettempdir()) / "red-condors" / "rover_images" / "panoramas"
+    return Path(__file__).resolve().parents[2] / "data" / "rover_images" / "panoramas"
 
 
 class Settings(BaseSettings):
@@ -13,10 +22,8 @@ class Settings(BaseSettings):
     env: str = "development"
     api_prefix: str = "/api"
 
-    # Rover Street View: resized NASA panoramas cached on first use (gitignored).
-    rover_images_cache_dir: Path = (
-        Path(__file__).resolve().parents[2] / "data" / "rover_images" / "panoramas"
-    )
+    # Rover Street View: resized NASA panoramas cached on first use (gitignored; /tmp on Vercel).
+    rover_images_cache_dir: Path = Field(default_factory=_default_rover_cache_dir)
     rover_images_panorama_max_px: int = 8192
 
     # --- Safe routing (app/modules/routing) ---

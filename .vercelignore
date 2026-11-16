@@ -1,0 +1,31 @@
+# Dependencies & virtual environments
+node_modules/
+apps/api/.venv/
+.venv/
+
+# Local build outputs (rebuilt on Vercel)
+/dist/
+apps/web/dist/
+dist-ssr/
+.vite/
+
+# Local caches & test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+apps/api/tests/
+
+# Large local datasets (never uploaded; use RC_MOLA_DEM_PATH or bundled Olympus fallback)
+apps/api/data/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# OS & logs
+.DS_Store
+Thumbs.db
+*.log
