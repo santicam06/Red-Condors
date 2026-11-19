@@ -28,3 +28,4 @@ pnpm-debug.log*
 
 # Large datasets (downloaded locally, never committed)
 apps/api/data/
+Roamars demo.mp4
